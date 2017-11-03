@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="demo_navigation" pkg="ropod_demo_dec_2017" type="demo_navigation" output="screen" />
+</launch>
