@@ -30,6 +30,8 @@ namespace wm
     public: pose_wm wayp_wait;
     public: pose_wm wayp_out;   
 
+    public: void set_inside_elevator_pose(pose_wm pose);
+    public: void set_outside_elevator_pose(pose_wm pose);
 
 
   };

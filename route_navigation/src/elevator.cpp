@@ -39,6 +39,14 @@ bool Elevator:: is_entrance_accesible() {
 void Elevator:: go_into() {};
 void Elevator:: go_out() {};
 
+void Elevator::set_inside_elevator_pose(pose_wm pose)
+{
+    wayp_elevator = pose;
+}
+void Elevator::set_outside_elevator_pose(pose_wm pose)
+{
+    wayp_out = pose;
+}
 }
 
 

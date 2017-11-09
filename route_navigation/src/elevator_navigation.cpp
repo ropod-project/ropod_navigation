@@ -103,15 +103,17 @@ bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStat
 }
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Publisher movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
+void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
 						   bool& sendgoal, ropod_demo_dec_2017::doorDetection doorStatus) {
     sendgoal = false;
 
     switch(nav_state) {
       
     case NAV_IDLE: // No waypoints received yet.
-        if (route_busy == true)
+        if (route_busy == true){
             nav_next_state = NAV_CHECKDOOR_IN;
+            ROS_INFO("Waiting for door");
+        }
         break;
 
     case NAV_CHECKDOOR_IN: 	//we'll send the the next goal to the robot
@@ -128,6 +130,7 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
             stamp_start = ros::Time::now();
             stamp_wait = ros::Duration(20.0); // wait five seconds from the moment you want to enter to checl way out. This will be replaced by communication with elevator system
             nav_next_state = NAV_GOTOPOINT;
+            ROS_INFO("Door is open. Entering elevator");
         }
         break;
 	
@@ -154,6 +157,7 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
         if( ros::Time::now() - stamp_start > stamp_wait) {
 
             nav_next_state = NAV_CHECKDOOR_OUT;
+            ROS_INFO("Reached target floor. Waiting for door");
 
         }
         break;
@@ -170,6 +174,7 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
 
             nav_next_state_wp = NAV_DONE;
             nav_next_state = NAV_GOTOPOINT;
+            ROS_INFO("Door is open. Moving outside elevator");
         }
         break;
 	
