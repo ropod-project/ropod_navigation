@@ -65,7 +65,7 @@ public:
     bool is_position_valid();
     bool is_waypoint_achieved();
     bool check_door(ropod_demo_dec_2017::doorDetection doorStatus);
-    void navigation_state_machine(wm::Elevator elevator,ros::Publisher movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, ropod_demo_dec_2017::doorDetection doorStatus);
+    void navigation_state_machine(wm::Elevator elevator,ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, ropod_demo_dec_2017::doorDetection doorStatus);
 };
 
 
