@@ -63,6 +63,19 @@ void routetopicCallback(const nav_msgs::Path::ConstPtr& Pathmsg)
 
 }
 
+wm::pose_wm getWMPose(const geometry_msgs::PoseStamped &pose)
+{
+    wm::pose_wm p;
+    p.position.x = pose.pose.position.x;
+    p.position.y = pose.pose.position.y;
+    p.position.z = pose.pose.position.z;
+    p.orientation.x = pose.pose.orientation.x;
+    p.orientation.y = pose.pose.orientation.y;
+    p.orientation.z = pose.pose.orientation.z;
+    p.orientation.w = pose.pose.orientation.w;
+    return p;
+}
+
 void CCUcommandCallback(const ropod_ros_msgs::sem_waypoint_cmd::ConstPtr& Cmdmsg)
 {
 
@@ -81,6 +94,12 @@ void CCUcommandCallback(const ropod_ros_msgs::sem_waypoint_cmd::ConstPtr& Cmdmsg
         waypoint_navigation.resume_navigation();
         elevator_navigation.resume_navigation();
     } else if(Cmdmsg->primitive[0].behaviour == "TAKE_ELEVATOR") {
+        // if we get elevator poses from ropod_wm_mediator, use them
+        if (Cmdmsg->primitive[0].poses.size() == 2)
+        {
+            simple_wm.elevator1.set_inside_elevator_pose(getWMPose(Cmdmsg->primitive[0].poses[0]));
+            simple_wm.elevator1.set_outside_elevator_pose(getWMPose(Cmdmsg->primitive[0].poses[1]));
+        }
         elevator_navigation.start_navigation();
         active_nav = NAV_ELEVATOR;
     } else if(Cmdmsg->primitive[0].behaviour == "GOTO") {
