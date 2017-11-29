@@ -6,6 +6,8 @@
 #include <vector>
 #include "datatypes_wm.h"
 
+#include "route_navigation_defines.h"
+
 #define ELEV_WAIT_DIST_TH 0.5
 
 namespace wm
@@ -29,9 +31,10 @@ namespace wm
     public: pose_wm wayp_elevator;
     public: pose_wm wayp_wait;
     public: pose_wm wayp_out;   
-
+    
     public: void set_inside_elevator_pose(pose_wm pose);
     public: void set_outside_elevator_pose(pose_wm pose);
+
 
 
   };

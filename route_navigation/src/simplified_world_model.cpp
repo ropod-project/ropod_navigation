@@ -45,33 +45,33 @@ Simplified_WorldModel::Simplified_WorldModel() {
     p2.y = 2.35;
     line_door.push_back(p1);
     line_door.push_back(p2);
+    
 
-    wayp_elevator.position.x = 2.86;
-    wayp_elevator.position.y = 3.31;
+    wayp_elevator.position.x = -5.27;
+    wayp_elevator.position.y = 0.025;
     wayp_elevator.position.z = 0.0;
     wayp_elevator.orientation.x = 0.0;
     wayp_elevator.orientation.y = 0.0;
-    wayp_elevator.orientation.z = -0.72;
-    wayp_elevator.orientation.w = 0.69;
+    wayp_elevator.orientation.z = 1.0;
+    wayp_elevator.orientation.w = 0.012;
+    
 
-
-    wayp_wait.position.x = 2.92;
-    wayp_wait.position.y = 1.32;
+    wayp_wait.position.x = -8.1;
+    wayp_wait.position.y = -1.87;
     wayp_wait.position.z = 0.0;
     wayp_wait.orientation.x = 0.0;
     wayp_wait.orientation.y = 0.0;
-    wayp_wait.orientation.z = 0.72;
-    wayp_wait.orientation.w = 0.7;
+    wayp_wait.orientation.z = 0.71;
+    wayp_wait.orientation.w = 0.71;
 
 
-
-    wayp_out.position.x = 3.85;
-    wayp_out.position.y = 2.35;
+    wayp_out.position.x = -8.12;
+    wayp_out.position.y = -1.53;
     wayp_out.position.z = 0.0;
     wayp_out.orientation.x = 0.0;
     wayp_out.orientation.y = 0.0;
-    wayp_out.orientation.z = -0.01;
-    wayp_out.orientation.w = 1.0;
+    wayp_out.orientation.z = -0.72;
+    wayp_out.orientation.w = 0.7;
     
     
     elevator1.init(convex_area_elev, line_door, wayp_elevator, wayp_wait, wayp_out);
@@ -84,6 +84,18 @@ Simplified_WorldModel::Simplified_WorldModel() {
 Simplified_WorldModel::~Simplified_WorldModel() {
 };
 
+pose_wm getWMPose(const geometry_msgs::PoseStamped &pose)
+{
+    pose_wm p;
+    p.position.x = pose.pose.position.x;
+    p.position.y = pose.pose.position.y;
+    p.position.z = pose.pose.position.z;
+    p.orientation.x = pose.pose.orientation.x;
+    p.orientation.y = pose.pose.orientation.y;
+    p.orientation.z = pose.pose.orientation.z;
+    p.orientation.w = pose.pose.orientation.w;
+    return p;
+};
 
 }
 

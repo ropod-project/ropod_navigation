@@ -30,7 +30,7 @@ void Waypoint_navigation::pause_navigation()
 {
     nav_paused_req = true;
     nav_state_bpause = nav_state;
-    nav_next_state = NAV_PAUSED;
+    nav_next_state = WAYP_NAV_PAUSED;
     ROS_INFO("Navigation paused");
     return;
 }
@@ -39,8 +39,8 @@ void Waypoint_navigation::pause_navigation()
 void Waypoint_navigation::resume_navigation()
 {
     nav_paused_req = false;
-    if (nav_state_bpause == NAV_BUSY)
-        nav_next_state = NAV_GOTOPOINT;
+    if (nav_state_bpause == WAYP_NAV_BUSY)
+        nav_next_state = WAYP_NAV_GOTOPOINT;
     else
         nav_next_state = nav_state_bpause;
     ROS_INFO("Navigation resumed");
@@ -54,9 +54,9 @@ void Waypoint_navigation::reset_navigation()
     route_busy = false;
     nav_paused_req = false;
     waypoint_cnt = 0;
-    nav_state = NAV_IDLE;
-    nav_next_state = NAV_IDLE;
-    nav_state_bpause = NAV_IDLE;
+    nav_state = WAYP_NAV_IDLE;
+    nav_next_state = WAYP_NAV_IDLE;
+    nav_state_bpause = WAYP_NAV_IDLE;
 }
 
 /*--------------------------------------------------------*/
@@ -135,59 +135,67 @@ geometry_msgs::Pose Waypoint_navigation::get_next_point(void)
 }
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::navigation_state_machine(ros::Publisher movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
+task_fb_ccu Waypoint_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
 {
-    sendgoal = false;
+  task_fb_ccu tfb_nav;
+  tfb_nav.wayp_n = waypoint_cnt;
+  tfb_nav.fb_nav = NAV_BUSY;
+  sendgoal = false;
 
     switch (nav_state) {
-    case NAV_IDLE: // No waypoints received yet.
+    case WAYP_NAV_IDLE: // No waypoints received yet.
+      tfb_nav.fb_nav = NAV_IDLE;
         if (route_busy == true)
-            nav_next_state = NAV_GETPOINT;
+            nav_next_state = WAYP_NAV_GETPOINT;
         break;
 
-    case NAV_GETPOINT: //we'll send the the next goal to the robot
-        goal.target_pose.pose = get_next_point();
-        nav_next_state = NAV_GOTOPOINT;
+    case WAYP_NAV_GETPOINT: //we'll send the the next goal to the robot
+        goal.target_pose.pose = get_next_point();	
+        nav_next_state = WAYP_NAV_GOTOPOINT;
         break;
 	
-    case NAV_GOTOPOINT:
+    case WAYP_NAV_GOTOPOINT:
         goal.target_pose.header.frame_id = "map";
         goal.target_pose.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
-        sendgoal = true;
-        nav_next_state = NAV_BUSY;
+        sendgoal = true;	
+	tfb_nav.fb_nav = NAV_GOTOPOINT;
+        nav_next_state = WAYP_NAV_BUSY;
         break;
 	
-    case NAV_BUSY: //
+    case WAYP_NAV_BUSY: //
         if (!is_position_valid()) {
-            nav_next_state = NAV_HOLD;
+            nav_next_state = WAYP_NAV_HOLD;
             break;
         }
         if (is_waypoint_achieved())
-            nav_next_state = NAV_WAYPOINT_DONE;
+            nav_next_state = WAYP_NAV_WAYPOINT_DONE;
         break;
 	
-    case NAV_WAYPOINT_DONE: //
+    case WAYP_NAV_WAYPOINT_DONE: //
+        tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
         if (is_last_waypoint())
-            nav_next_state = NAV_DONE;
+            nav_next_state = WAYP_NAV_DONE;
         else
-            nav_next_state = NAV_GETPOINT;
+            nav_next_state = WAYP_NAV_GETPOINT;
+	
         break;
 	
-    case NAV_DONE: //
+    case WAYP_NAV_DONE: //
+        tfb_nav.fb_nav = NAV_DONE;
         ROS_INFO("Navigation done");
         stop_navigation();
         movbase_cancel_pub.publish(emptyGoalID);
-        nav_next_state = NAV_IDLE;
+        nav_next_state = WAYP_NAV_IDLE;	
         break;
 	
-    case NAV_HOLD: //
+    case WAYP_NAV_HOLD: //
         ROS_INFO("Navigation on hold to receive feedback");
         if (is_position_valid()) // check we have a valid position
-            nav_next_state = NAV_BUSY;
+            nav_next_state = WAYP_NAV_BUSY;
         break;
 	
-    case NAV_PAUSED: // this state is reached via a callback
+    case WAYP_NAV_PAUSED: // this state is reached via a callback
         if (nav_paused_req) {
             movbase_cancel_pub.publish(emptyGoalID);
             nav_paused_req = false;
@@ -195,12 +203,13 @@ void Waypoint_navigation::navigation_state_machine(ros::Publisher movbase_cancel
         break;
 
     default:
-        nav_next_state = NAV_IDLE;
+        nav_next_state = WAYP_NAV_IDLE;
     }
 
     nav_state = nav_next_state;
 
     *goal_ptr = goal;
+    return tfb_nav;
 }
 
 

@@ -1,5 +1,5 @@
-#ifndef ROUTE_NAV_HH
-#define ROUTE_NAV_HH
+#ifndef ROUTE_WAYP_NAV_HH
+#define ROUTE_WAYP_NAV_HH
 
 #include <ros/ros.h>
 #include <move_base_msgs/MoveBaseAction.h>
@@ -11,20 +11,24 @@
 #include <tf/transform_datatypes.h>
 #include <string>
 
+#include <ropod_ros_msgs/ropod_demo_status_update.h>
+
+#include "route_navigation_defines.h"
+
 #define WAYP_REACHED_DIST 0.5
 #define GOAL_REACHED_DIST 0.2
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
 class Waypoint_navigation {
 
-    enum { NAV_HOLD = 0,
-           NAV_IDLE,
-           NAV_PAUSED,
-           NAV_BUSY,
-           NAV_GETPOINT,
-           NAV_GOTOPOINT,
-           NAV_WAYPOINT_DONE,
-           NAV_DONE
+    enum { WAYP_NAV_HOLD = 0,
+           WAYP_NAV_IDLE,
+           WAYP_NAV_PAUSED,
+           WAYP_NAV_BUSY,
+           WAYP_NAV_GETPOINT,
+           WAYP_NAV_GOTOPOINT,
+           WAYP_NAV_WAYPOINT_DONE,
+           WAYP_NAV_DONE
          };
 
 public:
@@ -41,6 +45,8 @@ public:
     tf::Transform waypoint_tf_;
     actionlib_msgs::GoalID emptyGoalID;
     move_base_msgs::MoveBaseGoal goal;
+    
+    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
     Waypoint_navigation();
     ~Waypoint_navigation();
@@ -56,7 +62,7 @@ public:
 
     geometry_msgs::Pose get_next_point(void);
 
-    void navigation_state_machine(ros::Publisher movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal);
+    task_fb_ccu navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal);
 private:
 };
 

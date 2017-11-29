@@ -1,0 +1,67 @@
+header: 
+  seq: 1
+  stamp: 
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+planID: ''
+locations: 
+  - 
+    command: TAKE_ELEVATOR
+    locationName: ''
+    id: ''
+    locationStatus: 
+      status: ''
+      sequenceNumber: 0
+      totalNumber: 0
+    areas: 
+      - 
+        areaName: 'inside_elevator'
+        id: 'inside_elevator'
+        locationStatus: 
+          status: ''
+          sequenceNumber: 0
+          totalNumber: 0
+        waypoints: 
+          - 
+            id: 'inside_elevator'
+            locationStatus: 
+              status: ''
+              sequenceNumber: 0
+              totalNumber: 0
+            waypointPosition: 
+              position: 
+                x: -5.27
+                y: 0.025
+                z: 0.0
+              orientation: 
+                x: 0.0
+                y: 0.0
+                z: 1.0
+                w: 0.012
+      - 
+        areaName: 'outside_elevator'
+        id: 'outside_elevator'
+        locationStatus: 
+          status: ''
+          sequenceNumber: 0
+          totalNumber: 0
+        waypoints: 
+          - 
+            id: 'outside_elevator'
+            locationStatus: 
+              status: ''
+              sequenceNumber: 0
+              totalNumber: 0
+            waypointPosition: 
+              position: 
+                x: -8.12
+                y: -1.53
+                z: 0.0
+              orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.72
+                w: 0.7
+                
+

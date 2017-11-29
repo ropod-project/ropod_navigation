@@ -11,11 +11,18 @@ Elevator_navigation::~Elevator_navigation() {
 };
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::start_navigation() {
+void Elevator_navigation::start_navigation(wm::Elevator elevator,nav_msgs::Path Pathmsg) {
     reset_navigation();
     route_busy = true;
+    // if we get elevator poses from ropod_wm_mediator, use them
+    if (Pathmsg.poses.size() == 2)
+    {
+      elevator.set_inside_elevator_pose(wm::getWMPose(Pathmsg.poses[0]));
+      elevator.set_outside_elevator_pose(wm::getWMPose(Pathmsg.poses[1]));      
+    }    
+    
+    
     ROS_INFO("start navigation trough elevator");
-
     return;
 }
 
@@ -23,7 +30,7 @@ void Elevator_navigation::start_navigation() {
 void Elevator_navigation::pause_navigation() {
     nav_paused_req = true;
     nav_state_bpause = nav_state;
-    nav_next_state = NAV_PAUSED;
+    nav_next_state = ELEV_NAV_PAUSED;
     ROS_INFO("Navigation paused");
     return;
 };
@@ -31,8 +38,8 @@ void Elevator_navigation::pause_navigation() {
 /*--------------------------------------------------------*/
 void Elevator_navigation::resume_navigation() {
     nav_paused_req = false;
-    if(nav_state_bpause == NAV_BUSY)
-        nav_next_state = NAV_GOTOPOINT;
+    if(nav_state_bpause == ELEV_NAV_BUSY)
+        nav_next_state = ELEV_NAV_GOTOPOINT;
     else
         nav_next_state = nav_state_bpause;
     ROS_INFO("Navigation resumed");
@@ -45,10 +52,10 @@ void Elevator_navigation::reset_navigation() {
     route_busy = false;
     nav_paused_req = false;
     waypoint_cnt = 0;
-    nav_state = NAV_IDLE;
-    nav_next_state = NAV_IDLE;
-    nav_state_bpause = NAV_IDLE;
-    nav_next_state_wp = NAV_IDLE;
+    nav_state = ELEV_NAV_IDLE;
+    nav_next_state = ELEV_NAV_IDLE;
+    nav_state_bpause = ELEV_NAV_IDLE;
+    nav_next_state_wp = ELEV_NAV_IDLE;
 }
 
 /*--------------------------------------------------------*/
@@ -103,21 +110,26 @@ bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStat
 }
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
-						   bool& sendgoal, ropod_demo_dec_2017::doorDetection doorStatus) {
+task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
+						   bool& sendgoal, wm::Elevator elevator, ropod_demo_dec_2017::doorDetection doorStatus) {
+  task_fb_ccu tfb_nav;
+  tfb_nav.wayp_n = waypoint_cnt;
+  tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
 
     switch(nav_state) {
       
-    case NAV_IDLE: // No waypoints received yet.
+    case ELEV_NAV_IDLE: // No waypoints received yet.
+        tfb_nav.fb_nav = NAV_IDLE;
         if (route_busy == true){
-            nav_next_state = NAV_CHECKDOOR_IN;
-            ROS_INFO("Waiting for door");
-        }
+            nav_next_state = ELEV_NAV_CHECKDOOR_IN;
+	    ROS_INFO("Waiting for door");
+	}
         break;
 
-    case NAV_CHECKDOOR_IN: 	//we'll send the the next goal to the robot
+    case ELEV_NAV_CHECKDOOR_IN: 	//we'll send the the next goal to the robot
         if(check_door(doorStatus)) {
+	    waypoint_cnt = waypoint_cnt +1;
             goal.target_pose.pose.position.x=elevator.wayp_elevator.position.x;
             goal.target_pose.pose.position.y=elevator.wayp_elevator.position.y;
             goal.target_pose.pose.position.z=elevator.wayp_elevator.position.z;
@@ -126,44 +138,46 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
             goal.target_pose.pose.orientation.z=elevator.wayp_elevator.orientation.z;
             goal.target_pose.pose.orientation.w=elevator.wayp_elevator.orientation.w;
             //goal.target_pose.pose =
-            nav_next_state_wp = NAV_WAIT_FLOOR_CHANGE;
+            nav_next_state_wp = ELEV_NAV_WAIT_FLOOR_CHANGE;
             stamp_start = ros::Time::now();
             stamp_wait = ros::Duration(20.0); // wait five seconds from the moment you want to enter to checl way out. This will be replaced by communication with elevator system
-            nav_next_state = NAV_GOTOPOINT;
-            ROS_INFO("Door is open. Entering elevator");
+            nav_next_state = ELEV_NAV_GOTOPOINT;
+	    ROS_INFO("Door is open. Entering elevator");
         }
         break;
 	
-    case NAV_GOTOPOINT:
+    case ELEV_NAV_GOTOPOINT:
         goal.target_pose.header.frame_id = "map";
         goal.target_pose.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
         sendgoal = true;
-        nav_next_state = NAV_BUSY;
+	tfb_nav.fb_nav = NAV_GOTOPOINT;
+        nav_next_state = ELEV_NAV_BUSY;
         break;
 	
-    case NAV_BUSY: //
+    case ELEV_NAV_BUSY: //
         if (!is_position_valid()) {
-            nav_next_state = NAV_HOLD;
+            nav_next_state = ELEV_NAV_HOLD;
             break;
         }
         if (is_waypoint_achieved())
-            nav_next_state = NAV_WAYPOINT_DONE;
+            nav_next_state = ELEV_NAV_WAYPOINT_DONE;
 
         break;
 	
-    case NAV_WAIT_FLOOR_CHANGE: //
+    case ELEV_NAV_WAIT_FLOOR_CHANGE: //
         // wait for signal that we have arrived to the floor. For now just time based
         if( ros::Time::now() - stamp_start > stamp_wait) {
-
-            nav_next_state = NAV_CHECKDOOR_OUT;
+            nav_next_state = ELEV_NAV_CHECKDOOR_OUT;
             ROS_INFO("Reached target floor. Waiting for door");
-
         }
         break;
 
-    case NAV_CHECKDOOR_OUT: //
+    case ELEV_NAV_CHECKDOOR_OUT: //
+      ROS_INFO("check_door(doorStatus): %d", check_door(doorStatus));
+      
         if(check_door(doorStatus)) {
+	    waypoint_cnt = waypoint_cnt +1;
             goal.target_pose.pose.position.x=elevator.wayp_out.position.x;
             goal.target_pose.pose.position.y=elevator.wayp_out.position.y;
             goal.target_pose.pose.position.z=elevator.wayp_out.position.z;
@@ -172,30 +186,32 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
             goal.target_pose.pose.orientation.z=elevator.wayp_out.orientation.z;
             goal.target_pose.pose.orientation.w=elevator.wayp_out.orientation.w;
 
-            nav_next_state_wp = NAV_DONE;
-            nav_next_state = NAV_GOTOPOINT;
-            ROS_INFO("Door is open. Moving outside elevator");
+            nav_next_state_wp = ELEV_NAV_DONE;
+            nav_next_state = ELEV_NAV_GOTOPOINT;
+	    ROS_INFO("Door is open. Moving outside elevator");
         }
         break;
 	
-    case NAV_WAYPOINT_DONE: //
+    case ELEV_NAV_WAYPOINT_DONE: //
+        tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
         nav_next_state = nav_next_state_wp;
 
         break;
-    case NAV_DONE: //
+    case ELEV_NAV_DONE: //
         ROS_INFO("Navigation done");
+	tfb_nav.fb_nav = NAV_DONE;
         stop_navigation();
         movbase_cancel_pub.publish(emptyGoalID);
-        nav_next_state = NAV_IDLE;
+        nav_next_state = ELEV_NAV_IDLE;
         break;
 	
-    case NAV_HOLD: //
+    case ELEV_NAV_HOLD: //
         ROS_INFO("Navigation on hold to receive feedback");
         if (is_position_valid()) // check we have a valid position
-            nav_next_state = NAV_BUSY;
+            nav_next_state = ELEV_NAV_BUSY;
         break;
 	
-    case NAV_PAUSED: // this state is reached via a callback
+    case ELEV_NAV_PAUSED: // this state is reached via a callback
         if(nav_paused_req) {
             movbase_cancel_pub.publish(emptyGoalID);
             nav_paused_req = false;
@@ -203,10 +219,12 @@ void Elevator_navigation::navigation_state_machine(wm::Elevator elevator,ros::Pu
         break;
 
     default:
-        nav_next_state = NAV_IDLE;
+        nav_next_state = ELEV_NAV_IDLE;
     }
 
     nav_state = nav_next_state;
 
     *goal_ptr = goal;
+    
+    return tfb_nav;
 }
