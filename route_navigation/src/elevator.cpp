@@ -7,7 +7,7 @@ Elevator::Elevator() {
 
 };
 void Elevator:: init(std::vector<point_wm> convex_area_elev_, std::vector<point_wm> line_door_,
-                     pose_wm wayp_elevator_, pose_wm  wayp_wait_, pose_wm wayp_out_) {
+                     pose_wm wayp1_elevator_, pose_wm wayp2_elevator_, pose_wm  wayp_wait_, pose_wm wayp_out_) {
   
     /* Elevator 1
      * In this simplified model, an elevator is using these parameters
@@ -19,7 +19,8 @@ void Elevator:: init(std::vector<point_wm> convex_area_elev_, std::vector<point_
      */  
     convex_area_elev = convex_area_elev_;
     line_door = line_door_;
-    wayp_elevator = wayp_elevator_;
+    wayp1_elevator = wayp1_elevator_;
+    wayp2_elevator = wayp2_elevator_;
     wayp_wait = wayp_wait_;
     wayp_out = wayp_out_;
 };
@@ -39,9 +40,10 @@ bool Elevator:: is_entrance_accesible() {
 void Elevator:: go_into() {};
 void Elevator:: go_out() {};
 
-void Elevator::set_inside_elevator_pose(pose_wm pose)
+void Elevator::set_inside_elevator_pose(pose_wm pose1, pose_wm pose2)
 {
-    wayp_elevator = pose;
+    wayp1_elevator = pose1;
+    wayp2_elevator = pose2;    
 }
 void Elevator::set_outside_elevator_pose(pose_wm pose)
 {
