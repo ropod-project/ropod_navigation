@@ -12,7 +12,7 @@
 #include <string>
 
 #include "simplified_world_model.h"
-#include <ropod_demo_dec_2017/doorDetection.h>
+#include <ropod_ros_msgs/ropod_door_detection.h>
 
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
 
@@ -54,7 +54,7 @@ public:
     move_base_msgs::MoveBaseGoal goal;
     ros::Time stamp_start;
     ros::Duration stamp_wait;
-    
+
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
 
@@ -68,8 +68,8 @@ public:
     void stop_navigation();
     bool is_position_valid();
     bool is_waypoint_achieved();
-    bool check_door(ropod_demo_dec_2017::doorDetection doorStatus);
-    task_fb_ccu navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, wm::Elevator elevator,ropod_demo_dec_2017::doorDetection doorStatus);
+    bool check_door(ropod_ros_msgs::ropod_door_detection doorStatus);
+    task_fb_ccu navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, wm::Elevator elevator,ropod_ros_msgs::ropod_door_detection doorStatus);
 };
 
 
