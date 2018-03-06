@@ -30,6 +30,7 @@ class Elevator_navigation
            ELEV_NAV_BUSY,
            ELEV_NAV_CHECKDOOR_IN,
            ELEV_NAV_CHECKDOOR_OUT,
+	   ELEV_NAV_TURN_FACING_EXIT,
            ELEV_NAV_WAIT_FLOOR_CHANGE,
            ELEV_NAV_GOTOPOINT,
            ELEV_NAV_WAYPOINT_DONE,
@@ -61,7 +62,7 @@ public:
     Elevator_navigation();
     ~Elevator_navigation();
 
-    void start_navigation(wm::Elevator elevator,nav_msgs::Path Pathmsg);
+    void start_navigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg);
     void pause_navigation();
     void resume_navigation();
     void reset_navigation();

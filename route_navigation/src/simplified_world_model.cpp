@@ -18,7 +18,8 @@ Simplified_WorldModel::Simplified_WorldModel() {
     // Elevator 1
     std::vector<point_wm> convex_area_elev;
     std::vector<point_wm> line_door;
-    pose_wm wayp_elevator;
+    pose_wm wayp1_elevator;
+    pose_wm wayp2_elevator;
     pose_wm  wayp_wait;
     pose_wm wayp_out; 
         
@@ -47,13 +48,29 @@ Simplified_WorldModel::Simplified_WorldModel() {
     line_door.push_back(p2);
     
 
-    wayp_elevator.position.x = -5.27;
-    wayp_elevator.position.y = 0.025;
-    wayp_elevator.position.z = 0.0;
-    wayp_elevator.orientation.x = 0.0;
-    wayp_elevator.orientation.y = 0.0;
-    wayp_elevator.orientation.z = 1.0;
-    wayp_elevator.orientation.w = 0.012;
+//     wayp1_elevator.position.x = -5.27;
+//     wayp1_elevator.position.y = 0.025;
+//     wayp1_elevator.position.z = 0.0;
+//     wayp1_elevator.orientation.x = 0.0;
+//     wayp1_elevator.orientation.y = 0.0;
+//     wayp1_elevator.orientation.z = 0.012;
+//     wayp1_elevator.orientation.w = 1.0;
+    
+    wayp1_elevator.position.x = -7.27;
+    wayp1_elevator.position.y = 0.025;
+    wayp1_elevator.position.z = 0.0;
+    wayp1_elevator.orientation.x = 0.0;
+    wayp1_elevator.orientation.y = 0.0;
+    wayp1_elevator.orientation.z = 0.012;
+    wayp1_elevator.orientation.w = 1.0;
+    
+    wayp2_elevator.position.x = -5.27;
+    wayp2_elevator.position.y = 0.025;
+    wayp2_elevator.position.z = 0.0;
+    wayp2_elevator.orientation.x = 0.0;
+    wayp2_elevator.orientation.y = 0.0;
+    wayp2_elevator.orientation.z = 1.0;
+    wayp2_elevator.orientation.w = 0.012;    
     
 
     wayp_wait.position.x = -8.1;
@@ -74,7 +91,7 @@ Simplified_WorldModel::Simplified_WorldModel() {
     wayp_out.orientation.w = 0.7;
     
     
-    elevator1.init(convex_area_elev, line_door, wayp_elevator, wayp_wait, wayp_out);
+    elevator1.init(convex_area_elev, line_door, wayp1_elevator, wayp2_elevator, wayp_wait, wayp_out);
 
 
 
