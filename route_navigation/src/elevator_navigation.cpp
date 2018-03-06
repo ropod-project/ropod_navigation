@@ -20,9 +20,7 @@ void Elevator_navigation::start_navigation(wm::Elevator &elevator,nav_msgs::Path
       elevator.set_inside_elevator_pose(wm::getWMPose(Pathmsg.poses[0]), wm::getWMPose(Pathmsg.poses[1]));
       elevator.set_outside_elevator_pose(wm::getWMPose(Pathmsg.poses[2]));      
       ROS_INFO("Poses from elevator message assigned: %f", elevator.wayp1_elevator.position.x);
-    }    
-    
-    
+    }
     ROS_INFO("start navigation trough elevator");
     return;
 }
@@ -99,7 +97,7 @@ bool Elevator_navigation::is_waypoint_achieved() {
 }
 
 /*--------------------------------------------------------*/
-bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStatus) {    
+bool Elevator_navigation::check_door(ropod_ros_msgs::ropod_door_detection doorStatus) {
     if(doorStatus.undetectable)
         return false;
     else if(doorStatus.closed)
@@ -111,15 +109,15 @@ bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStat
 }
 
 /*--------------------------------------------------------*/
-task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
-						   bool& sendgoal, wm::Elevator elevator, ropod_demo_dec_2017::doorDetection doorStatus) {
+task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr,
+						   bool& sendgoal, wm::Elevator elevator, ropod_ros_msgs::ropod_door_detection doorStatus) {
   task_fb_ccu tfb_nav;
   tfb_nav.wayp_n = waypoint_cnt;
   tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
 
     switch(nav_state) {
-      
+
     case ELEV_NAV_IDLE: // No waypoints received yet.
         tfb_nav.fb_nav = NAV_IDLE;
         if (route_busy == true){
@@ -145,7 +143,7 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 	  ROS_INFO("Door is open. Entering elevator");
         }
         break;
-	
+
     case ELEV_NAV_GOTOPOINT:
         goal.target_pose.header.frame_id = "map";
         goal.target_pose.header.stamp = ros::Time::now();
@@ -154,7 +152,7 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 	tfb_nav.fb_nav = NAV_GOTOPOINT;
         nav_next_state = ELEV_NAV_BUSY;
         break;
-	
+
     case ELEV_NAV_BUSY: //
         if (!is_position_valid()) {
             nav_next_state = ELEV_NAV_HOLD;
@@ -164,7 +162,6 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
             nav_next_state = ELEV_NAV_WAYPOINT_DONE;
 
         break;
-	
     case ELEV_NAV_TURN_FACING_EXIT:
 	waypoint_cnt = waypoint_cnt +1;
 	goal.target_pose.pose.position.x=elevator.wayp2_elevator.position.x;
@@ -187,7 +184,7 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 
     case ELEV_NAV_CHECKDOOR_OUT: //
       ROS_INFO("check_door(doorStatus): %d", check_door(doorStatus));
-      
+
         if(check_door(doorStatus)) {
 	    waypoint_cnt = waypoint_cnt +1;
             goal.target_pose.pose.position.x=elevator.wayp_out.position.x;
@@ -203,7 +200,7 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 	    ROS_INFO("Door is open. Moving outside elevator");
         }
         break;
-	
+
     case ELEV_NAV_WAYPOINT_DONE: //
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
         nav_next_state = nav_next_state_wp;
@@ -216,13 +213,13 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
         movbase_cancel_pub.publish(emptyGoalID);
         nav_next_state = ELEV_NAV_IDLE;
         break;
-	
+
     case ELEV_NAV_HOLD: //
         ROS_INFO("Navigation on hold to receive feedback");
         if (is_position_valid()) // check we have a valid position
             nav_next_state = ELEV_NAV_BUSY;
         break;
-	
+
     case ELEV_NAV_PAUSED: // this state is reached via a callback
         if(nav_paused_req) {
             movbase_cancel_pub.publish(emptyGoalID);
@@ -237,6 +234,6 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
     nav_state = nav_next_state;
 
     *goal_ptr = goal;
-    
+
     return tfb_nav;
 }

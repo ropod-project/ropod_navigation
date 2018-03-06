@@ -8,34 +8,28 @@
 #include <tf/transform_datatypes.h>
 #include <string>
 
-
 /* ROPOD ROS messages */
 #include <ropod_ros_msgs/sem_waypoint_cmd.h>
-
 #include <ropod_ros_msgs/ropod_demo_plan.h>
 #include <ropod_ros_msgs/ropod_demo_location.h>
 #include <ropod_ros_msgs/ropod_demo_area.h>
 #include <ropod_ros_msgs/ropod_demo_waypoint.h>
 #include <ropod_ros_msgs/ropod_demo_status.h>
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
-
-
-
-
+#include <ropod_ros_msgs/ropod_door_detection.h>
 
 #include "waypoint_navigation.h"
 #include "elevator_navigation.h"
 #include "route_navigation_defines.h"
 /* Simple world model */
 #include "simplified_world_model.h"
-#include <ropod_demo_dec_2017/doorDetection.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 wm::Simplified_WorldModel simple_wm;
 Waypoint_navigation waypoint_navigation;
 Elevator_navigation elevator_navigation;
-ropod_demo_dec_2017::doorDetection doorStatus;
+ropod_ros_msgs::ropod_door_detection doorStatus;
 ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
 enum {
@@ -43,7 +37,6 @@ enum {
     NAVTYPE_ELEVATOR,
     NAVTYPE_NONE
 };
-
 
 int active_nav = NAVTYPE_NONE;
 bool Pathmsg_received = false;
@@ -57,33 +50,28 @@ void move_base_fbCallback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr
     elevator_navigation.base_position_ = msg;
 }
 
-
-
 void CCUPathCommandCallback(const ropod_ros_msgs::ropod_demo_plan::ConstPtr& Planmsg_)
 {
-  
-  
     ROS_INFO("CCU Command received. planID %s, %d locations", Planmsg_->planID.c_str(), (int) Planmsg_->locations.size());
-  
     Planmsg_rec = *Planmsg_;
     Pathmsg_received = true;
-
-
 }
-void doorDetectCallback(const ropod_demo_dec_2017::doorDetection::ConstPtr& DoorStmsg)
+
+void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& DoorStmsg)
 {
     doorStatus = *DoorStmsg;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     ros::init(argc, argv, "route_navigation");
     ros::NodeHandle n;
     ros::Rate rate(5.0);
 
     ros::Subscriber submvfb = 	n.subscribe<move_base_msgs::MoveBaseActionFeedback>("/move_base/feedback", 10, move_base_fbCallback);
     ros::Subscriber subCCUCommands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("ropod_demo_plan", 10,CCUPathCommandCallback);
-    ros::Subscriber subdoorStatus = n.subscribe<ropod_demo_dec_2017::doorDetection>("door", 10, doorDetectCallback);
-    
+    ros::Subscriber subdoorStatus = n.subscribe<ropod_ros_msgs::ropod_door_detection>("door", 10, doorDetectCallback);
+
     doorStatus.closed = false;
     doorStatus.open = false;
     doorStatus.undetectable = true;
@@ -93,12 +81,13 @@ int main(int argc, char** argv) {
 
     //tell the action client that we want to spin a thread by default
     MoveBaseClient ac("move_base", true);
-    
+
     nav_msgs::Path Pathmsg;
     std::vector<std::basic_string< char > > Wayp_ids;
-    
+
     // wait for the action server to come up
-    while(!ac.waitForServer(ros::Duration(5.0))){
+    while(!ac.waitForServer(ros::Duration(5.0)))
+    {
         ROS_INFO("Waiting for the move_base action server to come up");
     }
 
