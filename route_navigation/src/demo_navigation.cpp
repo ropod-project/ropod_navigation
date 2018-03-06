@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
 	      waypoint_navigation.start_navigation(Pathmsg);
 	      active_nav = NAVTYPE_WAYPOINT;
 	  } else if (Planmsg.locations[curr_loc].command == "TAKE_ELEVATOR") {
-	      elevator_navigation.start_navigation(simple_wm.elevator1,Pathmsg);
+	      elevator_navigation.start_navigation(simple_wm.elevator1,Pathmsg);	      
 	      active_nav = NAVTYPE_ELEVATOR;
 	  }    
 	

@@ -11,14 +11,15 @@ Elevator_navigation::~Elevator_navigation() {
 };
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::start_navigation(wm::Elevator elevator,nav_msgs::Path Pathmsg) {
+void Elevator_navigation::start_navigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg) {
     reset_navigation();
     route_busy = true;
     // if we get elevator poses from ropod_wm_mediator, use them
-    if (Pathmsg.poses.size() == 2)
+    if (Pathmsg.poses.size() == 3)
     {
-      elevator.set_inside_elevator_pose(wm::getWMPose(Pathmsg.poses[0]));
-      elevator.set_outside_elevator_pose(wm::getWMPose(Pathmsg.poses[1]));      
+      elevator.set_inside_elevator_pose(wm::getWMPose(Pathmsg.poses[0]), wm::getWMPose(Pathmsg.poses[1]));
+      elevator.set_outside_elevator_pose(wm::getWMPose(Pathmsg.poses[2]));      
+      ROS_INFO("Poses from elevator message assigned: %f", elevator.wayp1_elevator.position.x);
     }    
     
     
@@ -98,7 +99,7 @@ bool Elevator_navigation::is_waypoint_achieved() {
 }
 
 /*--------------------------------------------------------*/
-bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStatus) {
+bool Elevator_navigation::check_door(ropod_demo_dec_2017::doorDetection doorStatus) {    
     if(doorStatus.undetectable)
         return false;
     else if(doorStatus.closed)
@@ -129,20 +130,19 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 
     case ELEV_NAV_CHECKDOOR_IN: 	//we'll send the the next goal to the robot
         if(check_door(doorStatus)) {
-	    waypoint_cnt = waypoint_cnt +1;
-            goal.target_pose.pose.position.x=elevator.wayp_elevator.position.x;
-            goal.target_pose.pose.position.y=elevator.wayp_elevator.position.y;
-            goal.target_pose.pose.position.z=elevator.wayp_elevator.position.z;
-            goal.target_pose.pose.orientation.x=elevator.wayp_elevator.orientation.x;
-            goal.target_pose.pose.orientation.y=elevator.wayp_elevator.orientation.y;
-            goal.target_pose.pose.orientation.z=elevator.wayp_elevator.orientation.z;
-            goal.target_pose.pose.orientation.w=elevator.wayp_elevator.orientation.w;
-            //goal.target_pose.pose =
-            nav_next_state_wp = ELEV_NAV_WAIT_FLOOR_CHANGE;
-            stamp_start = ros::Time::now();
-            stamp_wait = ros::Duration(20.0); // wait five seconds from the moment you want to enter to checl way out. This will be replaced by communication with elevator system
-            nav_next_state = ELEV_NAV_GOTOPOINT;
-	    ROS_INFO("Door is open. Entering elevator");
+	  waypoint_cnt = waypoint_cnt +1;
+	  goal.target_pose.pose.position.x=elevator.wayp1_elevator.position.x;
+	  goal.target_pose.pose.position.y=elevator.wayp1_elevator.position.y;
+	  goal.target_pose.pose.position.z=elevator.wayp1_elevator.position.z;
+	  goal.target_pose.pose.orientation.x=elevator.wayp1_elevator.orientation.x;
+	  goal.target_pose.pose.orientation.y=elevator.wayp1_elevator.orientation.y;
+	  goal.target_pose.pose.orientation.z=elevator.wayp1_elevator.orientation.z;
+	  goal.target_pose.pose.orientation.w=elevator.wayp1_elevator.orientation.w;
+	  nav_next_state_wp = ELEV_NAV_TURN_FACING_EXIT;
+	  stamp_start = ros::Time::now();
+	  stamp_wait = ros::Duration(20.0); // wait from the moment you want to enter to checl way out. This will be replaced by communication with elevator system
+	  nav_next_state = ELEV_NAV_GOTOPOINT;
+	  ROS_INFO("Door is open. Entering elevator");
         }
         break;
 	
@@ -165,6 +165,18 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
 
         break;
 	
+    case ELEV_NAV_TURN_FACING_EXIT:
+	waypoint_cnt = waypoint_cnt +1;
+	goal.target_pose.pose.position.x=elevator.wayp2_elevator.position.x;
+	goal.target_pose.pose.position.y=elevator.wayp2_elevator.position.y;
+	goal.target_pose.pose.position.z=elevator.wayp2_elevator.position.z;
+	goal.target_pose.pose.orientation.x=elevator.wayp2_elevator.orientation.x;
+	goal.target_pose.pose.orientation.y=elevator.wayp2_elevator.orientation.y;
+	goal.target_pose.pose.orientation.z=elevator.wayp2_elevator.orientation.z;
+	goal.target_pose.pose.orientation.w=elevator.wayp2_elevator.orientation.w;
+	nav_next_state_wp = ELEV_NAV_WAIT_FLOOR_CHANGE;
+	nav_next_state = ELEV_NAV_GOTOPOINT;
+	ROS_INFO("Turn to face elevator exit");      
     case ELEV_NAV_WAIT_FLOOR_CHANGE: //
         // wait for signal that we have arrived to the floor. For now just time based
         if( ros::Time::now() - stamp_start > stamp_wait) {
