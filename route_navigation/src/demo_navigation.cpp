@@ -68,7 +68,15 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     ros::Rate rate(5.0);
 
-    ros::Subscriber submvfb = 	n.subscribe<move_base_msgs::MoveBaseActionFeedback>("/move_base/feedback", 10, move_base_fbCallback);
+    std::string moveBaseServerName;
+    std::string moveBaseFeedbackTopic;
+    std::string moveBaseCancelTopic;
+
+    n.param<std::string>("move_base_server", moveBaseServerName, "move_base");
+    n.param<std::string>("move_base_feedback_topic", moveBaseFeedbackTopic, "/move_base/feedback");
+    n.param<std::string>("move_base_cancel_topic", moveBaseCancelTopic, "/move_base/cancel");
+
+    ros::Subscriber submvfb = 	n.subscribe<move_base_msgs::MoveBaseActionFeedback>(moveBaseFeedbackTopic, 10, move_base_fbCallback);
     ros::Subscriber subCCUCommands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("ropod_demo_plan", 10,CCUPathCommandCallback);
     ros::Subscriber subdoorStatus = n.subscribe<ropod_ros_msgs::ropod_door_detection>("door", 10, doorDetectCallback);
 
@@ -76,11 +84,11 @@ int main(int argc, char** argv)
     doorStatus.open = false;
     doorStatus.undetectable = true;
 
-    ros::Publisher movbase_cancel_pub = n.advertise<actionlib_msgs::GoalID>("move_base/cancel", 1);
+    ros::Publisher movbase_cancel_pub = n.advertise<actionlib_msgs::GoalID>(moveBaseCancelTopic, 1);
     ros::Publisher ropod_task_fb_pub = n.advertise<ropod_ros_msgs::ropod_demo_status_update>("ropod_task_feedback", 1);
 
     //tell the action client that we want to spin a thread by default
-    MoveBaseClient ac("move_base", true);
+    MoveBaseClient ac(moveBaseServerName, true);
 
     nav_msgs::Path Pathmsg;
     std::vector<std::basic_string< char > > Wayp_ids;
@@ -96,24 +104,24 @@ int main(int argc, char** argv)
     // Wait fo route to be published
     ROS_INFO("Wait for route");
     while(n.ok()) {
-      
-      
-      
+
+
+
       int curr_loc;
       std::vector<ropod_ros_msgs::ropod_demo_area>::const_iterator curr_area;
       std::vector<ropod_ros_msgs::ropod_demo_waypoint>::const_iterator curr_wp;
       int it_idwp;
-	
+
       // Process the received Plan message. Point to first location
       if(Pathmsg_received){ // checks need to be done if a current navigation is taking place
-			
+
 	Pathmsg_received = false;
-	
+
 	// If first location is a PAUSE OR RESUME, then do not modify existing path
 	if (Planmsg_rec.locations[0].command == "PAUSE") {
 	    waypoint_navigation.pause_navigation();
 	    elevator_navigation.pause_navigation();
-	} else if (Planmsg_rec.locations[0].command == "RESUME") {	  
+	} else if (Planmsg_rec.locations[0].command == "RESUME") {
 	    if(active_nav ==  NAVTYPE_NONE){ // in case the pause is received in between locations, force to go to next location
 	      prepare_next_loc = true;
 	    }else {
@@ -122,35 +130,35 @@ int main(int argc, char** argv)
 	    }
 	} else {
 	  curr_loc = 0;
-	  Planmsg = Planmsg_rec; 
+	  Planmsg = Planmsg_rec;
 	  prepare_next_loc = true;
 	}
-	      
+
       }
-      
-      // Process locations, read areas and stack the waypoins  
-      
+
+      // Process locations, read areas and stack the waypoins
+
       if(prepare_next_loc){
 
-	// Clear previous waypoints and locations			
+	// Clear previous waypoints and locations
 	Wayp_ids.clear();
 	Pathmsg.poses.clear();
-	// Load waypoints of new location    
-	if(curr_loc < Planmsg.locations.size()){ 
-		  
+	// Load waypoints of new location
+	if(curr_loc < Planmsg.locations.size()){
+
 	    // Extract all areas and waypoints to go the corresponding location
 	    for(std::vector<ropod_ros_msgs::ropod_demo_area>::const_iterator curr_area = Planmsg.locations[curr_loc].areas.begin(); curr_area != Planmsg.locations[curr_loc].areas.end(); ++curr_area)
 	    {
 	      for(std::vector<ropod_ros_msgs::ropod_demo_waypoint>::const_iterator curr_wp = curr_area->waypoints.begin(); curr_wp != curr_area->waypoints.end(); ++curr_wp)
 	      {
 		  geometry_msgs::PoseStamped PoseStampedtemp;
-		  PoseStampedtemp.pose = curr_wp->waypointPosition;	    
+		  PoseStampedtemp.pose = curr_wp->waypointPosition;
 		  Pathmsg.poses.push_back(PoseStampedtemp);
 		  Wayp_ids.push_back(curr_wp->id.c_str());
-	      }   
+	      }
 	    }
-	    
-	  
+
+
 	  // Select the corresponding navigation routine depending con the command
 	  if (Planmsg.locations[curr_loc].command == "PAUSE") {
 	    // Notice that a RESUME in a sequence is not valid, once a pause is received, the path is resumed only if received separately from the CCU
@@ -160,46 +168,46 @@ int main(int argc, char** argv)
 	      waypoint_navigation.start_navigation(Pathmsg);
 	      active_nav = NAVTYPE_WAYPOINT;
 	  } else if (Planmsg.locations[curr_loc].command == "TAKE_ELEVATOR") {
-	      elevator_navigation.start_navigation(simple_wm.elevator1,Pathmsg);	      
+	      elevator_navigation.start_navigation(simple_wm.elevator1,Pathmsg);
 	      active_nav = NAVTYPE_ELEVATOR;
-	  }    
-	
-	} 
-	
+	  }
+
+	}
+
 	curr_loc++;
 	prepare_next_loc = false;
-	
+
       }
-    
-        
+
+
       task_fb_ccu nav_state;
-      
+
       // Select the corresponding navigation
       switch(active_nav) {
-	
+
 	case NAVTYPE_WAYPOINT:
 	  // ROS_INFO("NAV_WAYPOINT");
 	  nav_state = waypoint_navigation.navigation_state_machine(movbase_cancel_pub, &goal, sendgoal);
 	  break;
-	  
+
 	case NAVTYPE_ELEVATOR:
 	  // ROS_INFO("NAV_ELEVATOR");
 	  nav_state = elevator_navigation.navigation_state_machine(movbase_cancel_pub, &goal, sendgoal, simple_wm.elevator1, doorStatus);
 	  if(nav_state.fb_nav == NAV_DONE){
-	    
+
 	    active_nav = NAVTYPE_NONE;
 	    prepare_next_loc = true;
-	  }	  
+	  }
 	  break;
-	  
+
 	default:
 	  nav_state.fb_nav = NAV_IDLE;
 	  break;
       }
-      
+
       // Send feedback
       // TODO: how to properly give feedback when taking elevator since waypoints are not fixed? e.g. multiple possible waiting areas outside elevator
-      if(nav_state.fb_nav == NAV_DONE){           	      
+      if(nav_state.fb_nav == NAV_DONE){
 	ROS_INFO("NAV_ELEVATOR DONE!");
 	active_nav = NAVTYPE_NONE;
 	prepare_next_loc = true;
@@ -207,7 +215,7 @@ int main(int argc, char** argv)
 	ROS_INFO("Waypoint done notification received");
 	if(nav_state.wayp_n<=Wayp_ids.size())
 	  ropod_fb_msg.id = Wayp_ids[nav_state.wayp_n-1];
-	ropod_fb_msg.status.status = "reached"; 
+	ropod_fb_msg.status.status = "reached";
 	ropod_fb_msg.status.sequenceNumber = nav_state.wayp_n;
 	ropod_fb_msg.status.totalNumber = Wayp_ids.size();
 	ropod_task_fb_pub.publish(ropod_fb_msg);
@@ -215,12 +223,12 @@ int main(int argc, char** argv)
       }else if(nav_state.fb_nav == NAV_GOTOPOINT){
 	  if(nav_state.wayp_n<=Wayp_ids.size())
 	    ropod_fb_msg.id = Wayp_ids[nav_state.wayp_n-1];
-	  ropod_fb_msg.status.status = "reaching"; 
+	  ropod_fb_msg.status.status = "reaching";
 	  ropod_fb_msg.status.sequenceNumber = nav_state.wayp_n;
 	  ropod_fb_msg.status.totalNumber = Wayp_ids.size();
 	  ropod_task_fb_pub.publish(ropod_fb_msg);
       }
-      
+
       // Send navigation command
       if (sendgoal)
 	  ac.sendGoal(goal);
