@@ -72,20 +72,20 @@ int main(int argc, char** argv)
     std::string moveBaseFeedbackTopic;
     std::string moveBaseCancelTopic;
 
-    n.param<std::string>("move_base_server", moveBaseServerName, "move_base");
+    n.param<std::string>("move_base_server", moveBaseServerName, "/move_base");
     n.param<std::string>("move_base_feedback_topic", moveBaseFeedbackTopic, "/move_base/feedback");
     n.param<std::string>("move_base_cancel_topic", moveBaseCancelTopic, "/move_base/cancel");
 
     ros::Subscriber submvfb = 	n.subscribe<move_base_msgs::MoveBaseActionFeedback>(moveBaseFeedbackTopic, 10, move_base_fbCallback);
-    ros::Subscriber subCCUCommands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("ropod_demo_plan", 10,CCUPathCommandCallback);
-    ros::Subscriber subdoorStatus = n.subscribe<ropod_ros_msgs::ropod_door_detection>("door", 10, doorDetectCallback);
+    ros::Subscriber subCCUCommands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("/ropod_demo_plan", 10, CCUPathCommandCallback);
+    ros::Subscriber subdoorStatus = n.subscribe<ropod_ros_msgs::ropod_door_detection>("/door", 10, doorDetectCallback);
 
     doorStatus.closed = false;
     doorStatus.open = false;
     doorStatus.undetectable = true;
 
     ros::Publisher movbase_cancel_pub = n.advertise<actionlib_msgs::GoalID>(moveBaseCancelTopic, 1);
-    ros::Publisher ropod_task_fb_pub = n.advertise<ropod_ros_msgs::ropod_demo_status_update>("ropod_task_feedback", 1);
+    ros::Publisher ropod_task_fb_pub = n.advertise<ropod_ros_msgs::ropod_demo_status_update>("/ropod_task_feedback", 1);
 
     //tell the action client that we want to spin a thread by default
     MoveBaseClient ac(moveBaseServerName, true);
