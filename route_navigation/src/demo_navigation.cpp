@@ -65,7 +65,7 @@ void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& Do
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "route_navigation");
-    ros::NodeHandle n;
+    ros::NodeHandle n("~");
     ros::Rate rate(5.0);
 
     std::string moveBaseServerName;
