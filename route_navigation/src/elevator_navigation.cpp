@@ -1,24 +1,24 @@
 #include "elevator_navigation.h"
 
 /*--------------------------------------------------------*/
-Elevator_navigation::Elevator_navigation() {
+ElevatorNavigation::ElevatorNavigation() {
 
 };
 
 /*--------------------------------------------------------*/
-Elevator_navigation::~Elevator_navigation() {
-    base_position_.reset();
+ElevatorNavigation::~ElevatorNavigation() {
+    base_position.reset();
 };
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::start_navigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg) {
-    reset_navigation();
+void ElevatorNavigation::startNavigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg) {
+    resetNavigation();
     route_busy = true;
     // if we get elevator poses from ropod_wm_mediator, use them
     if (Pathmsg.poses.size() == 3)
     {
-      elevator.set_inside_elevator_pose(wm::getWMPose(Pathmsg.poses[0]), wm::getWMPose(Pathmsg.poses[1]));
-      elevator.set_outside_elevator_pose(wm::getWMPose(Pathmsg.poses[2]));      
+      elevator.setInsideElevatorPose(wm::getWMPose(Pathmsg.poses[0]), wm::getWMPose(Pathmsg.poses[1]));
+      elevator.setOutsideElevatorPose(wm::getWMPose(Pathmsg.poses[2]));      
       ROS_INFO("Poses from elevator message assigned: %f", elevator.wayp1_elevator.position.x);
     }
     ROS_INFO("start navigation trough elevator");
@@ -26,7 +26,7 @@ void Elevator_navigation::start_navigation(wm::Elevator &elevator,nav_msgs::Path
 }
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::pause_navigation() {
+void ElevatorNavigation::pauseNavigation() {
     nav_paused_req = true;
     nav_state_bpause = nav_state;
     nav_next_state = ELEV_NAV_PAUSED;
@@ -35,7 +35,7 @@ void Elevator_navigation::pause_navigation() {
 };
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::resume_navigation() {
+void ElevatorNavigation::resumeNavigation() {
     nav_paused_req = false;
     if(nav_state_bpause == ELEV_NAV_BUSY)
         nav_next_state = ELEV_NAV_GOTOPOINT;
@@ -46,8 +46,8 @@ void Elevator_navigation::resume_navigation() {
 }
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::reset_navigation() {
-    base_position_.reset();
+void ElevatorNavigation::resetNavigation() {
+    base_position.reset();
     route_busy = false;
     nav_paused_req = false;
     waypoint_cnt = 0;
@@ -58,34 +58,34 @@ void Elevator_navigation::reset_navigation() {
 }
 
 /*--------------------------------------------------------*/
-void Elevator_navigation::stop_navigation() {
-    base_position_.reset();
+void ElevatorNavigation::stopNavigation() {
+    base_position.reset();
     route_busy = false;
     waypoint_cnt = 0;
 }
 
 /*--------------------------------------------------------*/
-bool Elevator_navigation::is_position_valid() {
-    if(base_position_)
+bool ElevatorNavigation::isPositionValid() {
+    if(base_position)
         return true;
     else
         return false;
 }
 
 /*--------------------------------------------------------*/
-bool Elevator_navigation::is_waypoint_achieved() {
+bool ElevatorNavigation::isWaypointAchieved() {
 
     // In elevator we checked whether teh specific position is reached.
-    tf::Quaternion qtemp = tf::Quaternion(base_position_->feedback.base_position.pose.orientation.x, base_position_->feedback.base_position.pose.orientation.y,
-                                          base_position_->feedback.base_position.pose.orientation.z,base_position_->feedback.base_position.pose.orientation.w);
-    tf::Vector3 v3temp = tf::Vector3(base_position_->feedback.base_position.pose.position.x,base_position_->feedback.base_position.pose.position.y, 0.0);
-    base_position_tf_ = tf::Transform( qtemp, v3temp);
+    tf::Quaternion qtemp = tf::Quaternion(base_position->feedback.base_position.pose.orientation.x, base_position->feedback.base_position.pose.orientation.y,
+                                          base_position->feedback.base_position.pose.orientation.z,base_position->feedback.base_position.pose.orientation.w);
+    tf::Vector3 v3temp = tf::Vector3(base_position->feedback.base_position.pose.position.x,base_position->feedback.base_position.pose.position.y, 0.0);
+    base_positiontf_ = tf::Transform( qtemp, v3temp);
     qtemp = tf::Quaternion(goal.target_pose.pose.orientation.x, goal.target_pose.pose.orientation.y,
                            goal.target_pose.pose.orientation.z,goal.target_pose.pose.orientation.w);
     v3temp = tf::Vector3(goal.target_pose.pose.position.x,goal.target_pose.pose.position.y, 0.0);
     waypoint_tf_ = tf::Transform( qtemp, v3temp);
 
-    tf::Transform diff_tf = base_position_tf_.inverseTimes(waypoint_tf_);
+    tf::Transform diff_tf = base_positiontf_.inverseTimes(waypoint_tf_);
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
 
@@ -97,21 +97,21 @@ bool Elevator_navigation::is_waypoint_achieved() {
 }
 
 /*--------------------------------------------------------*/
-bool Elevator_navigation::check_door(ropod_ros_msgs::ropod_door_detection doorStatus) {
-    if(doorStatus.undetectable)
+bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status) {
+    if(door_status.undetectable)
         return false;
-    else if(doorStatus.closed)
+    else if(door_status.closed)
         return false;
-    else if(doorStatus.open)
+    else if(door_status.open)
         return true;
     else
         return false;
 }
 
 /*--------------------------------------------------------*/
-task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr,
-						   bool& sendgoal, wm::Elevator elevator, ropod_ros_msgs::ropod_door_detection doorStatus) {
-  task_fb_ccu tfb_nav;
+TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr,
+						   bool& sendgoal, wm::Elevator elevator, ropod_ros_msgs::ropod_door_detection door_status) {
+  TaskFeedbackCcu tfb_nav;
   tfb_nav.wayp_n = waypoint_cnt;
   tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
@@ -127,7 +127,7 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
         break;
 
     case ELEV_NAV_CHECKDOOR_IN: 	//we'll send the the next goal to the robot
-        if(check_door(doorStatus)) {
+        if(checkDoorStatus(door_status)) {
 	  waypoint_cnt = waypoint_cnt +1;
 	  goal.target_pose.pose.position.x=elevator.wayp1_elevator.position.x;
 	  goal.target_pose.pose.position.y=elevator.wayp1_elevator.position.y;
@@ -154,11 +154,11 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
         break;
 
     case ELEV_NAV_BUSY: //
-        if (!is_position_valid()) {
+        if (!isPositionValid()) {
             nav_next_state = ELEV_NAV_HOLD;
             break;
         }
-        if (is_waypoint_achieved())
+        if (isWaypointAchieved())
             nav_next_state = ELEV_NAV_WAYPOINT_DONE;
 
         break;
@@ -183,9 +183,9 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
         break;
 
     case ELEV_NAV_CHECKDOOR_OUT: //
-      ROS_INFO("check_door(doorStatus): %d", check_door(doorStatus));
+      ROS_INFO("checkDoorStatus(door_status): %d", checkDoorStatus(door_status));
 
-        if(check_door(doorStatus)) {
+        if(checkDoorStatus(door_status)) {
 	    waypoint_cnt = waypoint_cnt +1;
             goal.target_pose.pose.position.x=elevator.wayp_out.position.x;
             goal.target_pose.pose.position.y=elevator.wayp_out.position.y;
@@ -209,14 +209,14 @@ task_fb_ccu Elevator_navigation::navigation_state_machine(ros::Publisher &movbas
     case ELEV_NAV_DONE: //
         ROS_INFO("Navigation done");
 	tfb_nav.fb_nav = NAV_DONE;
-        stop_navigation();
+        stopNavigation();
         movbase_cancel_pub.publish(emptyGoalID);
         nav_next_state = ELEV_NAV_IDLE;
         break;
 
     case ELEV_NAV_HOLD: //
         ROS_INFO("Navigation on hold to receive feedback");
-        if (is_position_valid()) // check we have a valid position
+        if (isPositionValid()) // check we have a valid position
             nav_next_state = ELEV_NAV_BUSY;
         break;
 

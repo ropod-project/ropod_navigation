@@ -17,12 +17,12 @@ enum { NAV_HOLD = 0,
 	NAV_DONE
       };
 	 
-struct task_fb_ccu
+struct TaskFeedbackCcu
 {
       int wayp_n; // waypoint number
       int fb_nav; // status navigation
 };
 
-typedef struct task_fb_ccu task_fb_ccu;
+typedef struct TaskFeedbackCcu TaskFeedbackCcu;
 
 #endif

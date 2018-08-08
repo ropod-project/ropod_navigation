@@ -7,13 +7,13 @@
 
 namespace wm
 {
-  struct point_wm
+  struct PointWm
   {
 	double x;
 	double y;
   };
   
-  struct pose_wm
+  struct PoseWm
   {
       struct{
 	double x;
@@ -28,8 +28,8 @@ namespace wm
       } orientation;      
   };  
   
-  typedef struct point_wm point_wm;
-  typedef struct pose_wm pose_wm;
+  typedef struct PointWm PointWm;
+  typedef struct PoseWm PoseWm;
     
 }
 #endif

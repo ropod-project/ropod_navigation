@@ -1,22 +1,22 @@
 #include "waypoint_navigation.h"
 
 /*--------------------------------------------------------*/
-Waypoint_navigation::Waypoint_navigation()
+WaypointNavigation::WaypointNavigation()
 {
 
-    reset_navigation();
+    resetNavigation();
 };
 
 /*--------------------------------------------------------*/
-Waypoint_navigation::~Waypoint_navigation()
+WaypointNavigation::~WaypointNavigation()
 {
-    base_position_.reset();
+    base_position.reset();
 };
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::start_navigation(nav_msgs::Path Pathmsg)
+void WaypointNavigation::startNavigation(nav_msgs::Path Pathmsg)
 {
-    reset_navigation();
+    resetNavigation();
     route_busy = true;
     planned_route = Pathmsg;
     planned_route_size = (int)planned_route.poses.size();
@@ -26,7 +26,7 @@ void Waypoint_navigation::start_navigation(nav_msgs::Path Pathmsg)
 }
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::pause_navigation()
+void WaypointNavigation::pauseNavigation()
 {
     nav_paused_req = true;
     nav_state_bpause = nav_state;
@@ -36,7 +36,7 @@ void Waypoint_navigation::pause_navigation()
 }
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::resume_navigation()
+void WaypointNavigation::resumeNavigation()
 {
     nav_paused_req = false;
     if (nav_state_bpause == WAYP_NAV_BUSY)
@@ -48,9 +48,9 @@ void Waypoint_navigation::resume_navigation()
 }
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::reset_navigation()
+void WaypointNavigation::resetNavigation()
 {
-    base_position_.reset();
+    base_position.reset();
     route_busy = false;
     nav_paused_req = false;
     waypoint_cnt = 0;
@@ -60,33 +60,33 @@ void Waypoint_navigation::reset_navigation()
 }
 
 /*--------------------------------------------------------*/
-void Waypoint_navigation::stop_navigation()
+void WaypointNavigation::stopNavigation()
 {
-    base_position_.reset();
+    base_position.reset();
     route_busy = false;
     waypoint_cnt = 0;
 }
 
 /*--------------------------------------------------------*/
-bool Waypoint_navigation::is_position_valid()
+bool WaypointNavigation::isPositionValid()
 {
-    if (base_position_)
+    if (base_position)
         return true;
     else
         return false;
 }
 
 /*--------------------------------------------------------*/
-bool Waypoint_navigation::is_waypoint_achieved()
+bool WaypointNavigation::isWaypointAchieved()
 {
-    tf::Quaternion qtemp = tf::Quaternion(base_position_->feedback.base_position.pose.orientation.x,
-                                          base_position_->feedback.base_position.pose.orientation.y,
-                                          base_position_->feedback.base_position.pose.orientation.z,
-                                          base_position_->feedback.base_position.pose.orientation.w);
-    tf::Vector3 v3temp = tf::Vector3(base_position_->feedback.base_position.pose.position.x,
-                                     base_position_->feedback.base_position.pose.position.y,
+    tf::Quaternion qtemp = tf::Quaternion(base_position->feedback.base_position.pose.orientation.x,
+                                          base_position->feedback.base_position.pose.orientation.y,
+                                          base_position->feedback.base_position.pose.orientation.z,
+                                          base_position->feedback.base_position.pose.orientation.w);
+    tf::Vector3 v3temp = tf::Vector3(base_position->feedback.base_position.pose.position.x,
+                                     base_position->feedback.base_position.pose.position.y,
                                      0.0);
-    base_position_tf_ = tf::Transform(qtemp, v3temp);
+    base_positiontf_ = tf::Transform(qtemp, v3temp);
     qtemp = tf::Quaternion(goal.target_pose.pose.orientation.x,
                            goal.target_pose.pose.orientation.y,
                            goal.target_pose.pose.orientation.z,
@@ -96,7 +96,7 @@ bool Waypoint_navigation::is_waypoint_achieved()
                          0.0);
     waypoint_tf_ = tf::Transform(qtemp, v3temp);
 
-    tf::Transform diff_tf = base_position_tf_.inverseTimes(waypoint_tf_);
+    tf::Transform diff_tf = base_positiontf_.inverseTimes(waypoint_tf_);
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
 
@@ -117,7 +117,7 @@ bool Waypoint_navigation::is_waypoint_achieved()
 }
 
 /*--------------------------------------------------------*/
-bool Waypoint_navigation::is_last_waypoint()
+bool WaypointNavigation::isLastWaypoint()
 {
     if (waypoint_cnt >= planned_route_size)
         return true;
@@ -126,7 +126,7 @@ bool Waypoint_navigation::is_last_waypoint()
 }
 
 /*--------------------------------------------------------*/
-geometry_msgs::Pose Waypoint_navigation::get_next_point(void)
+geometry_msgs::Pose WaypointNavigation::getNextWaypoint(void)
 {
     if (waypoint_cnt < planned_route_size) {
         waypoint_cnt = waypoint_cnt + 1;
@@ -135,9 +135,9 @@ geometry_msgs::Pose Waypoint_navigation::get_next_point(void)
 }
 
 /*--------------------------------------------------------*/
-task_fb_ccu Waypoint_navigation::navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
+TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
 {
-  task_fb_ccu tfb_nav;
+  TaskFeedbackCcu tfb_nav;
   tfb_nav.wayp_n = waypoint_cnt;
   tfb_nav.fb_nav = NAV_BUSY;
   sendgoal = false;
@@ -150,7 +150,7 @@ task_fb_ccu Waypoint_navigation::navigation_state_machine(ros::Publisher &movbas
         break;
 
     case WAYP_NAV_GETPOINT: //we'll send the the next goal to the robot
-        goal.target_pose.pose = get_next_point();	
+        goal.target_pose.pose = getNextWaypoint();	
         nav_next_state = WAYP_NAV_GOTOPOINT;
         break;
 	
@@ -164,17 +164,17 @@ task_fb_ccu Waypoint_navigation::navigation_state_machine(ros::Publisher &movbas
         break;
 	
     case WAYP_NAV_BUSY: //
-        if (!is_position_valid()) {
+        if (!isPositionValid()) {
             nav_next_state = WAYP_NAV_HOLD;
             break;
         }
-        if (is_waypoint_achieved())
+        if (isWaypointAchieved())
             nav_next_state = WAYP_NAV_WAYPOINT_DONE;
         break;
 	
     case WAYP_NAV_WAYPOINT_DONE: //
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
-        if (is_last_waypoint())
+        if (isLastWaypoint())
             nav_next_state = WAYP_NAV_DONE;
         else
             nav_next_state = WAYP_NAV_GETPOINT;
@@ -184,14 +184,14 @@ task_fb_ccu Waypoint_navigation::navigation_state_machine(ros::Publisher &movbas
     case WAYP_NAV_DONE: //
         tfb_nav.fb_nav = NAV_DONE;
         ROS_INFO("Navigation done");
-        stop_navigation();
+        stopNavigation();
         movbase_cancel_pub.publish(emptyGoalID);
         nav_next_state = WAYP_NAV_IDLE;	
         break;
 	
     case WAYP_NAV_HOLD: //
         ROS_INFO("Navigation on hold to receive feedback");
-        if (is_position_valid()) // check we have a valid position
+        if (isPositionValid()) // check we have a valid position
             nav_next_state = WAYP_NAV_BUSY;
         break;
 	

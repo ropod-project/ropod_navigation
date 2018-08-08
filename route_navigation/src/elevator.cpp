@@ -6,8 +6,8 @@ namespace wm
 Elevator::Elevator() {
 
 };
-void Elevator:: init(std::vector<point_wm> convex_area_elev_, std::vector<point_wm> line_door_,
-                     pose_wm wayp1_elevator_, pose_wm wayp2_elevator_, pose_wm  wayp_wait_, pose_wm wayp_out_) {
+void Elevator:: init(std::vector<PointWm> convex_area_elev_, std::vector<PointWm> line_door_,
+                     PoseWm wayp1_elevator_, PoseWm wayp2_elevator_, PoseWm  wayp_wait_, PoseWm wayp_out_) {
   
     /* Elevator 1
      * In this simplified model, an elevator is using these parameters
@@ -29,23 +29,23 @@ Elevator::~Elevator() {};
 
 
 
-bool Elevator:: is_entrance_detectable() {
+bool Elevator:: isEntranceDetectable() {
     return true; // TODO: for now we assume the robot is facing the door
 
 };
-bool Elevator:: is_entrance_accesible() {
+bool Elevator:: isEntranceAccesible() {
     return true; // TODO:for now we assume the door is open, once the laser data is integrated this will be checked
 };
 
-void Elevator:: go_into() {};
-void Elevator:: go_out() {};
+void Elevator:: goIn() {};
+void Elevator:: goOut() {};
 
-void Elevator::set_inside_elevator_pose(pose_wm pose1, pose_wm pose2)
+void Elevator::setInsideElevatorPose(PoseWm pose1, PoseWm pose2)
 {
     wayp1_elevator = pose1;
     wayp2_elevator = pose2;    
 }
-void Elevator::set_outside_elevator_pose(pose_wm pose)
+void Elevator::setOutsideElevatorPose(PoseWm pose)
 {
     wayp_out = pose;
 }

@@ -21,7 +21,7 @@
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
 
-class Elevator_navigation
+class ElevatorNavigation
 {
 
     enum { ELEV_NAV_HOLD = 0,
@@ -48,8 +48,8 @@ public:
     int nav_next_state;
     int nav_state_bpause;
     int nav_next_state_wp;
-    move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position_;
-    tf::Transform base_position_tf_;
+    move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position;
+    tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
     actionlib_msgs::GoalID emptyGoalID;
     move_base_msgs::MoveBaseGoal goal;
@@ -59,18 +59,18 @@ public:
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
 
-    Elevator_navigation();
-    ~Elevator_navigation();
+    ElevatorNavigation();
+    ~ElevatorNavigation();
 
-    void start_navigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg);
-    void pause_navigation();
-    void resume_navigation();
-    void reset_navigation();
-    void stop_navigation();
-    bool is_position_valid();
-    bool is_waypoint_achieved();
-    bool check_door(ropod_ros_msgs::ropod_door_detection doorStatus);
-    task_fb_ccu navigation_state_machine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, wm::Elevator elevator,ropod_ros_msgs::ropod_door_detection doorStatus);
+    void startNavigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg);
+    void pauseNavigation();
+    void resumeNavigation();
+    void resetNavigation();
+    void stopNavigation();
+    bool isPositionValid();
+    bool isWaypointAchieved();
+    bool checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, wm::Elevator elevator,ropod_ros_msgs::ropod_door_detection door_status);
 };
 
 

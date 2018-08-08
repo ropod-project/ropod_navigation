@@ -4,7 +4,7 @@
 namespace wm
 {
 
-Simplified_WorldModel::Simplified_WorldModel() {
+SimplifiedWorldModel::SimplifiedWorldModel() {
   
     // Corridor 1: Not used
     double l1C1[] = {4.22, -1.22, 3.57, -6.44};
@@ -16,23 +16,23 @@ Simplified_WorldModel::Simplified_WorldModel() {
     
      
     // Elevator 1
-    std::vector<point_wm> convex_area_elev;
-    std::vector<point_wm> line_door;
-    pose_wm wayp1_elevator;
-    pose_wm wayp2_elevator;
-    pose_wm  wayp_wait;
-    pose_wm wayp_out; 
+    std::vector<PointWm> convex_area_elev;
+    std::vector<PointWm> line_door;
+    PoseWm wayp1_elevator;
+    PoseWm wayp2_elevator;
+    PoseWm  wayp_wait;
+    PoseWm wayp_out; 
         
-    point_wm p1;
+    PointWm p1;
     p1.x = 0.0;
     p1.y = 0.0;
-    point_wm p2;
+    PointWm p2;
     p2.x = 0.0;
     p2.y = 0.0;
-    point_wm p3;
+    PointWm p3;
     p3.x = 0.0;
     p3.y = 0.0;
-    point_wm p4;
+    PointWm p4;
     p4.x = 0.0;
     p4.y = 0.0;
     convex_area_elev.push_back(p1);
@@ -98,12 +98,12 @@ Simplified_WorldModel::Simplified_WorldModel() {
 
 };
 
-Simplified_WorldModel::~Simplified_WorldModel() {
+SimplifiedWorldModel::~SimplifiedWorldModel() {
 };
 
-pose_wm getWMPose(const geometry_msgs::PoseStamped &pose)
+PoseWm getWMPose(const geometry_msgs::PoseStamped &pose)
 {
-    pose_wm p;
+    PoseWm p;
     p.position.x = pose.pose.position.x;
     p.position.y = pose.pose.position.y;
     p.position.z = pose.pose.position.z;
