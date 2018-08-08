@@ -100,16 +100,18 @@ bool WaypointNavigation::isWaypointAchieved()
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
 
-    if (waypoint_cnt < planned_route_size) { // Check succced only by looking at distance to waypoint
-        if (pow(v3temp.x(), 2) + pow(v3temp.y(), 2) < pow(WAYP_REACHED_DIST, 2)) {
+    if (waypoint_cnt < planned_route_size) 
+    { // Check succced only by looking at distance to waypoint
+        if (pow(v3temp.x(), 2) + pow(v3temp.y(), 2) < pow(WAYP_REACHED_DIST, 2)) 
+        {
             ROS_INFO("Hooray, Intermediate waypoint passed");
             return true;
         }
     }
     else if (pow(v3temp.x(), 2) + pow(v3temp.y(), 2) < pow(GOAL_REACHED_DIST, 2)
-             && fabs(qtemp.getAngle()) < GOAL_REACHED_ANG) {
+             && fabs(qtemp.getAngle()) < GOAL_REACHED_ANG) 
+    {
         //(ac_state == actionlib::SimpleClientGoalState::SUCCEEDED)
-
         return true;
     }
     else
@@ -128,9 +130,9 @@ bool WaypointNavigation::isLastWaypoint()
 /*--------------------------------------------------------*/
 geometry_msgs::Pose WaypointNavigation::getNextWaypoint(void)
 {
-    if (waypoint_cnt < planned_route_size) {
+    if (waypoint_cnt < planned_route_size) 
         waypoint_cnt = waypoint_cnt + 1;
-    }
+    
     return planned_route.poses[waypoint_cnt - 1].pose;
 }
 
@@ -164,7 +166,8 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
         break;
 	
     case WAYP_NAV_BUSY: //
-        if (!isPositionValid()) {
+        if (!isPositionValid()) 
+        {
             nav_next_state = WAYP_NAV_HOLD;
             break;
         }
@@ -196,7 +199,8 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
         break;
 	
     case WAYP_NAV_PAUSED: // this state is reached via a callback
-        if (nav_paused_req) {
+        if (nav_paused_req) 
+        {
             movbase_cancel_pub.publish(emptyGoalID);
             nav_paused_req = false;
         }

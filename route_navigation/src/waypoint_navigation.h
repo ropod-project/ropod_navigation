@@ -19,17 +19,20 @@
 #define GOAL_REACHED_DIST 0.2
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
-class WaypointNavigation {
+class WaypointNavigation
+{
 
-    enum { WAYP_NAV_HOLD = 0,
-           WAYP_NAV_IDLE,
-           WAYP_NAV_PAUSED,
-           WAYP_NAV_BUSY,
-           WAYP_NAV_GETPOINT,
-           WAYP_NAV_GOTOPOINT,
-           WAYP_NAV_WAYPOINT_DONE,
-           WAYP_NAV_DONE
-         };
+    enum
+    {
+        WAYP_NAV_HOLD = 0,
+        WAYP_NAV_IDLE,
+        WAYP_NAV_PAUSED,
+        WAYP_NAV_BUSY,
+        WAYP_NAV_GETPOINT,
+        WAYP_NAV_GOTOPOINT,
+        WAYP_NAV_WAYPOINT_DONE,
+        WAYP_NAV_DONE
+    };
 
 public:
     nav_msgs::Path planned_route;
@@ -45,7 +48,7 @@ public:
     tf::Transform waypoint_tf_;
     actionlib_msgs::GoalID emptyGoalID;
     move_base_msgs::MoveBaseGoal goal;
-    
+
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
     WaypointNavigation();
