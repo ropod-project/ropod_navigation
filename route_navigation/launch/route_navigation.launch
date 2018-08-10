@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <rosparam command="load" ns="areas" file="$(find ropod_demo_dec_2017)/config/navigation_goals.yaml"/>
-    <node name="demo_navigation" pkg="ropod_demo_dec_2017" type="demo_navigation" output="screen">
+    <rosparam command="load" ns="areas" file="$(find route_navigation)/config/navigation_goals.yaml"/>
+    <node name="route_navigation" pkg="route_navigation" type="demo_navigation" output="screen">
         <param name="move_base_server" value="move_base" />
         <param name="move_base_feedback_topic" value="/move_base/feedback" />
         <param name="move_base_cancel_topic" value="/move_base/cancel" />
