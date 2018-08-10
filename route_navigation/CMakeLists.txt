@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   ropod_ros_msgs
   roscpp
   tf
+  costmap_2d
+  base_local_planner
 )
 
 ## System dependencies are found with CMake's conventions
@@ -112,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ropod_demo_dec_2017
-  CATKIN_DEPENDS message_generation  geometry_msgs   actionlib  move_base_msgs    nav_msgs  ropod_ros_msgs  roscpp  tf
+  CATKIN_DEPENDS message_generation  geometry_msgs   actionlib  move_base_msgs    nav_msgs  ropod_ros_msgs  roscpp  tf costmap_2d base_local_planner
 #  DEPENDS system_lib
 )
 
@@ -205,6 +207,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(demo_navigation src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp)
+add_executable(demo_navigation src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp  src/maneuver_navigation.cpp)
 target_link_libraries(demo_navigation ${catkin_LIBRARIES})
 add_dependencies(demo_navigation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
