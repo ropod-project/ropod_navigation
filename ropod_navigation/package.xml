@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
-<package>
-  <name>route_navigation</name>
+<package format="2">
+  <name>ropod_navigation</name>
   <version>0.0.0</version>
-  <description>The route_navigation package</description>
+  <description>The ropod_navigation package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="cesar@todo.todo">cesar</maintainer>
+  <maintainer email="cesar@todo.todo">Cesar Lopez</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -19,7 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/ropod_demo_dec_2017</url> -->
+  <!-- <url type="website">http://wiki.ros.org/ropod_navigation</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
@@ -28,41 +28,32 @@
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
 
 
-  <!-- The *_depend tags are used to specify dependencies -->
+  <!-- The *depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
   <!-- Examples: -->
+  <!-- Use depend as a shortcut for packages that are both build and exec dependencies -->
+  <!--   <depend>roscpp</depend> -->
+  <!--   Note that this is equivalent to the following: -->
+  <!--   <build_depend>roscpp</build_depend> -->
+  <!--   <exec_depend>roscpp</exec_depend> -->
   <!-- Use build_depend for packages you need at compile time: -->
   <!--   <build_depend>message_generation</build_depend> -->
+  <!-- Use build_export_depend for packages you need in order to build against this package: -->
+  <!--   <build_export_depend>message_generation</build_export_depend> -->
   <!-- Use buildtool_depend for build tool packages: -->
   <!--   <buildtool_depend>catkin</buildtool_depend> -->
-  <!-- Use run_depend for packages you need at runtime: -->
-  <!--   <run_depend>message_runtime</run_depend> -->
+  <!-- Use exec_depend for packages you need at runtime: -->
+  <!--   <exec_depend>message_runtime</exec_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
+  <!-- Use doc_depend for packages you need only for building documentation: -->
+  <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>actionlib</build_depend>
-  <build_depend>move_base_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>ropod_ros_msgs</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
-
-
-  <run_depend>message_generation</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>move_base_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>ropod_ros_msgs</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>actionlib</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <metapackage/>
   </export>
 </package>
