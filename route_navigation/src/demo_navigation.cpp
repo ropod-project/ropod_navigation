@@ -24,10 +24,6 @@
 /* Simple world model */
 #include "simplified_world_model.h"
 
-#include "maneuver_navigation.h"
-
-#include <nav_msgs/Path.h>
-
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 wm::SimplifiedWorldModel simple_wm;
@@ -48,13 +44,13 @@ bool prepare_next_loc = false;
 ropod_ros_msgs::ropod_demo_plan plan_msg;
 ropod_ros_msgs::ropod_demo_plan plan_msg_rec;
 
-void moveBaseFbCallback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg)
+void move_base_fbCallback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg)
 {
     waypoint_navigation.base_position = msg;
     elevator_navigation.base_position = msg;
 }
 
-void ccuPathCommandCallback(const ropod_ros_msgs::ropod_demo_plan::ConstPtr& plan_msg_)
+void CCUPathCommandCallback(const ropod_ros_msgs::ropod_demo_plan::ConstPtr& plan_msg_)
 {
     ROS_INFO("CCU Command received. planID %s, %d locations", plan_msg_->planID.c_str(), (int) plan_msg_->locations.size());
     plan_msg_rec = *plan_msg_;
@@ -64,15 +60,6 @@ void ccuPathCommandCallback(const ropod_ros_msgs::ropod_demo_plan::ConstPtr& pla
 void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& DoorStmsg)
 {
     door_status = *DoorStmsg;
-}
-
-std::vector<geometry_msgs::PoseStamped> global_path;
-bool global_path_received = false;
-void globalPlanCallback(const nav_msgs::Path::ConstPtr& global_path_msg)
-{
-    ROS_INFO("global_path received");
-    global_path = global_path_msg->poses;
-    global_path_received = true;
 }
 
 int main(int argc, char** argv)
@@ -89,12 +76,9 @@ int main(int argc, char** argv)
     n.param<std::string>("move_base_feedback_topic", moveBaseFeedbackTopic, "/move_base/feedback");
     n.param<std::string>("move_base_cancel_topic", moveBaseCancelTopic, "/move_base/cancel");
 
-    ros::Subscriber sub_movebase_fb =   n.subscribe<move_base_msgs::MoveBaseActionFeedback>(moveBaseFeedbackTopic, 10, moveBaseFbCallback);
-    ros::Subscriber sub_ccu_commands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("/ropod_demo_plan", 10, ccuPathCommandCallback);
+    ros::Subscriber sub_movebase_fb =   n.subscribe<move_base_msgs::MoveBaseActionFeedback>(moveBaseFeedbackTopic, 10, move_base_fbCallback);
+    ros::Subscriber sub_ccu_commands = n.subscribe<ropod_ros_msgs::ropod_demo_plan>("/ropod_demo_plan", 10, CCUPathCommandCallback);
     ros::Subscriber subdoor_status = n.subscribe<ropod_ros_msgs::ropod_door_detection>("/door", 10, doorDetectCallback);
-    ros::Subscriber subglobal_path = n.subscribe<nav_msgs::Path>(moveBaseServerName+"/TrajectoryPlannerROS/global_plan", 10, globalPlanCallback);
-    
-
 
     door_status.closed = false;
     door_status.open = false;
@@ -102,11 +86,6 @@ int main(int argc, char** argv)
 
     ros::Publisher movbase_cancel_pub = n.advertise<actionlib_msgs::GoalID>(moveBaseCancelTopic, 1);
     ros::Publisher ropod_task_fb_pub = n.advertise<ropod_ros_msgs::ropod_demo_status_update>("/ropod_task_feedback", 1);
-    
-    
-    tf::TransformListener tf( ros::Duration(10) );
-    maneuver_n::ManeuverNavigation maneuver_navigator(tf);
-    maneuver_navigator.init();
 
     //tell the action client that we want to spin a thread by default
     MoveBaseClient ac(moveBaseServerName, true);
@@ -271,14 +250,6 @@ int main(int argc, char** argv)
         if (send_goal)
             ac.sendGoal(goal);
 
-        if (global_path_received)
-        {
-            global_path_received = false;
-            double max_ahead_dist = 4.0;
-            double dist_before_obs;
-            maneuver_navigator.checkFootprintOnGlobalPlan(global_path,max_ahead_dist, dist_before_obs);
-            ROS_INFO("dist_before_obs: %f",dist_before_obs);
-        }
 
         ros::spinOnce();
         rate.sleep();
