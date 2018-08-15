@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   ropod_ros_msgs
   roscpp
   tf
+  ed
 )
 
 ## System dependencies are found with CMake's conventions
@@ -205,6 +206,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(demo_navigation src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp)
-target_link_libraries(demo_navigation ${catkin_LIBRARIES})
-add_dependencies(demo_navigation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_library(ed_route_navigation_plugin src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp)
+target_link_libraries(ed_route_navigation_plugin ${catkin_LIBRARIES})
+add_dependencies(ed_route_navigation_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
