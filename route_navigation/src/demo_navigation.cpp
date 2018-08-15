@@ -10,12 +10,6 @@
 #include <string>
 
 /* ROPOD ROS messages */
-#include <ropod_ros_msgs/sem_waypoint_cmd.h>
-#include <ropod_ros_msgs/ropod_demo_location.h>
-#include <ropod_ros_msgs/ropod_demo_area.h>
-#include <ropod_ros_msgs/ropod_demo_waypoint.h>
-#include <ropod_ros_msgs/ropod_demo_status.h>
-#include <ropod_ros_msgs/ropod_demo_status_update.h>
 #include <ropod_ros_msgs/ropod_door_detection.h>
 
 #include <ropod_ros_msgs/Action.h>
