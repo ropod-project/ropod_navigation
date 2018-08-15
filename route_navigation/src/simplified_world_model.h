@@ -11,22 +11,22 @@
 
 namespace wm
 {
-  class Simplified_WorldModel
-  {
-    
-    
-    public: 
-      Simplified_WorldModel();
-      ~Simplified_WorldModel();
-      
-      Corridor corridor1;
-      Elevator elevator1;
-    
-      
+class SimplifiedWorldModel
+{
 
-  };
-  
-  pose_wm getWMPose(const geometry_msgs::PoseStamped &pose);
-  
+
+public:
+    SimplifiedWorldModel();
+    ~SimplifiedWorldModel();
+
+    Corridor corridor1;
+    Elevator elevator1;
+
+
+
+};
+
+PoseWm getWMPose(const geometry_msgs::PoseStamped &pose);
+
 }
 #endif

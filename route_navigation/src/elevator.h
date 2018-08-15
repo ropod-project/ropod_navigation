@@ -19,22 +19,22 @@ namespace wm
 
     public: ~Elevator();
 
-    public: bool is_entrance_detectable();
-    public: bool is_entrance_accesible();
-    public: void go_into();
-    public: void go_out();
+    public: bool isEntranceDetectable();
+    public: bool isEntranceAccesible();
+    public: void goIn();
+    public: void goOut();
     
-    public: void init(std::vector<point_wm> convex_area_elev_, std::vector<point_wm> line_door_, 
-		     pose_wm wayp1_elevator_, pose_wm wayp2_elevator_, pose_wm  wayp_wait_, pose_wm wayp_out_);
-    private: std::vector<point_wm> convex_area_elev;
-    public: std::vector<point_wm> line_door;
-    public: pose_wm wayp1_elevator;
-    public: pose_wm wayp2_elevator;
-    public: pose_wm wayp_wait;
-    public: pose_wm wayp_out;   
+    public: void init(std::vector<PointWm> convex_area_elev_, std::vector<PointWm> line_door_, 
+		     PoseWm wayp1_elevator_, PoseWm wayp2_elevator_, PoseWm  wayp_wait_, PoseWm wayp_out_);
+    private: std::vector<PointWm> convex_area_elev;
+    public: std::vector<PointWm> line_door;
+    public: PoseWm wayp1_elevator;
+    public: PoseWm wayp2_elevator;
+    public: PoseWm wayp_wait;
+    public: PoseWm wayp_out;   
     
-    public: void set_inside_elevator_pose(pose_wm pose1, pose_wm pose2);
-    public: void set_outside_elevator_pose(pose_wm pose);
+    public: void setInsideElevatorPose(PoseWm pose1, PoseWm pose2);
+    public: void setOutsideElevatorPose(PoseWm pose);
 
 
 
