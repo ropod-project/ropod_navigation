@@ -1,6 +1,6 @@
 #### Usage
 ```
-roslaunch route_navigation route_navigation.launch
+roslaunch ropod_demo_dec_2017 route_navigation.launch
 ```
 
 #### Subscribed to

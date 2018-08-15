@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>route_navigation</name>
+  <name>ropod_demo_dec_2017</name>
   <version>0.0.0</version>
-  <description>The route_navigation package</description>
+  <description>The ropod_demo_dec_2017 package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -39,22 +39,22 @@
   <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>  
   <build_depend>geometry_msgs</build_depend>
   <build_depend>message_generation</build_depend>
-  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib</build_depend>  
   <build_depend>move_base_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>ropod_ros_msgs</build_depend>
+  <build_depend>ropod_ros_msgs</build_depend>      
   <build_depend>roscpp</build_depend>
   <build_depend>tf</build_depend>
 
-
+  
   <run_depend>message_generation</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>move_base_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
-  <run_depend>ropod_ros_msgs</run_depend>
+  <run_depend>ropod_ros_msgs</run_depend>    
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>actionlib</run_depend>
