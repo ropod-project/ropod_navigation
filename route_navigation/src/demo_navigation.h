@@ -18,7 +18,6 @@
 #include <ropod_ros_msgs/Action.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
 
-
 #include "waypoint_navigation.h"
 #include "elevator_navigation.h"
 #include "route_navigation_defines.h"

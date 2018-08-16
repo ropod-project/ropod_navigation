@@ -44,7 +44,7 @@ geometry_msgs::PoseStamped getPoseFromWorldModel(const std::string &area_name)
 {
     std::string param_name = "/areas/" + area_name;
     std::vector<double> waypoint;
-    ros::param::get(param_name, waypoint);
+    ros::param::get(param_name, waypoint);    
     geometry_msgs::PoseStamped p;
     p.pose.position.x = waypoint[0];
     p.pose.position.y = waypoint[1];
@@ -89,7 +89,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     n.param<std::string> ( "move_base_cancel_topic", moveBaseCancelTopic, "/move_base/cancel" );
 
     sub_movebase_fb_ =   n.subscribe<move_base_msgs::MoveBaseActionFeedback> ( moveBaseFeedbackTopic, 10, move_base_fbCallback );
-    sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "/ropod_demo_plan", 10, actionCallback );
+    sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
 
     door_status.closed = false;
@@ -97,7 +97,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     door_status.undetectable = true;
     
     movbase_cancel_pub_ = n.advertise<actionlib_msgs::GoalID> ( moveBaseCancelTopic, 1 );
-    ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::ropod_demo_status_update> ( "/ropod_task_feedback", 1 );
+    ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "progress", 1 );
 
     ac_ = new MoveBaseClient ( moveBaseServerName, true );
 
@@ -115,7 +115,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
 
 void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& req )
 {
-    cb_queue_.callAvailable();
+    cb_queue_.callAvailable();    
 
     int curr_loc;
     std::vector<ropod_ros_msgs::Area>::const_iterator curr_area;
@@ -125,7 +125,6 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // Process the received Action message. Point to first location
     if ( action_msg_received ) // checks need to be done if a current navigation is taking place
     {
-
         action_msg_received = false;
         curr_loc = 0;
         action_msg = action_msg_rec;
@@ -154,10 +153,11 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 //            elevator_navigation.startNavigation(simple_wm.elevator1,path_msg);
             active_nav = NAVTYPE_ELEVATOR;
         }
+
     }
-
+    
     TaskFeedbackCcu nav_state;
-
+    
     // Select the corresponding navigation
     switch ( active_nav )
     {
@@ -218,7 +218,6 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // Send navigation command
     if ( send_goal_ )
         ac_->sendGoal ( goal_ );
-
 }
 
 ED_REGISTER_PLUGIN(RopodNavigation)
