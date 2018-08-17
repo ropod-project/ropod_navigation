@@ -1,156 +1,46 @@
-header: 
-  seq: 7
-  stamp: 
-    secs: 0
-    nsecs: 0
-  frame_id: ''
-planID: ''
-locations: 
+rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "
+action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
+type: 'GOTO'
+areas: 
   - 
-    command: GOTO
-    locationName: MOBIDIK
-    id: ''
-    locationStatus: 
-      status: ''
-      sequenceNumber: 0
-      totalNumber: 0
-    areas: 
-      - 
-        areaName: corridor
-        id: ''
-        locationStatus: 
-          status: ''
-          sequenceNumber: 0
-          totalNumber: 0
-        waypoints: 
-          - 
-            id: corridor1
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'WP01'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
               position: 
-                x: 15.6
-                y: 3.1
-                z: 0.0
+                  x: 1.842681
+                  y: 1.084743
+                  z: 0.0
               orientation: 
-                x: 0.0
-                y: 0.0
-                z: 1.0
-                w: 0.0
-          - 
-            id: mobidik_room_entrance
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
-              position: 
-                x: 11.1
-                y: 4.0
-                z: 0.0
-              orientation: 
-                x: 0.0
-                y: 0.0
-                z: 0.92
-                w: 0.4
-      - 
-        areaName: roommobidik
-        id: ''
-        locationStatus: 
-          status: ''
-          sequenceNumber: 0
-          totalNumber: 0
-        waypoints: 
-          - 
-            id: mobidikwp
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
-              position: 
-                x: 10.64
-                y: 6.56
-                z: 0.0
-              orientation: 
-                x: 0.0
-                y: 0.0
-                z: -0.77
-                w: 0.64
+                  x: -0.030137
+                  y: 0.0
+                  z: 0.0
+                  w: 0.0 
   - 
-    command: GOTO
-    locationName: ELEVATOR
-    id: ''
-    locationStatus: 
-      status: ''
-      sequenceNumber: 0
-      totalNumber: 0
-    areas: 
-      - 
-        areaName: corridor2
-        id: ''
-        locationStatus: 
-          status: ''
-          sequenceNumber: 0
-          totalNumber: 0
-        waypoints: 
-          - 
-            id: corner_corr2
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
+    area_id: '1d19dded-806f-43f0-8777-888de32507fb'
+    name: 'WP02'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-2'
+          area_id: 'test-area_id-2'
+          floor_number: 0
+          waypoint_pose: 
               position: 
-                x: 8.8
-                y: -5.8
-                z: 0.0
+                  x: 2.304686
+                  y: 0.998834
+                  z: 0.0
               orientation: 
-                x: 0.0
-                y: 0.0
-                z: -1.0
-                w: 0.2
-          - 
-            id: close_to_elev
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
-              position: 
-                x: -7.61
-                y: -4.16
-                z: 0.0
-              orientation: 
-                x: 0.0
-                y: 0.0
-                z: 0.96
-                w: 0.3
-      - 
-        areaName: front_elevator
-        id: ''
-        locationStatus: 
-          status: ''
-          sequenceNumber: 0
-          totalNumber: 0
-        waypoints: 
-          - 
-            id: 'wp_front_elev'
-            locationStatus: 
-              status: ''
-              sequenceNumber: 0
-              totalNumber: 0
-            waypointPosition: 
-              position: 
-                x: -8.1
-                y: -0.87
-                z: 0.0
-              orientation: 
-                x: 0.0
-                y: 0.0
-                z: 0.71
-                w: 0.71
-
-
+                  x: -0.109854
+                  y: 0.0
+                  z: 0.0
+                  w: 0.0 
+waypoints: []
+start_floor: 0
+goal_floor: 0
+execution_status: ''
+estimated_duration: 0.0
+"
