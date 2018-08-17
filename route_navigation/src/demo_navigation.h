@@ -21,6 +21,8 @@
 #include "waypoint_navigation.h"
 #include "elevator_navigation.h"
 #include "route_navigation_defines.h"
+#include "mobidik_collection_navigation.h"
+
 /* Simple world model */
 #include "simplified_world_model.h"
 
