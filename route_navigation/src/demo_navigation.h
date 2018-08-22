@@ -53,9 +53,13 @@ private:
         
     ros::Subscriber subdoor_status_; 
     
+    ros::Subscriber objectMarkers_; 
+    
     ros::Publisher movbase_cancel_pub_;
     
     ros::Publisher ropod_task_fb_pub_;
+    
+    ros::Publisher ObjectMarkers_pub_; // TODO remove
     
     nav_msgs::Path path_msg_;
     

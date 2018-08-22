@@ -1,4 +1,5 @@
 #include "mobidik_collection_navigation.h"
+#include <ed_gui_server/EntityInfos.h>
 
 /*--------------------------------------------------------*/
 MobidikCollection::MobidikCollection()
@@ -13,27 +14,165 @@ MobidikCollection::~MobidikCollection()
 };
 
 
-MobidikCollection::queryMobidik() 
-// TODO via ED WM if data-association solved, or for now, as there is no data-association, remove all the previous entities described by the laser and create new ones
+bool MobidikCollection::getMobidik(visualization_msgs::MarkerArray markerArray, visualization_msgs::Marker *marker) 
+// TODO via ED WM (if data-association solved!?), or for now, as there is no data-association, remove all the previous entities described by the laser and create new ones
+// assumption: there is only 1 object which can be recognized as a mobidik, so the first one is taken now
 {
-    
+        std::cout << "MarkerArray size = " <<  markerArray.markers.size() << std::endl;
+        for (unsigned int ii = 0; ii < markerArray.markers.size(); ii++)
+        {
+                
+                visualization_msgs::Marker markerToCheck = markerArray.markers.at(ii);
+                if (markerToCheck.ns == "Mobidik")
+                {
+//                         std::cout << "getMobidik-function: mobidik found" << std::endl;
+//                                                 
+//                         std::cout << "Mobidik Position = \n" <<
+//                      markerToCheck.pose.position.x << " \n " <<
+//                      markerToCheck.pose.position.y << " \n " <<
+//                      markerToCheck.pose.position.z << " \n " <<
+//                      markerToCheck.pose.orientation.x << " \n " << 
+//                      markerToCheck.pose.orientation.y << " \n " <<
+//                      markerToCheck.pose.orientation.z << " \n " <<
+//                      markerToCheck.pose.orientation.w << " \n " <<
+//                     std::endl;
+                        *marker = markerToCheck;
+                        return true;
+                }                    
+        }       
 };
 
-MobidikCollection::setMobidikPosition() // Store mobidik in WM as it might not be detected anymore when the robot rotates
+template <class T>
+void MobidikCollection::wrap ( T *angle )
 {
-    
-};
+    *angle -= 2*M_PI * std::floor ( *angle * ( 1 / ( 2*M_PI )) );
+}
 
-MobidikCollection::getSetpointInFrontOfMobidik ( const ed::WorldModel& world )
+void MobidikCollection::setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker* points ) // Store mobidik in ED as it might not be detected anymore when the robot rotates
+{
+    // Area where the mobidik will be collected is assumed to be known
+    geo::Pose3D mobidikPose;
+
+    visualization_msgs::Marker mobidikPoseMarker = mobidikMarker;
+    double mobidikWidth = mobidikPoseMarker.scale.x;
+    double mobidikLength = mobidikPoseMarker.scale.y;
+
+
+    tf::Quaternion q ( mobidikPoseMarker.pose.orientation.x, mobidikPoseMarker.pose.orientation.y, mobidikPoseMarker.pose.orientation.z, mobidikPoseMarker.pose.orientation.w );
+    tf::Matrix3x3 m ( q );
+    double MD_roll, MD_pitch, MD_yaw; // MD = mobidik
+    m.getRPY ( MD_roll, MD_pitch, MD_yaw );
+    wrap ( &MD_yaw );
+
+    double xPos = mobidikPoseMarker.pose.position.x;
+    double yPos = mobidikPoseMarker.pose.position.y;
+
+    geo::Vec3d origin ( xPos, yPos, mobidikPoseMarker.pose.position.z );
+    mobidikPose.setOrigin ( origin );
+
+    for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
+    {
+        const ed::EntityConstPtr& e = *it;
+
+        std::string orientationWPID = "orient_wp_" +  mobidikAreaID;
+
+        if ( orientationWPID.compare ( e.get()->id().str() ) == 0 ) // function returns 0 if strings are equal
+        {
+            geo::Pose3D poseWP = e.get()->pose();
+            geo::Quaternion rotationWP = poseWP.getQuaternion();
+
+            tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
+            tf::Matrix3x3 matrix ( q );
+            double WP_roll, WP_pitch, WP_yaw;
+            matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
+            wrap ( &WP_yaw );
+
+            std::cout << "yaw = " << WP_yaw << std::endl;
+
+            // find quadrant closest to the orientation of the orienation
+            geo::real diffAngleMin = INFINITY;
+            for ( unsigned int ii = 0; ii < 4; ii++ )
+            {
+                double angle = MD_yaw + ii*M_PI_2;
+                wrap ( &angle );
+
+                geo::real diffAngle = std::min ( std::fabs ( angle - WP_yaw ), std::fabs ( angle + 2*M_PI - WP_yaw ) );
+                if ( diffAngle < diffAngleMin )
+                {
+                    diffAngleMin = diffAngle;
+                    MD_yaw = angle;
+                }
+            }
+
+            geo::Mat3 rotation;
+            rotation.setRPY ( MD_roll, MD_pitch, MD_yaw );
+            mobidikPose.setBasis ( rotation );
+
+            ed::ConvexHull chull;
+            for ( unsigned int ii = 0; ii < 4; ii++ )
+            {
+                float rotation = MD_yaw + M_PI/4 + M_PI/2*ii;
+
+                float length = std::sqrt ( std::pow ( 0.5*mobidikWidth, 2.0 ) + std::pow ( 0.5*mobidikLength, 2.0 ) );
+                geo::Vec2f point ( mobidikPose.getOrigin().getX() + length*cos ( rotation ), mobidikPose.getOrigin().getY() + length*sin ( rotation ) );
+                chull.points.push_back ( point );
+
+                geometry_msgs::Point p;
+                p.x = point.x;
+                p.y = point.y;
+                p.z = 0.0;
+
+                points->points.push_back ( p );
+            }
+
+            *id = ed::Entity::generateID().str() + "-Mobidik";  // Generate unique ID
+            req.setExistenceProbability ( *id, 1.0 ); // TODO magic number
+            req.setConvexHullNew ( *id, chull, mobidikPose, mobidikMarker.header.stamp.toSec(), mobidikMarker.header.frame_id );
+
+            ROS_INFO ( "Mobidik Position set" );
+            return;
+        }
+
+    }
+
+    return;
+
+};                      
+
+void MobidikCollection::getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points )
 {
     for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
     {
         const ed::EntityConstPtr& e = *it;
-        
-        // check which area is the closest (calculate centerpoint of polygon?) -> this is assumed to be the area at which the mobidik should be collected
-        // or is this information known? How is this information received?
+
+        if ( mobidikID.str().compare ( e.get()->id().str() )  == 0 )
+        {
+            geo::Pose3D mobidikPose = e.get()->pose();
+            geo::Quaternion rotation = mobidikPose.getQuaternion();
+            tf::Quaternion q ( rotation.getX(), rotation.getY(), rotation.getZ(), rotation.getW() );
+            tf::Matrix3x3 matrix ( q );
+            double roll, pitch, yaw;
+            matrix.getRPY ( roll, pitch, yaw );
+
+            float dist = 0.5* ( ROPOD_LENGTH + MOBIDIK_LENGTH ) + DIST_IN_FRONT_OFF_MOBID;
+            *setpoint = mobidikPose;
+
+            geo::Vec3d origin ( mobidikPose.getOrigin().getX() + dist*cos ( yaw ), mobidikPose.getOrigin().getY() + dist*sin ( yaw ), 0 );
+            setpoint->setOrigin ( origin );
+
+            geometry_msgs::Point p;
+            p.x = setpoint->getOrigin().getX();
+            p.y = setpoint->getOrigin().getY();
+            p.z = 0.0;
+
+            points->points.push_back ( p );
+
+            return;
+        }
     }
 
+    return;
+   
 };
 
 
@@ -107,6 +246,12 @@ bool MobidikCollection::isPositionValid()
         return false;
 }
 
+void MobidikCollection::initNavState()
+{
+        nav_state_ = MOBID_COLL_FIND_MOBIDIK;
+        std::cout << "Nave state initialised at " << MOBID_COLL_FIND_MOBIDIK << std::endl;
+}
+
 /*--------------------------------------------------------*/
 bool MobidikCollection::isWaypointAchieved()
 {
@@ -133,18 +278,58 @@ bool MobidikCollection::isWaypointAchieved()
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
+TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest)
 {
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
     tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
+    visualization_msgs::Marker marker;
+    geo::Pose3D setpoint;
+    tf::Quaternion q;
+    
+    bool test;
+    visualization_msgs::Marker points, line_strip, line_list;
+    points.header.frame_id = line_strip.header.frame_id = line_list.header.frame_id = "/map";
+    points.header.stamp = line_strip.header.stamp = line_list.header.stamp = ros::Time::now();
+    points.ns = line_strip.ns = line_list.ns = "points_and_lines";
+    points.action = line_strip.action = line_list.action = visualization_msgs::Marker::ADD;
+    points.pose.orientation.w = line_strip.pose.orientation.w = line_list.pose.orientation.w = 1.0;
+
+    points.id = 0;
+    line_strip.id = 1;
+    line_list.id = 2;
+
+    points.type = visualization_msgs::Marker::POINTS;
+    line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+    line_list.type = visualization_msgs::Marker::LINE_LIST;
+    
+     // POINTS markers use x and y scale for width/height respectively
+    points.scale.x = 0.1;
+    points.scale.y = 0.1;
+
+    // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
+    line_strip.scale.x = 0.1;
+    line_list.scale.x = 0.1;
+
+    // Points are green
+    points.color.g = 1.0f;
+    points.color.a = 1.0;
+
+    // Line strip is blue
+    line_strip.color.b = 1.0;
+    line_strip.color.a = 1.0;
+
+    // Line list is red
+    line_list.color.r = 1.0;
+    line_list.color.a = 1.0;
 
     switch(nav_state_)
     { 
             
     case MOBID_COLL_NAV_IDLE: // No waypoints received yet.
         tfb_nav.fb_nav = NAV_IDLE;
+        ROS_INFO("NAV_IDLE");
 //         if (route_busy_ == true)
 //         {
 //              nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
@@ -153,50 +338,85 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         break;
         
     case MOBID_COLL_FIND_MOBIDIK:
-            if( queryMobidik() ) // Assumption: there is only 1 mobidik available at the moment
+            ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
+
+            if( getMobidik(markerArray,  &marker)  ) // Assumption: there is only 1 mobidik available at the moment
             {           
-                    setMobidikPosition(); // set the position of the mobidik in the WM
-                    goal_.target_pose = getSetpointInFrontOfMobidik();
-                    
-                    nav_next_state_wp_ = MOBID_COLL_ROTATE;
-                    nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-                    ROS_INFO("Mobidik Collection: Mobidik found");
-            }
-            
+                    setMobidikPosition ( world, req, areaID, marker, &MobidikID_ED_, &points ); 
+                    std::cout << "Mobidik ID = " << MobidikID_ED_ << std::endl;
+                    markerArraytest->markers.push_back( points );
+                    nav_next_state_ = MOBID_COLL_FIND_SETPOINT_FRONT;
+                    ROS_INFO ( "Mobidik Collection: Mobidik found" );
+             }
             else 
             {
-                    ROS_WARN("Mobidik Collection: No mobidik found");
+                    ROS_WARN("Mobidik Collection: No mobidik found"); // TODO Recovery behaviour
             }
+                     
+                     
+         break;
+         
+    case MOBID_COLL_FIND_SETPOINT_FRONT:
+            ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
+            getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint, &points);
+
+            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
+            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
+            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
+            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
+            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
+            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
+            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+
+            markerArraytest->markers.push_back ( points );
+
+            nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
+            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
+            
         break;
         
     case MOBID_COLL_ROTATE:
-            goal_.target_pose = getSetpointInFrontOfMobidik(); // + pi rad ratotion!
+            
+            ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
+            q = tf::createQuaternionFromRPY(0, 0, M_PI);
+            
+            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
+            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
+            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
+            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX() + q.x();
+            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY() + q.y();
+            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ() + q.z();
+            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW() + q.w();
+            
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
          break;
          
-    case MOBID_COLL_NAV_CONNECTING: 
+    case MOBID_COLL_NAV_CONNECTING: // TODO
+            ROS_INFO("MOBID_COLL_NAV_CONNECTING");
             // publish this state on a topic and send a low velocity such that the mpc-controller can do its job.
             // Read the force measured by the bumper, and check when it touches the mobidik
             
-            bool touched = false;
-            
-            if (touched)
-                  nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+//             bool touched = false;
+//             
+//             if (touched)
+//                   nav_next_state_  = MOBID_COLL_NAV_COUPLING;
             
          break;
          
-    case MOBID_COLL_NAV_COUPLING:
+    case MOBID_COLL_NAV_COUPLING: // TODO
+            ROS_INFO("MOBID_COLL_NAV_COUPLING");
             // couple mobidik manually and wait for signal;
-            bool signal = false;
-            
-            if(signal)
-            {
-                    MOBID_COLL_NAV_DONE;
-            }
+//             bool signal = false;
+//             
+//             if(signal)
+//             {
+//                     MOBID_COLL_NAV_DONE;
+//             }
          break;
 
     case MOBID_COLL_NAV_GOTOPOINT:
+            ROS_INFO("MOBID_COLL_NAV_GOTOPOINT");
         goal_.target_pose.header.frame_id = "map";
         goal_.target_pose.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
@@ -205,7 +425,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         nav_next_state_ = MOBID_COLL_NAV_BUSY;
         break;
          
-    case MOBID_COLL_NAV_BUSY: 
+    case MOBID_COLL_NAV_BUSY:
+            ROS_INFO("MOBID_COLL_NAV_BUSY");
         if (!isPositionValid())
         {
             nav_next_state_ = MOBID_COLL_NAV_HOLD;
@@ -217,12 +438,14 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         break;
 
     case MOBID_COLL_NAV_WAYPOINT_DONE: //
+            ROS_INFO("MOBID_COLL_NAV_DONE");
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
         nav_next_state_ = nav_next_state_wp_;
 
         break;
         
     case MOBID_COLL_NAV_DONE: //
+            ROS_INFO("MOBID_COLL_NAV_DONE");
         ROS_INFO("Navigation done");
         tfb_nav.fb_nav = NAV_DONE;
         stopNavigation();
@@ -231,12 +454,14 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         break;
 
     case MOBID_COLL_NAV_HOLD: //
+            ROS_INFO("MOBID_COLL_NAV_HOLD");
         ROS_INFO("Navigation on hold to receive feedback");
         if (isPositionValid()) // check we have a valid position
             nav_next_state_ = MOBID_COLL_NAV_BUSY;
         break;
 
     case MOBID_COLL_NAV_PAUSED: // this state is reached via a callback
+            ROS_INFO("MOBID_COLL_NAV_PAUSED");
         if(nav_paused_req_)
         {
             movbase_cancel_pub.publish(emptyGoalID_);
