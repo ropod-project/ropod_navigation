@@ -7,6 +7,9 @@
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Twist.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/UInt16.h>
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
 #include <string>
@@ -16,6 +19,8 @@
 #include <ed/entity.h>
 
 #include "simplified_world_model.h"
+#include "route_navigation_defines.h"
+
 #include <ropod_ros_msgs/ropod_door_detection.h>
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
 #include <visualization_msgs/Marker.h>
@@ -24,18 +29,24 @@
 #include <geolib/Shape.h>
 #include <math.h>
 
+
 #define WAYP_REACHED_DIST 0.5
 #define GOAL_REACHED_DIST 0.2
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
-#define WAYP_MOBID_COLL_REACHED_DIST 0.05
-#define GOAL_MOBID_COLL_REACHED_DIST 0.05
-#define GOAL_MOBID_REACHED_ANG  2.0*3.141592/180.0
+#define WAYP_MOBID_COLL_REACHED_DIST 0.1 // [m]
+#define GOAL_MOBID_COLL_REACHED_DIST 0.1 // [m]
+#define GOAL_MOBID_REACHED_ANG  5.0*3.141592/180.0 // [rad]
 
-#define ROPOD_LENGTH 0.6
-#define ROPOD_WIDTH ROPOD_LENGTH
-#define DIST_IN_FRONT_OFF_MOBID 0.5
-#define MOBIDIK_LENGTH 0.8
+#define ROPOD_LENGTH 0.6 // [m]
+#define ROPOD_WIDTH ROPOD_LENGTH // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.5 // [m]
+#define MOBIDIK_LENGTH 0.8 // [m]
+#define BACKWARD_VEL_DOCKING 0.2 // [m/s]
+
+#define N_COUNTS_WRENCHES 10 // [-]
+#define MIN_FORCE_TOUCHED 20 // [N]
+#define MAX_COUPLE_TOUCHED 3 // [Nm]
 
 class MobidikCollection
 {
@@ -46,7 +57,6 @@ class MobidikCollection
            MOBID_COLL_NAV_BUSY,
            MOBID_COLL_FIND_MOBIDIK,
            MOBID_COLL_FIND_SETPOINT_FRONT,
-           MOBID_COLL_ROTATE,
            MOBID_COLL_NAV_GOTOPOINT,
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
@@ -83,7 +93,7 @@ class MobidikCollection
     
     bool isWaypointAchieved();
      
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches);
     
     move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position_;
     
@@ -108,6 +118,8 @@ class MobidikCollection
     ed::UUID MobidikID_ED_;
 
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
+    
+    std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
 };
 
 

@@ -278,7 +278,7 @@ bool MobidikCollection::isWaypointAchieved()
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest)
+TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches)
 {
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
@@ -287,8 +287,11 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     visualization_msgs::Marker marker;
     geo::Pose3D setpoint;
     tf::Quaternion q;
+    geometry_msgs::Twist output_vel;
     
-    bool test;
+    float avgForce, avgCouple;
+    bool touched;
+    
     visualization_msgs::Marker points, line_strip, line_list;
     points.header.frame_id = line_strip.header.frame_id = line_list.header.frame_id = "/map";
     points.header.stamp = line_strip.header.stamp = line_list.header.stamp = ros::Time::now();
@@ -373,46 +376,74 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
             
+            bumperWrenchesVector_.clear();
+            
         break;
-        
-    case MOBID_COLL_ROTATE:
-            
-            ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
-            q = tf::createQuaternionFromRPY(0, 0, M_PI);
-            
-            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
-            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
-            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
-            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX() + q.x();
-            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY() + q.y();
-            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ() + q.z();
-            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW() + q.w();
-            
-            nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
-            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-         break;
          
     case MOBID_COLL_NAV_CONNECTING: // TODO
             ROS_INFO("MOBID_COLL_NAV_CONNECTING");
-            // publish this state on a topic and send a low velocity such that the mpc-controller can do its job.
-            // Read the force measured by the bumper, and check when it touches the mobidik
+            controlMode->data = ropodNavigation::LLC_DOCKING;
+            output_vel.linear.x = -BACKWARD_VEL_DOCKING;
+            cmv_vel_pub.publish(output_vel);
             
-//             bool touched = false;
-//             
-//             if (touched)
-//                   nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+            touched = false;
+            bumperWrenchesVector_.push_back(bumperWrenches);
+            if( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+            {
+                    bumperWrenchesVector_.erase( bumperWrenchesVector_.begin() );
+                    avgForce = 0.0;
+                    avgCouple = 0.0;
+                    for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
+                    {
+                            avgForce += bumperWrenchesVector_[ii].back.force.x;
+                            avgCouple += bumperWrenchesVector_[ii].back.torque.x;
+                    }
+                    
+                    avgForce /= bumperWrenchesVector_.size();
+                    avgCouple /= bumperWrenchesVector_.size();
+                    
+                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED && std::fabs(avgCouple) < MAX_COUPLE_TOUCHED )
+                    {
+                            touched = true;
+                    }
+            }
+            
+            if (touched)
+            {
+                  nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+                  bumperWrenchesVector_.clear();
+            }
             
          break;
          
     case MOBID_COLL_NAV_COUPLING: // TODO
             ROS_INFO("MOBID_COLL_NAV_COUPLING");
+            controlMode->data = ropodNavigation::LLC_DOCKING;
             // couple mobidik manually and wait for signal;
-//             bool signal = false;
-//             
-//             if(signal)
-//             {
-//                     MOBID_COLL_NAV_DONE;
-//             }
+            
+            bumperWrenchesVector_.push_back(bumperWrenches);
+            if( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+            {
+                    bumperWrenchesVector_.erase( bumperWrenchesVector_.begin() );
+                    avgForce = 0.0;
+                    for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
+                    {
+                            avgForce += bumperWrenchesVector_[ii].front.force.x;
+                    }
+                    
+                    avgForce /= bumperWrenchesVector_.size();
+                    
+                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED )
+                    {
+                            touched = true;
+                    }
+            }
+            
+            if (touched)
+            {
+                  nav_next_state_  = MOBID_COLL_NAV_DONE;
+                  bumperWrenchesVector_.clear();
+            }
          break;
 
     case MOBID_COLL_NAV_GOTOPOINT:
@@ -432,8 +463,15 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             nav_next_state_ = MOBID_COLL_NAV_HOLD;
             break;
         }
-        if (isWaypointAchieved())
+        if (isWaypointAchieved()) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
+        {
+                ROS_INFO("Waypoint achieved");
             nav_next_state_ = MOBID_COLL_NAV_WAYPOINT_DONE;
+        }
+        else 
+        {
+                ROS_INFO("Waypoint not achieved");
+        }
 
         break;
 

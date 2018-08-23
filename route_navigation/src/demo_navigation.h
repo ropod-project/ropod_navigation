@@ -5,8 +5,12 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseActionFeedback.h>
 #include <nav_msgs/Path.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Wrench.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/UInt16.h>
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
@@ -33,6 +37,7 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 class RopodNavigation : public ed::Plugin
 {
 
+
 public:
 
     RopodNavigation();
@@ -42,6 +47,13 @@ public:
     void initialize(ed::InitData& init);
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
+    
+            enum {
+    NAVTYPE_WAYPOINT = 0,
+    NAVTYPE_ELEVATOR,
+    NAVTYPE_MOBIDIK_COLLECTION,
+    NAVTYPE_NONE
+};
 
 private:
 
@@ -55,11 +67,29 @@ private:
     
     ros::Subscriber objectMarkers_; 
     
+    ros::Subscriber wrenchFront_; 
+    
+    ros::Subscriber wrenchLeft_; 
+    
+    ros::Subscriber wrenchBack_; 
+    
+    ros::Subscriber wrenchRight_; 
+    
+    ros::Subscriber LLCmodeApplied_; 
+    
+    ros::Subscriber loadAttachedApplied_; 
+    
     ros::Publisher movbase_cancel_pub_;
     
     ros::Publisher ropod_task_fb_pub_;
     
     ros::Publisher ObjectMarkers_pub_; // TODO remove
+    
+    ros::Publisher LLCmodeSet_pub_; 
+    
+    ros::Publisher loadAttachedSet_pub_; 
+    
+    ros::Publisher cmd_vel_pub_;
     
     nav_msgs::Path path_msg_;
     
