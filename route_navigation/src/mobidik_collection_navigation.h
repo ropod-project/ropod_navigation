@@ -46,7 +46,7 @@
 
 #define N_COUNTS_WRENCHES 10 // [-]
 #define MIN_FORCE_TOUCHED 20 // [N]
-#define MAX_COUPLE_TOUCHED 3 // [Nm]
+#define MAX_TORQUE_TOUCHED 3 // [Nm]
 
 class MobidikCollection
 {

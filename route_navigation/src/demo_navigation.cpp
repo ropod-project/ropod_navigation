@@ -47,22 +47,22 @@ void MarkerArrayCallback(const visualization_msgs::MarkerArray::ConstPtr& Marker
     objectMarkerArray = *MarkerArrayStmsg;
 }
 
-void wrenchFrontCallback(const geometry_msgs::Wrench::ConstPtr& wrench_frontStmsg)
+void wrenchFrontCallback(const geometry_msgs::WrenchStamped::ConstPtr& wrench_frontStmsg)
 {
     bumperWrenches.front = *wrench_frontStmsg;
 }
 
-void wrenchLeftCallback(const geometry_msgs::Wrench::ConstPtr& wrench_leftStmsg)
+void wrenchLeftCallback(const geometry_msgs::WrenchStamped::ConstPtr& wrench_leftStmsg)
 {
     bumperWrenches.left = *wrench_leftStmsg;
 }
 
-void wrenchBackCallback(const geometry_msgs::Wrench::ConstPtr& wrench_backStmsg)
+void wrenchBackCallback(const geometry_msgs::WrenchStamped::ConstPtr& wrench_backStmsg)
 {
     bumperWrenches.back = *wrench_backStmsg;
 }
 
-void wrenchRightCallback(const geometry_msgs::Wrench::ConstPtr& wrench_rightStmsg)
+void wrenchRightCallback(const geometry_msgs::WrenchStamped::ConstPtr& wrench_rightStmsg)
 {
     bumperWrenches.right = *wrench_rightStmsg;
 }
@@ -135,10 +135,10 @@ void RopodNavigation::initialize ( ed::InitData& init )
     loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_applied", 10, loadAttachedCallback ); 
     
     // Communication to the bumpers 
-    wrenchFront_ = n.subscribe<geometry_msgs::Wrench> ( "/ropod/wrench_front", 10, wrenchFrontCallback );
-    wrenchLeft_ = n.subscribe<geometry_msgs::Wrench> ( "/ropod/wrench_left", 10, wrenchLeftCallback );
-    wrenchBack_ = n.subscribe<geometry_msgs::Wrench> ( "/ropod/wrench_back", 10, wrenchBackCallback );
-    wrenchRight_ = n.subscribe<geometry_msgs::Wrench> ( "/ropod/wrench_right", 10, wrenchRightCallback );
+    wrenchFront_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_front", 10, wrenchFrontCallback );
+    wrenchLeft_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_left", 10, wrenchLeftCallback );
+    wrenchBack_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_back", 10, wrenchBackCallback );
+    wrenchRight_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_right", 10, wrenchRightCallback );
     
     LLCmodeSet_pub_ = n.advertise<std_msgs::UInt16> ( "/ropod/Set_LLCmode", 1 );
     loadAttachedSet_pub_ = n.advertise<std_msgs::Bool> ( "/ropod/Set_load_attached", 1 );

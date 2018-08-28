@@ -289,7 +289,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     tf::Quaternion q;
     geometry_msgs::Twist output_vel;
     
-    float avgForce, avgCouple;
+    float avgForce, avgTorque;
     bool touched;
     
     visualization_msgs::Marker points, line_strip, line_list;
@@ -392,17 +392,17 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             {
                     bumperWrenchesVector_.erase( bumperWrenchesVector_.begin() );
                     avgForce = 0.0;
-                    avgCouple = 0.0;
+                    avgTorque = 0.0;
                     for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
                     {
-                            avgForce += bumperWrenchesVector_[ii].back.force.x;
-                            avgCouple += bumperWrenchesVector_[ii].back.torque.x;
+                            avgForce += bumperWrenchesVector_[ii].back.wrench.force.x;
+                            avgTorque += bumperWrenchesVector_[ii].back.wrench.torque.x;
                     }
                     
                     avgForce /= bumperWrenchesVector_.size();
-                    avgCouple /= bumperWrenchesVector_.size();
+                    avgTorque /= bumperWrenchesVector_.size();
                     
-                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED && std::fabs(avgCouple) < MAX_COUPLE_TOUCHED )
+                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED && std::fabs( avgTorque ) < MAX_TORQUE_TOUCHED )
                     {
                             touched = true;
                     }
@@ -428,7 +428,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                     avgForce = 0.0;
                     for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
                     {
-                            avgForce += bumperWrenchesVector_[ii].front.force.x;
+                            avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
                     }
                     
                     avgForce /= bumperWrenchesVector_.size();

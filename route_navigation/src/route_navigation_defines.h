@@ -3,7 +3,7 @@
 #ifndef ROUTE_NAV_DEF_HH
 #define ROUTE_NAV_DEF_HH
 
-#include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/WrenchStamped.h>
 
 
 
@@ -38,10 +38,10 @@ namespace ropodNavigation{
 };
 
 struct wrenches{
-   geometry_msgs::Wrench front;     
-   geometry_msgs::Wrench left;
-   geometry_msgs::Wrench back;
-   geometry_msgs::Wrench right;
+   geometry_msgs::WrenchStamped front;     
+   geometry_msgs::WrenchStamped left;
+   geometry_msgs::WrenchStamped back;
+   geometry_msgs::WrenchStamped right;
 };
 }
 
