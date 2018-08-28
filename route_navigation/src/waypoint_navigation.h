@@ -16,7 +16,7 @@
 #include "route_navigation_defines.h"
 
 #define WAYP_REACHED_DIST 0.5
-#define GOAL_REACHED_DIST 0.2
+#define GOAL_REACHED_DIST 0.3
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
 class WaypointNavigation
@@ -43,7 +43,7 @@ public:
     int nav_state;
     int nav_next_state;
     int nav_state_bpause;
-    move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position;
+    geometry_msgs::PoseStamped::ConstPtr base_position;
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
     actionlib_msgs::GoalID emptyGoalID;

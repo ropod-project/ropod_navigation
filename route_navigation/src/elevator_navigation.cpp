@@ -85,9 +85,9 @@ bool ElevatorNavigation::isWaypointAchieved()
 {
 
     // In elevator we checked whether teh specific position is reached.
-    tf::Quaternion qtemp = tf::Quaternion(base_position->feedback.base_position.pose.orientation.x, base_position->feedback.base_position.pose.orientation.y,
-                                          base_position->feedback.base_position.pose.orientation.z,base_position->feedback.base_position.pose.orientation.w);
-    tf::Vector3 v3temp = tf::Vector3(base_position->feedback.base_position.pose.position.x,base_position->feedback.base_position.pose.position.y, 0.0);
+    tf::Quaternion qtemp = tf::Quaternion(base_position->pose.orientation.x, base_position->pose.orientation.y, 
+                                          base_position->pose.orientation.z, base_position->pose.orientation.w);
+    tf::Vector3 v3temp = tf::Vector3(base_position->pose.position.x, base_position->pose.position.y, 0.0);
     base_positiontf_ = tf::Transform( qtemp, v3temp);
     qtemp = tf::Quaternion(goal.target_pose.pose.orientation.x, goal.target_pose.pose.orientation.y,
                            goal.target_pose.pose.orientation.z,goal.target_pose.pose.orientation.w);

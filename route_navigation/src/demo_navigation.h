@@ -20,6 +20,7 @@
 #include <ropod_ros_msgs/ropod_door_detection.h>
 
 #include <ropod_ros_msgs/Action.h>
+#include <ropod_ros_msgs/RobotAction.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
 
 #include "waypoint_navigation.h"
@@ -57,9 +58,7 @@ public:
 
 private:
 
-    ros::CallbackQueue cb_queue_;
-
-    ros::Subscriber sub_movebase_fb_;
+    ros::CallbackQueue cb_queue_;    
         
     ros::Subscriber sub_ccu_commands_;
         
@@ -90,7 +89,7 @@ private:
     ros::Publisher loadAttachedSet_pub_; 
     
     ros::Publisher cmd_vel_pub_;
-    
+            
     nav_msgs::Path path_msg_;
     
     std::vector<std::basic_string< char > > waypoint_ids_;
@@ -99,8 +98,15 @@ private:
     
     bool send_goal_;
     
-     //tell the action client that we want to spin a thread by default
-    MoveBaseClient* ac_;
+    ros::Subscriber sub_model_med_commands_;
+    
+    ros::Publisher sendGoal_pub_;
+    
+    ros::Subscriber sub_navigation_fb_;
+    
+
+    
+    
     
 };
 

@@ -23,7 +23,20 @@ std_msgs::Bool loadAttachedSet, loadAttachedApplied;
 ropodNavigation::wrenches bumperWrenches;
 
 
-void move_base_fbCallback(const move_base_msgs::MoveBaseActionFeedback::ConstPtr& msg)
+
+bool robot_action_msg_received = false;
+ropod_ros_msgs::RobotAction robot_action_msg;
+ropod_ros_msgs::RobotAction robot_action_msg_rec;
+
+void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& robot_action_msg_)
+{
+//     ROS_INFO("Action message from Model mediator received. Action ID %s, %d areas", robot_action_msg_->action_id.c_str(), (int) robot_action_msg_->navigation_areas.size());
+    std::cout << "Action message from Model mediator received. Action ID " << robot_action_msg_->action_id.c_str() << ", " << (int) robot_action_msg_->navigation_areas.size() << " areas" <<std::endl;
+    robot_action_msg_rec = *robot_action_msg_;
+    robot_action_msg_received = true;
+}
+
+void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     waypoint_navigation.base_position = msg;
     elevator_navigation.base_position = msg;
@@ -36,7 +49,6 @@ void actionCallback(const ropod_ros_msgs::Action::ConstPtr& action_msg_)
     action_msg_rec = *action_msg_;
     action_msg_received = true;
 }
-
 void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& DoorStmsg)
 {
     door_status = *DoorStmsg;
@@ -120,14 +132,13 @@ void RopodNavigation::initialize ( ed::InitData& init )
     n.setCallbackQueue(&cb_queue_);
     
     std::string moveBaseServerName;
-    std::string moveBaseFeedbackTopic;
-    std::string moveBaseCancelTopic;
+    std::string navigationFeedbackTopic;
+    std::string navigationCancelTopic;
 
     n.param<std::string> ( "move_base_server", moveBaseServerName, "/move_base" );
-    n.param<std::string> ( "move_base_feedback_topic", moveBaseFeedbackTopic, "/move_base/feedback" );
-    n.param<std::string> ( "move_base_cancel_topic", moveBaseCancelTopic, "/move_base/cancel" );
-
-    sub_movebase_fb_ =   n.subscribe<move_base_msgs::MoveBaseActionFeedback> ( moveBaseFeedbackTopic, 10, move_base_fbCallback );
+    n.param<std::string> ( "move_base_feedback_topic", navigationFeedbackTopic, "/maneuver_navigation/feedback" );
+    n.param<std::string> ( "move_base_cancel_topic", navigationCancelTopic, "/move_base/cancel" );
+    
     sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
@@ -142,6 +153,12 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     LLCmodeSet_pub_ = n.advertise<std_msgs::UInt16> ( "/ropod/Set_LLCmode", 1 );
     loadAttachedSet_pub_ = n.advertise<std_msgs::Bool> ( "/ropod/Set_load_attached", 1 );
+    
+    
+    sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
+    sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/goal", 1);
+    sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
+           
 
     door_status.closed = false;
     door_status.open = false;
@@ -149,17 +166,17 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     mobidikConnected.data = false;
     
-    movbase_cancel_pub_ = n.advertise<actionlib_msgs::GoalID> ( moveBaseCancelTopic, 1 );
+    movbase_cancel_pub_ = n.advertise<actionlib_msgs::GoalID> ( navigationCancelTopic, 1 );
     ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/progress", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
 
-    ac_ = new MoveBaseClient ( moveBaseServerName, true );
-
-    while ( !ac_->waitForServer ( ros::Duration ( 5.0 ) ) )
-    {
-        ROS_INFO ( "Waiting for the move_base action server to come up" );
-    }
+//     ac_ = new MoveBaseClient ( moveBaseServerName, true );
+// 
+//     while ( !ac_->waitForServer ( ros::Duration ( 5.0 ) ) )
+//     {
+//         ROS_INFO ( "Waiting for the move_base action server to come up" );
+//     }
 
     send_goal_ = false;
 
@@ -180,6 +197,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     std_msgs::UInt16 controlMode;
     controlMode.data = ropodNavigation::LLC_NORMAL;
 
+    
     // Process the received Action message. Point to first location
     if ( action_msg_received ) // checks need to be done if a current navigation is taking place
     {
@@ -192,17 +210,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         if ( action_msg.type == "GOTO" )
         {
                  ROS_INFO("GOTO-action set");
-            // Extract all areas and waypoints to go the corresponding location
-            for ( std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = action_msg.areas.begin();
-                    curr_area != action_msg.areas.end(); ++curr_area )
-            {
-                geometry_msgs::PoseStamped p = getPoseFromWorldModel ( curr_area->name );
-                std::string area_type = getAreaTypeFromWorldModel ( curr_area->name );
-                path_msg_.poses.push_back ( p );
-                waypoint_ids_.push_back ( curr_area->name );
-            }
-            waypoint_navigation.startNavigation ( path_msg_ );
-            active_nav = NAVTYPE_WAYPOINT;
+            // Here query world model mediator with OSM to obtain waypoints from the area id path plan
         }
         else if ( action_msg.type == "ENTER_ELEVATOR" )
         {
@@ -222,11 +230,49 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         }
 
     }
+
+    // Process the received RobotAction message.
+    if ( robot_action_msg_received ) // checks need to be done if a current navigation is taking place
+    {
+        robot_action_msg_received = false;
+        robot_action_msg = robot_action_msg_rec;
+        waypoint_ids_.clear();
+        path_msg_.poses.clear();
+        std::cout << "robot_action_msg.type = " << robot_action_msg_received << std::endl;
+        if ( robot_action_msg.type == "GOTO" )
+        {
+                 ROS_INFO("GOTO-action set");
+            // Extract all areas and waypoints to go the corresponding location
+            for ( std::vector<ropod_ros_msgs::NavigationArea>::const_iterator curr_area = robot_action_msg.navigation_areas.begin();
+                    curr_area != robot_action_msg.navigation_areas.end(); ++curr_area )
+            {
+                if (curr_area->type == "Intersection")
+                    continue;
+                for ( std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_wayp = curr_area->waypoints.begin();
+                    curr_wayp != curr_area->waypoints.end(); ++curr_wayp )
+                {
+                    geometry_msgs::PoseStamped p;
+                    p.pose = curr_wayp->waypoint_pose ;
+                    std::string area_type = curr_area->type;
+                    path_msg_.poses.push_back ( p );
+                    waypoint_ids_.push_back ( curr_wayp->semantic_id );
+                }
+            }
+            waypoint_navigation.startNavigation ( path_msg_ );
+            active_nav = NAVTYPE_WAYPOINT;
+        }
+        else 
+        {
+            ROS_ERROR("Wrong message: Commands other than GOTO do not need World model mediation");
+        }
+
+    }    
+   
     
     TaskFeedbackCcu nav_state;
     
-    std::cout << "Before state-machine: demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
-    std::cout << "active nav = " << active_nav << std::endl;
+//     std::cout << "Before state-machine: demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
+//     std::cout << "active nav = " << active_nav << std::endl;
     
     // Select the corresponding navigation
     switch ( active_nav )
@@ -328,7 +374,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
     // Send navigation command
     if ( send_goal_ )
-        ac_->sendGoal ( goal_ );
+         sendGoal_pub_.publish(goal_.target_pose); //ac_->sendGoal ( goal_ );
     
 //     std::cout << "active nav after sending goal = " << active_nav << std::endl;
     ObjectMarkers_pub_.publish( markerArray );

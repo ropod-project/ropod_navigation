@@ -267,9 +267,9 @@ bool MobidikCollection::isWaypointAchieved()
 {
 
     // In elevator we checked whether teh specific position is reached.
-    tf::Quaternion qtemp = tf::Quaternion(base_position_->feedback.base_position.pose.orientation.x, base_position_->feedback.base_position.pose.orientation.y,
-                                          base_position_->feedback.base_position.pose.orientation.z,base_position_->feedback.base_position.pose.orientation.w);
-    tf::Vector3 v3temp = tf::Vector3(base_position_->feedback.base_position.pose.position.x,base_position_->feedback.base_position.pose.position.y, 0.0);
+    tf::Quaternion qtemp = tf::Quaternion(base_position_->pose.orientation.x, base_position_->pose.orientation.y, 
+                                          base_position_->pose.orientation.z, base_position_->pose.orientation.w);
+    tf::Vector3 v3temp = tf::Vector3(base_position_->pose.position.x, base_position_->pose.position.y, 0.0);
     base_positiontf_ = tf::Transform( qtemp, v3temp);
     qtemp = tf::Quaternion(goal_.target_pose.pose.orientation.x, goal_.target_pose.pose.orientation.y,
                            goal_.target_pose.pose.orientation.z,goal_.target_pose.pose.orientation.w);

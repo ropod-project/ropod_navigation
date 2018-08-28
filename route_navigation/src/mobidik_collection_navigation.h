@@ -30,9 +30,6 @@
 #include <math.h>
 
 
-#define WAYP_REACHED_DIST 0.5
-#define GOAL_REACHED_DIST 0.2
-#define GOAL_REACHED_ANG  20.0*3.141592/180.0
 
 #define WAYP_MOBID_COLL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_COLL_REACHED_DIST 0.1 // [m]
@@ -116,7 +113,7 @@ class MobidikCollection
     
     TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected);
     
-    move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position_;
+    geometry_msgs::PoseStamped::ConstPtr base_position_;
     
     private:
 

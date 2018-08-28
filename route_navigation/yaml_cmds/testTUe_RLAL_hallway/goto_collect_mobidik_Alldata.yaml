@@ -1,0 +1,128 @@
+rostopic pub /model_mediator_action ropod_ros_msgs/RobotAction "
+action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
+type: 'GOTO'
+navigation_areas: 
+  - 
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'ParallerlAL_RL_CW'
+    type: 'Corridor'
+    waypoints:
+      - 
+        semantic_id: 'test-semantic_id-1'
+        area_id: 'test-area_id-1'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: 11.014998436
+            y: 5.00390911102
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: -0.780446907999
+            w: 0.625222059588
+      - 
+        semantic_id: 'test-semantic_id-1'
+        area_id: 'test-area_id-1'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: 10.2483825684
+            y: 1.79518699646
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: -0.786722757884
+            w: 0.617306489701
+  - 
+    area_id: '1d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Intersection_AL_door'
+    type: 'Intersection'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-2'
+          area_id: 'test-area_id-2'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 10.0414514542
+                y: -0.283344745636
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.782678788289
+                w: 0.622425830411
+  -
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Hallway_AL_RL_doors_CW'
+    type: 'Corridor'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose:
+            position: 
+                x: 8.73491668701
+                y: -0.0408208072186
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.993172984142
+                w: 0.116650861847
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 5.6969370842
+                y: 0.690964818001
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.990767225563
+                w: 0.135573982568
+  -                        
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Intersection_RL_door'
+    type: 'Intersection'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose:
+            position: 
+                x: 3.14523458481
+                y: 1.37765955925
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.619206891037
+                w: 0.785227881632
+  -               
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Point_to_pick_up_mobidik'
+    type: 'wait_area'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 4.15804815292
+                y: 2.52073478699
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.614194737528
+                w: 0.789154499697
+"
