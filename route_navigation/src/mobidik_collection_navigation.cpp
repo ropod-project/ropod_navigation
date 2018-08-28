@@ -225,6 +225,10 @@ void MobidikCollection::resetNavigation()
     nav_next_state_ = MOBID_COLL_NAV_IDLE;
     nav_state_bpause_ = MOBID_COLL_NAV_IDLE;
     nav_next_state_wp_ = MOBID_COLL_NAV_IDLE;
+    nav_state_release_ = MOBID_REL_NAV_IDLE;
+    nav_next_state_release_ = MOBID_REL_NAV_IDLE;
+    nav_next_state_wp_release_ = MOBID_REL_NAV_IDLE;
+    
     ROS_INFO("Navigation reset");
 }
 
@@ -250,6 +254,12 @@ void MobidikCollection::initNavState()
 {
         nav_state_ = MOBID_COLL_FIND_MOBIDIK;
         std::cout << "Nave state initialised at " << MOBID_COLL_FIND_MOBIDIK << std::endl;
+}
+
+void MobidikCollection::initRelState()
+{
+        nav_state_release_ = MOBID_REL_GET_SETPOINT_FRONT;
+        std::cout << "Nave state initialised at " << MOBID_REL_GET_SETPOINT_FRONT << std::endl;
 }
 
 /*--------------------------------------------------------*/
@@ -509,6 +519,251 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
     default:
         nav_next_state_ = MOBID_COLL_NAV_IDLE;
+    }
+
+    nav_state_ = nav_next_state_;
+
+    *goal_ptr = goal_;
+
+    return tfb_nav;
+}
+
+
+void MobidikCollection::getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik )
+{
+    for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
+    {
+        const ed::EntityConstPtr& e = *it;
+
+        if ( mobidikAreaID.compare ( e.get()->id().str() )  == 0 ) // Correct mobidikarea found
+        {
+            // It is assumed here that there is a navigation task, so only points on the ground are taken into consideration
+
+            std::vector<geo::Vector3> points = e.get()->shape().get()->getMesh().getPoints();
+            std::vector<geo::Vector3> groundPoints;
+            const geo::Vec3T<double> pose = e.get()->pose().getOrigin();
+
+            float sumX = 0;
+            float sumY = 0;
+            for ( unsigned int iPoints = 0; iPoints < points.size(); iPoints++ )
+            {
+
+                if ( points[iPoints].getZ() == 0 )
+                {
+                    sumX+= points[iPoints].getX();
+                    sumY+= points[iPoints].getY();
+                }
+            }
+            double centerX = sumX / points.size();
+            double centerY = sumY / points.size();
+            
+            geo::Vec3d originMobidik ( centerX, centerY, 0.0 ); // Assumption: mobidikArea's are rectangular, so the centerpoint is always within the mobidik-area
+
+            std::string orientationWPID = "orient_wp_" +  mobidikAreaID;
+            for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it ) // find corresponding orientation 
+            {
+                const ed::EntityConstPtr& e = *it;
+                if ( orientationWPID.compare ( e.get()->id().str() ) == 0 ) // function returns 0 if strings are equal
+                {
+                    geo::Pose3D poseWP = e.get()->pose();
+                    geo::Quaternion rotationWP = poseWP.getQuaternion();
+
+                    tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
+                    tf::Matrix3x3 matrix ( q );
+                    double WP_roll, WP_pitch, WP_yaw;
+                    matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
+
+                    geo::Mat3 rotation;
+                    rotation.setRPY ( WP_roll, WP_pitch, WP_yaw );
+
+                    mobidikPosition->setOrigin( originMobidik );
+                    mobidikPosition->setBasis( rotation );
+                    
+                    geo::Vec3d originInFrontOfMobidik(centerX + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *cos(WP_yaw), centerY + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *sin(WP_yaw), 0.0);
+                    setpointInFrontOfMobidik->setOrigin( originInFrontOfMobidik );
+                    setpointInFrontOfMobidik->setBasis( rotation );
+                    
+                    geo::Vec3d originAfterDisconnection(centerX + DIST_DISCONNECT_MOBID_RELEASE *cos(WP_yaw), centerY + DIST_DISCONNECT_MOBID_RELEASE *sin(WP_yaw), 0.0);
+                    disconnectSetpoint->setOrigin( originAfterDisconnection );
+                    disconnectSetpoint->setBasis( rotation );
+                    return;
+                    
+                    
+                }
+            }            
+        }
+    }
+
+    return;
+}
+
+TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected )
+{
+    //TODO set controlmode in all the states
+    TaskFeedbackCcu tfb_nav;
+    tfb_nav.wayp_n = waypoint_cnt_;
+    tfb_nav.fb_nav = NAV_BUSY;
+    sendgoal = false;
+    geo::Pose3D finalMobidikPosition, setpoint, disconnectSetpoint;
+    tf::Quaternion q;
+    geometry_msgs::Twist output_vel;
+    bool touched;
+    float avgForce;
+
+    switch ( nav_state_release_ )
+    {
+
+    case MOBID_REL_NAV_IDLE: // No waypoints received yet.
+        tfb_nav.fb_nav = NAV_IDLE;
+        ROS_INFO ( "MOBID_REL_NAV_IDLE" );
+//         if (route_busy_ == true)
+//         {
+//              nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
+//             ROS_INFO("Waiting for door");
+//         }
+        break;
+
+    case MOBID_REL_GET_SETPOINT_FRONT:
+        ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
+        // getFinalMobidikPos(markerArray);
+        // navigate to final setpoint + offset to front
+        getFinalMobidikPos ( world, areaID, &finalMobidikPosition, &disconnectSetpoint, &setpoint );
+
+        goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
+        goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
+        goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
+        goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
+        goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
+        goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
+        goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+
+        nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+        nav_next_state_wp_release_ = MOBID_REL_GET_FINAL_MOBIDIK_POS;
+        break;
+
+    case MOBID_REL_GET_FINAL_MOBIDIK_POS:
+        ROS_INFO ( "MOBID_REL_GOTO_FINAL_MOBIDIK_POS" );
+        // navigate to final setpoint
+        setpoint = finalMobidikPosition;
+        goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
+        goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
+        goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
+        goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
+        goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
+        goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
+        goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+
+        nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+        nav_next_state_wp_release_ = MOBID_REL_DECOUPLING;
+        bumperWrenchesVector_.clear();
+        break;
+
+    case MOBID_REL_DECOUPLING:
+        ROS_INFO ( "MOBID_REL_DECOUPLING" );
+        // Wait untill signal is given with force sensor at the front and go to the position which is slightly in front of the robot.
+
+        touched = false;
+        bumperWrenchesVector_.push_back ( bumperWrenches );
+        if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+        {
+            bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
+            avgForce = 0.0;
+            for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+            {
+                avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
+            }
+
+            avgForce /= bumperWrenchesVector_.size();
+
+            if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+            {
+                touched = true;
+            }
+        }
+
+        if ( touched )
+        {
+            setpoint = disconnectSetpoint;
+            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
+            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
+            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
+            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
+            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
+            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
+            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+            
+            *mobidikConnected = false;
+
+            nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+            nav_next_state_wp_release_ = MOBID_REL_NAV_DONE;
+        }
+        
+        break;
+
+    case MOBID_REL_NAV_GOTOPOINT:
+        ROS_INFO ( "MOBID_REL_NAV_GOTOPOINT" );
+        goal_.target_pose.header.frame_id = "map";
+        goal_.target_pose.header.stamp = ros::Time::now();
+        ROS_INFO ( "Sending goal" );
+        sendgoal = true;
+        tfb_nav.fb_nav = NAV_GOTOPOINT;
+        nav_next_state_release_ = MOBID_COLL_NAV_BUSY;
+        break;
+
+    case MOBID_REL_NAV_BUSY:
+        ROS_INFO ( "MOBID_REL_NAV_BUSY" );
+        if ( !isPositionValid() )
+        {
+            nav_next_state_release_ = MOBID_COLL_NAV_HOLD;
+            break;
+        }
+        if ( isWaypointAchieved() ) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
+        {
+            ROS_INFO ( "Waypoint achieved" );
+            nav_next_state_release_ = MOBID_COLL_NAV_WAYPOINT_DONE;
+        }
+        else
+        {
+            ROS_INFO ( "Waypoint not achieved" );
+        }
+
+        break;
+
+    case MOBID_REL_NAV_WAYPOINT_DONE: //
+        ROS_INFO ( "MOBID_REL_NAV_WAYPOINT_DONE" );
+        tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
+        nav_next_state_release_ = nav_next_state_wp_release_;
+
+        break;
+
+    case MOBID_REL_NAV_DONE: //
+        ROS_INFO ( "MOBID_REL_NAV_DONE" );
+        ROS_INFO ( "Navigation done" );
+        tfb_nav.fb_nav = NAV_DONE;
+        controlMode->data = ropodNavigation::LLC_NORMAL;
+        stopNavigation();
+        movbase_cancel_pub.publish ( emptyGoalID_ );
+        nav_next_state_release_ = MOBID_COLL_NAV_IDLE;
+        break;
+
+    case MOBID_REL_NAV_HOLD: //
+        ROS_INFO ( "MOBID_REL_NAV_HOLD" );
+        ROS_INFO ( "Navigation on hold to receive feedback" );
+        if ( isPositionValid() ) // check we have a valid position
+            nav_next_state_ = MOBID_COLL_NAV_BUSY;
+        break;
+
+    case MOBID_REL_NAV_PAUSED: // this state is reached via a callback
+        ROS_INFO ( "MOBID_REL_NAV_PAUSED" );
+        if ( nav_paused_req_ )
+        {
+            movbase_cancel_pub.publish ( emptyGoalID_ );
+            nav_paused_req_ = false;
+        }
+        break;
+
+    default:
+        nav_next_state_ = MOBID_REL_NAV_IDLE;
     }
 
     nav_state_ = nav_next_state_;

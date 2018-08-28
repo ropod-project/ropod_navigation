@@ -48,6 +48,9 @@
 #define MIN_FORCE_TOUCHED 20 // [N]
 #define MAX_TORQUE_TOUCHED 3 // [Nm]
 
+#define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 0.5 // [m]
+#define DIST_DISCONNECT_MOBID_RELEASE 0.1 // [m]
+
 class MobidikCollection
 {
 
@@ -62,6 +65,18 @@ class MobidikCollection
            MOBID_COLL_NAV_CONNECTING,
            MOBID_COLL_NAV_COUPLING,
            MOBID_COLL_NAV_DONE           
+         };
+         
+    enum { MOBID_REL_NAV_IDLE = 0,
+           MOBID_REL_GET_SETPOINT_FRONT,
+           MOBID_REL_GET_FINAL_MOBIDIK_POS,
+           MOBID_REL_DECOUPLING,
+           MOBID_REL_NAV_GOTOPOINT,
+           MOBID_REL_NAV_BUSY,
+           MOBID_REL_NAV_WAYPOINT_DONE,
+           MOBID_REL_NAV_DONE,
+           MOBID_REL_NAV_HOLD,
+           MOBID_REL_NAV_PAUSED         
          };
          
     public:
@@ -91,9 +106,15 @@ class MobidikCollection
     
     void initNavState();
     
+    void initRelState();
+    
     bool isWaypointAchieved();
      
     TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches);
+    
+    void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik );
+    
+    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected);
     
     move_base_msgs::MoveBaseActionFeedback::ConstPtr base_position_;
     
@@ -105,9 +126,12 @@ class MobidikCollection
     bool nav_paused_req_;
     int  waypoint_cnt_;
     int nav_state_;
+    int nav_state_release_;
     int nav_next_state_;
+    int nav_next_state_release_;
     int nav_state_bpause_;
     int nav_next_state_wp_;
+    int nav_next_state_wp_release_;
     
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
