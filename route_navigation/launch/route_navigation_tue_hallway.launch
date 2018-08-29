@@ -80,7 +80,7 @@
 
         
         <remap from="/maneuver_navigation/cmd_vel" to="/load/cmd_vel"/>
-        <remap from="odom" to="/ropod/odom"/>        
+        <remap from="odom" to="/load/odom"/>        
     </node>       
     
 </launch>
