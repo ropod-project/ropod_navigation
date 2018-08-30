@@ -102,6 +102,12 @@ class MobidikCollection
     
     bool isPositionValid();
     
+    geometry_msgs::WrenchStamped determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector);
+    
+    void determineAvgWrenches();
+    
+    void initAvgWrench(geometry_msgs::WrenchStamped *wrench);
+    
     void initNavState();
     
     void initRelState();
@@ -139,6 +145,9 @@ class MobidikCollection
     ros::Duration stamp_wait_;
     ed::UUID MobidikID_ED_;
     geo::Pose3D setpoint_;
+    
+    bool avgWrenchesDetermined_;
+    ropodNavigation::wrenches avgWrenches_;
 
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
     

@@ -250,10 +250,68 @@ bool MobidikCollection::isPositionValid()
         return false;
 }
 
+void MobidikCollection::initAvgWrench(geometry_msgs::WrenchStamped *wrench)
+{
+        wrench->wrench.force.x = INFINITY;
+        wrench->wrench.force.y = INFINITY;
+        wrench->wrench.force.z = INFINITY;
+        wrench->wrench.force.x = INFINITY;
+        wrench->wrench.torque.y = INFINITY;
+        wrench->wrench.torque.z = INFINITY;
+}
+
 void MobidikCollection::initNavState()
 {
         nav_state_ = MOBID_COLL_FIND_MOBIDIK;
+        avgWrenchesDetermined_ = false;
+        initAvgWrench(&avgWrenches_.front);
+        initAvgWrench(&avgWrenches_.left);
+        initAvgWrench(&avgWrenches_.back);
+        initAvgWrench(&avgWrenches_.right);
         std::cout << "Nave state initialised at " << MOBID_COLL_FIND_MOBIDIK << std::endl;
+}
+
+geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector)
+{
+        float sumForcex = 0.0, sumForcey = 0.0, sumForcez = 0.0, sumTorquex = 0.0, sumTorquey = 0.0, sumTorquez = 0.0;
+            for ( unsigned int ii = 0; ii < wrenchVector.size(); ii++ )
+            {
+                sumForcex += wrenchVector[ii].wrench.force.x;
+                sumForcey += wrenchVector[ii].wrench.force.y;
+                sumForcez += wrenchVector[ii].wrench.force.z;
+                sumTorquex += wrenchVector[ii].wrench.force.x;
+                sumTorquey += wrenchVector[ii].wrench.force.y;
+                sumTorquez += wrenchVector[ii].wrench.force.z;
+            }
+
+            geometry_msgs::WrenchStamped avgWrench;
+            avgWrench.wrench.force.x = sumForcex / wrenchVector.size();
+            avgWrench.wrench.force.y = sumForcey / wrenchVector.size();
+            avgWrench.wrench.force.z = sumForcez / wrenchVector.size();
+            avgWrench.wrench.torque.x = sumTorquex / wrenchVector.size();
+            avgWrench.wrench.torque.y = sumTorquey / wrenchVector.size();
+            avgWrench.wrench.torque.z = sumTorquez/ wrenchVector.size();
+            
+            return avgWrench;            
+}
+
+void MobidikCollection::determineAvgWrenches()
+{
+        std::vector<geometry_msgs::WrenchStamped> wrenchesFront, wrenchesLeft, wrenchesBack, wrenchesRight;
+        for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+        {
+                wrenchesFront.push_back( bumperWrenchesVector_[ii].front );
+                wrenchesLeft.push_back( bumperWrenchesVector_[ii].left );
+                wrenchesBack.push_back( bumperWrenchesVector_[ii].back );
+                wrenchesRight.push_back( bumperWrenchesVector_[ii].right );
+        }
+        
+        avgWrenches_.front = determineAvgWrench( wrenchesFront );
+        avgWrenches_.left = determineAvgWrench( wrenchesLeft );
+        avgWrenches_.back = determineAvgWrench( wrenchesBack );
+        avgWrenches_.right = determineAvgWrench( wrenchesRight );
+        
+        avgWrenchesDetermined_ = true;
 }
 
 void MobidikCollection::initRelState()
@@ -301,7 +359,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     geometry_msgs::Twist output_vel;
     
     float avgForce, avgTorque;
-    bool touched;
+    bool touched, forceCheck, torqueCheck;
     
     visualization_msgs::Marker points, line_strip, line_list;
     points.header.frame_id = line_strip.header.frame_id = line_list.header.frame_id = "/map";
@@ -374,23 +432,19 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
             std::cout << "Test1" << std::endl;
             getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
-std::cout << "Test2" << std::endl;
             goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
             goal_.target_pose.pose.position.y = setpoint_.getOrigin().getY();
             goal_.target_pose.pose.position.z = setpoint_.getOrigin().getZ();
-            std::cout << "Test2.1" << std::endl;
-            goal_.target_pose.pose.orientation.x = base_position_->pose.orientation.x;
+            goal_.target_pose.pose.orientation.x = base_position_->pose.orientation.x; // TODO: segfault when no autonomous movement was made in reading the base_position
             goal_.target_pose.pose.orientation.y = base_position_->pose.orientation.y;
             goal_.target_pose.pose.orientation.z = base_position_->pose.orientation.z            ;
             goal_.target_pose.pose.orientation.w = base_position_->pose.orientation.w;
-std::cout << "Test3" << std::endl;
             markerArraytest->markers.push_back ( points );
-std::cout << "Test4" << std::endl;
+
             nav_next_state_wp_ = MOBID_COLL_ROTATE_IN_FRONT;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-            std::cout << "Test5" << std::endl;
+
             bumperWrenchesVector_.clear();
-            std::cout << "Test6" << std::endl;
         break;
     case MOBID_COLL_ROTATE_IN_FRONT: // TODO
             goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
@@ -407,79 +461,105 @@ std::cout << "Test4" << std::endl;
         break;
         
     case MOBID_COLL_NAV_CONNECTING: // TODO
-            ROS_INFO("MOBID_COLL_NAV_CONNECTING");
-            controlMode->data = ropodNavigation::LLC_DOCKING;
-            output_vel.linear.x = -BACKWARD_VEL_DOCKING;
-           
-            
-            /*  TODO: REMOVE, ONLY FOR SIMULATION */
+        ROS_INFO ( "MOBID_COLL_NAV_CONNECTING" );
+
+
+
+        /*  TODO: REMOVE, ONLY FOR SIMULATION */
 //             nav_next_state_  = MOBID_COLL_NAV_DONE;
 //             bumperWrenchesVector_.clear();
 //             break;
-            /*************************************/
-            
-            
-            cmv_vel_pub.publish(output_vel);
-            
-            touched = false;
-            bumperWrenchesVector_.push_back(bumperWrenches);
-            if( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+        /*************************************/
+
+        cmv_vel_pub.publish ( output_vel );
+
+        touched = false;
+        bumperWrenchesVector_.push_back ( bumperWrenches );
+        if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+        {
+
+            bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
+
+            if ( !avgWrenchesDetermined_ )
             {
-                    bumperWrenchesVector_.erase( bumperWrenchesVector_.begin() );
-                    avgForce = 0.0;
-                    avgTorque = 0.0;
-                    for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
-                    {
-                            avgForce += bumperWrenchesVector_[ii].back.wrench.force.x;
-                            avgTorque += bumperWrenchesVector_[ii].back.wrench.torque.x;
-                    }
-                    
-                    avgForce /= bumperWrenchesVector_.size();
-                    avgTorque /= bumperWrenchesVector_.size();
-                    
-                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED && std::fabs( avgTorque ) < MAX_TORQUE_TOUCHED )
-                    {
-                            touched = true;
-                    }
+                    determineAvgWrenches();
+
             }
-            
-            if (touched)
+            else
             {
-                  nav_next_state_  = MOBID_COLL_NAV_COUPLING;
-                  bumperWrenchesVector_.clear();
+
+                controlMode->data = ropodNavigation::LLC_DOCKING;
+                output_vel.linear.x = -BACKWARD_VEL_DOCKING;
+
+                avgForce = 0.0;
+                avgTorque = 0.0;
+                for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ ) // TODO can be more efficient by storing the sum
+                {
+                    avgForce += bumperWrenchesVector_[ii].back.wrench.force.x;
+                    avgTorque += bumperWrenchesVector_[ii].back.wrench.torque.x;
+                }
+
+                avgForce /= bumperWrenchesVector_.size();
+                avgTorque /= bumperWrenchesVector_.size();
+                
+                forceCheck = std::fabs ( avgForce - avgWrenches_.back.wrench.force.x ) > MIN_FORCE_TOUCHED;
+                torqueCheck = std::fabs ( avgTorque - avgWrenches_.back.wrench.torque.x ) > MAX_TORQUE_TOUCHED;
+
+                if ( forceCheck && torqueCheck )
+                {
+                    touched = true;
+                }
             }
-            
-         break;
+        }
+
+        if ( touched )
+        {
+            nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+//              bumperWrenchesVector_.clear();
+        }
+
+        break;
          
     case MOBID_COLL_NAV_COUPLING: // TODO
-            ROS_INFO("MOBID_COLL_NAV_COUPLING");
-            controlMode->data = ropodNavigation::LLC_DOCKING;
-            // couple mobidik manually and wait for signal;
-            
-            bumperWrenchesVector_.push_back(bumperWrenches);
-            if( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+        ROS_INFO ( "MOBID_COLL_NAV_COUPLING" );
+        controlMode->data = ropodNavigation::LLC_VEL;
+        // couple mobidik manually and wait for signal;
+
+        bumperWrenchesVector_.push_back ( bumperWrenches );
+        if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+        {
+            bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() ); // just to be sure
+            if ( !avgWrenchesDetermined_ )
             {
-                    bumperWrenchesVector_.erase( bumperWrenchesVector_.begin() );
-                    avgForce = 0.0;
-                    for(unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++)
-                    {
-                            avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
-                    }
-                    
-                    avgForce /= bumperWrenchesVector_.size();
-                    
-                    if (std::fabs(avgForce) > MIN_FORCE_TOUCHED )
-                    {
-                            touched = true;
-                    }
+                determineAvgWrenches();
+
             }
-            
-            if (touched)
+            else
             {
-                  nav_next_state_  = MOBID_COLL_NAV_DONE;
-                  bumperWrenchesVector_.clear();
+
+                avgForce = 0.0;
+                for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+                {
+                    avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
+                }
+
+                avgForce /= bumperWrenchesVector_.size();
+                
+                forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
+
+                if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+                {
+                    touched = true;
+                }
             }
-         break;
+        }
+
+        if ( touched )
+        {
+            nav_next_state_  = MOBID_COLL_NAV_DONE;
+            bumperWrenchesVector_.clear();
+        }
+        break;
 
     case MOBID_COLL_NAV_GOTOPOINT:
             ROS_INFO("MOBID_COLL_NAV_GOTOPOINT");
