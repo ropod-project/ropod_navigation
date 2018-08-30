@@ -37,7 +37,7 @@
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
-#define DIST_IN_FRONT_OFF_MOBID 0.2 // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
 #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
 

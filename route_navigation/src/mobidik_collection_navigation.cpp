@@ -372,23 +372,25 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
          
     case MOBID_COLL_FIND_SETPOINT_FRONT:
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
+            std::cout << "Test1" << std::endl;
             getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
-
+std::cout << "Test2" << std::endl;
             goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
             goal_.target_pose.pose.position.y = setpoint_.getOrigin().getY();
             goal_.target_pose.pose.position.z = setpoint_.getOrigin().getZ();
+            std::cout << "Test2.1" << std::endl;
             goal_.target_pose.pose.orientation.x = base_position_->pose.orientation.x;
             goal_.target_pose.pose.orientation.y = base_position_->pose.orientation.y;
             goal_.target_pose.pose.orientation.z = base_position_->pose.orientation.z            ;
             goal_.target_pose.pose.orientation.w = base_position_->pose.orientation.w;
-
+std::cout << "Test3" << std::endl;
             markerArraytest->markers.push_back ( points );
-
+std::cout << "Test4" << std::endl;
             nav_next_state_wp_ = MOBID_COLL_ROTATE_IN_FRONT;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-            
+            std::cout << "Test5" << std::endl;
             bumperWrenchesVector_.clear();
-            
+            std::cout << "Test6" << std::endl;
         break;
     case MOBID_COLL_ROTATE_IN_FRONT: // TODO
             goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
