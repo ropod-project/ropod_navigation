@@ -31,7 +31,8 @@ namespace ropodNavigation{
 
   enum LLC
     {
-    LLC_NORMAL = 0,             // vel_control
+    LLC_VEL = 0,                // vel-control without bumper
+    LLC_NORMAL ,                // vel_control with bumper
     LLC_FX_FY_DT,               // Force-control in x and y, theta disabled
     LLC_VX_FY_DT,               // vel control in x, force control in y, theta disabled
     LLC_DOCKING    
