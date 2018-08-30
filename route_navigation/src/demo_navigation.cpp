@@ -143,7 +143,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
     LLCmodeApplied_ = n.subscribe<std_msgs::UInt16> ( "/ropod/LLCmode_Applied", 10, LLCmodeAppliedCallback );
-    loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_applied", 10, loadAttachedCallback ); 
+    loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_Applied", 10, loadAttachedCallback ); 
     
     // Communication to the bumpers 
     wrenchFront_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_front", 10, wrenchFrontCallback );
