@@ -413,9 +413,9 @@ std::cout << "Test4" << std::endl;
            
             
             /*  TODO: REMOVE, ONLY FOR SIMULATION */
-            nav_next_state_  = MOBID_COLL_NAV_DONE;
-            bumperWrenchesVector_.clear();
-            break;
+//             nav_next_state_  = MOBID_COLL_NAV_DONE;
+//             bumperWrenchesVector_.clear();
+//             break;
             /*************************************/
             
             
