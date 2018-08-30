@@ -1,5 +1,5 @@
 rostopic pub /model_mediator_action ropod_ros_msgs/RobotAction "
-action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
+action_id: 'goto-deliver-4a15af55-47fa-43e5-ad75-58d138242ab4'
 type: 'GOTO'
 navigation_areas: 
   - 

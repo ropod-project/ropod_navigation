@@ -37,7 +37,7 @@
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
-#define DIST_IN_FRONT_OFF_MOBID 0.5 // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.2 // [m]
 #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
 
@@ -57,6 +57,7 @@ class MobidikCollection
            MOBID_COLL_NAV_BUSY,
            MOBID_COLL_FIND_MOBIDIK,
            MOBID_COLL_FIND_SETPOINT_FRONT,
+           MOBID_COLL_ROTATE_IN_FRONT,
            MOBID_COLL_NAV_GOTOPOINT,
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
@@ -137,6 +138,7 @@ class MobidikCollection
     ros::Time stamp_start_;
     ros::Duration stamp_wait_;
     ed::UUID MobidikID_ED_;
+    geo::Pose3D setpoint_;
 
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
     

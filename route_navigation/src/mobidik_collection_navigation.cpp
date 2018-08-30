@@ -287,6 +287,7 @@ bool MobidikCollection::isWaypointAchieved()
         return false;
 }
 
+
 /*--------------------------------------------------------*/
 TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches)
 {
@@ -295,7 +296,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
     visualization_msgs::Marker marker;
-    geo::Pose3D setpoint;
+    
     tf::Quaternion q;
     geometry_msgs::Twist output_vel;
     
@@ -371,29 +372,51 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
          
     case MOBID_COLL_FIND_SETPOINT_FRONT:
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
-            getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint, &points);
+            getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
 
-            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
-            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
-            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
-            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
-            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
-            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
-            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+            goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
+            goal_.target_pose.pose.position.y = setpoint_.getOrigin().getY();
+            goal_.target_pose.pose.position.z = setpoint_.getOrigin().getZ();
+            goal_.target_pose.pose.orientation.x = base_position_->pose.orientation.x;
+            goal_.target_pose.pose.orientation.y = base_position_->pose.orientation.y;
+            goal_.target_pose.pose.orientation.z = base_position_->pose.orientation.z            ;
+            goal_.target_pose.pose.orientation.w = base_position_->pose.orientation.w;
 
             markerArraytest->markers.push_back ( points );
 
-            nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
+            nav_next_state_wp_ = MOBID_COLL_ROTATE_IN_FRONT;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
             
             bumperWrenchesVector_.clear();
             
         break;
-         
+    case MOBID_COLL_ROTATE_IN_FRONT: // TODO
+            goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
+            goal_.target_pose.pose.position.y = setpoint_.getOrigin().getY();
+            goal_.target_pose.pose.position.z = setpoint_.getOrigin().getZ();            
+            goal_.target_pose.pose.orientation.x = setpoint_.getQuaternion().getX();
+            goal_.target_pose.pose.orientation.y = setpoint_.getQuaternion().getY();
+            goal_.target_pose.pose.orientation.z = setpoint_.getQuaternion().getZ();
+            goal_.target_pose.pose.orientation.w = setpoint_.getQuaternion().getW();
+            
+            nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
+            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
+            
+        break;
+        
     case MOBID_COLL_NAV_CONNECTING: // TODO
             ROS_INFO("MOBID_COLL_NAV_CONNECTING");
             controlMode->data = ropodNavigation::LLC_DOCKING;
             output_vel.linear.x = -BACKWARD_VEL_DOCKING;
+           
+            
+            /*  TODO: REMOVE, ONLY FOR SIMULATION */
+            nav_next_state_  = MOBID_COLL_NAV_DONE;
+            bumperWrenchesVector_.clear();
+            break;
+            /*************************************/
+            
+            
             cmv_vel_pub.publish(output_vel);
             
             touched = false;

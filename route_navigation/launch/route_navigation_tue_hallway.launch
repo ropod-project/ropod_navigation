@@ -65,6 +65,7 @@
     
     <!-- Launch ED -->
     <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml">
+        <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
     </node>
     
     <!-- Launch navigation -->
