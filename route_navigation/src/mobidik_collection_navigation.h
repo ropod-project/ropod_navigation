@@ -37,7 +37,7 @@
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
-#define DIST_IN_FRONT_OFF_MOBID 0.2 // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
 #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
 
@@ -102,6 +102,12 @@ class MobidikCollection
     
     bool isPositionValid();
     
+    geometry_msgs::WrenchStamped determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector);
+    
+    void determineAvgWrenches();
+    
+    void initAvgWrench(geometry_msgs::WrenchStamped *wrench);
+    
     void initNavState();
     
     void initRelState();
@@ -139,6 +145,9 @@ class MobidikCollection
     ros::Duration stamp_wait_;
     ed::UUID MobidikID_ED_;
     geo::Pose3D setpoint_;
+    
+    bool avgWrenchesDetermined_;
+    ropodNavigation::wrenches avgWrenches_;
 
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
     
