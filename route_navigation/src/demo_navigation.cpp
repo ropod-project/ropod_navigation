@@ -156,7 +156,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     
     sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
-    sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/goal", 1);
+    sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/simple_goal", 1);
+    mn_sendGoal_pub_ = n.advertise<maneuver_navigation::Goal> ("/route_navigation/goal", 1);
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
            
 
@@ -270,6 +271,8 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     
     TaskFeedbackCcu nav_state;
     
+    bool send_mn_goal_ = false;
+    
 //     std::cout << "Before state-machine: demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
 //     std::cout << "active nav = " << active_nav << std::endl;
     
@@ -279,7 +282,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
     case NAVTYPE_WAYPOINT:
          ROS_INFO("NAV_WAYPOINT");
-        nav_state = waypoint_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_ );
+        nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
         break;
 
     case NAVTYPE_ELEVATOR:
@@ -374,6 +377,10 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // Send navigation command
     if ( send_goal_ )
          sendGoal_pub_.publish(goal_.target_pose); //ac_->sendGoal ( goal_ );
+    if (send_mn_goal_)
+        mn_sendGoal_pub_.publish(mn_goal_);
+         
+    
     
 //     std::cout << "active nav after sending goal = " << active_nav << std::endl;
     ObjectMarkers_pub_.publish( markerArray );

@@ -77,18 +77,18 @@ bool WaypointNavigation::isPositionValid()
 }
 
 /*--------------------------------------------------------*/
-bool WaypointNavigation::isWaypointAchieved()
+bool WaypointNavigation::isWaypointAchieved(const geometry_msgs::PoseStamped &goal)
 {
     tf::Quaternion qtemp = tf::Quaternion(base_position->pose.orientation.x, base_position->pose.orientation.y, 
                                           base_position->pose.orientation.z, base_position->pose.orientation.w);
     tf::Vector3 v3temp = tf::Vector3(base_position->pose.position.x, base_position->pose.position.y, 0.0);
     base_positiontf_ = tf::Transform(qtemp, v3temp);
-    qtemp = tf::Quaternion(goal.target_pose.pose.orientation.x,
-                           goal.target_pose.pose.orientation.y,
-                           goal.target_pose.pose.orientation.z,
-                           goal.target_pose.pose.orientation.w);
-    v3temp = tf::Vector3(goal.target_pose.pose.position.x,
-                         goal.target_pose.pose.position.y,
+    qtemp = tf::Quaternion(goal.pose.orientation.x,
+                           goal.pose.orientation.y,
+                           goal.pose.orientation.z,
+                           goal.pose.orientation.w);
+    v3temp = tf::Vector3(goal.pose.position.x,
+                         goal.pose.position.y,
                          0.0);
     waypoint_tf_ = tf::Transform(qtemp, v3temp);
 
@@ -133,7 +133,7 @@ geometry_msgs::Pose WaypointNavigation::getNextWaypoint(void)
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal)
+TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal_, maneuver_navigation::Feedback &mn_feedback_, bool& sendgoal)
 {
   TaskFeedbackCcu tfb_nav;
   tfb_nav.wayp_n = waypoint_cnt;
@@ -148,13 +148,13 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
         break;
 
     case WAYP_NAV_GETPOINT: //we'll send the the next goal to the robot
-        goal.target_pose.pose = getNextWaypoint();	
+        mn_goal_.goal.pose = getNextWaypoint();	
         nav_next_state = WAYP_NAV_GOTOPOINT;
         break;
 	
     case WAYP_NAV_GOTOPOINT:
-        goal.target_pose.header.frame_id = "map";
-        goal.target_pose.header.stamp = ros::Time::now();
+        mn_goal_.goal.header.frame_id = "map";
+        mn_goal_.goal.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
         sendgoal = true;	
 	tfb_nav.fb_nav = NAV_GOTOPOINT;
@@ -167,7 +167,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
             nav_next_state = WAYP_NAV_HOLD;
             break;
         }
-        if (isWaypointAchieved())
+        if (isWaypointAchieved(mn_goal_.goal))
             nav_next_state = WAYP_NAV_WAYPOINT_DONE;
         break;
 	
@@ -184,7 +184,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
         tfb_nav.fb_nav = NAV_DONE;
         ROS_INFO("Navigation done");
         stopNavigation();
-        movbase_cancel_pub.publish(true_bool_msg_);
+        nav_cancel_pub.publish(true_bool_msg_);
         nav_next_state = WAYP_NAV_IDLE;	
         break;
 	
@@ -197,7 +197,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
     case WAYP_NAV_PAUSED: // this state is reached via a callback
         if (nav_paused_req) 
         {
-            movbase_cancel_pub.publish(true_bool_msg_);
+            nav_cancel_pub.publish(true_bool_msg_);
             nav_paused_req = false;
         }
         break;
@@ -208,7 +208,6 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
 
     nav_state = nav_next_state;
 
-    *goal_ptr = goal;
     return tfb_nav;
 }
 

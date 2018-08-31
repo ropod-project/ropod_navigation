@@ -2,8 +2,6 @@
 #define ROUTE_WAYP_NAV_HH
 
 #include <ros/ros.h>
-#include <move_base_msgs/MoveBaseAction.h>
-#include <move_base_msgs/MoveBaseActionFeedback.h>
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
@@ -11,6 +9,10 @@
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
 #include <string>
+
+#include <maneuver_navigation/Goal.h>
+#include <maneuver_navigation/Configuration.h>
+#include <maneuver_navigation/Feedback.h>
 
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
 
@@ -48,7 +50,6 @@ public:
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
     std_msgs::Bool true_bool_msg_;
-    move_base_msgs::MoveBaseGoal goal;
 
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
@@ -61,12 +62,12 @@ public:
     void resetNavigation();
     void stopNavigation();
     bool isPositionValid();
-    bool isWaypointAchieved();
+    bool isWaypointAchieved(const geometry_msgs::PoseStamped &goal);
     bool isLastWaypoint();
 
     geometry_msgs::Pose getNextWaypoint(void);
 
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal_, maneuver_navigation::Feedback &mn_feedback_, bool& sendgoal);
 private:
 };
 
