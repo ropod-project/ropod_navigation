@@ -215,11 +215,10 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         else if ( action_msg.type == "ENTER_ELEVATOR" )
         {
                  ROS_INFO("Enter elevator action set");
-            // here we need to extract the two navigation poses to enter elevator
-            // and pass it to elevator_navigation
-            // geometry_msgs::PoseStamped p = getElevatorPoseFromWorldModel(floor id?)
-//            elevator_navigation.startNavigation(simple_wm.elevator1,path_msg);
+           
             active_nav = NAVTYPE_ELEVATOR;
+            areaID = action_msg.areas[0].area_id; // Get ID of elevator area
+            elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
         }
          else if ( action_msg.type == "COLLECT_MOBIDIK" ) // TODO: integrated in the CCU!?
         {
@@ -285,7 +284,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
     case NAVTYPE_ELEVATOR:
          ROS_INFO("NAV_ELEVATOR");
-        nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, simple_wm.elevator1, door_status );
+        nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, door_status );
         if ( nav_state.fb_nav == NAV_DONE )
         {
             active_nav = NAVTYPE_NONE;

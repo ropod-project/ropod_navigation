@@ -11,6 +11,15 @@
 #include <tf/transform_datatypes.h>
 #include <string>
 
+#include <ed/world_model.h>
+#include <ed/update_request.h>
+#include <ed/entity.h>
+
+#include <geolib/ros/tf_conversions.h>
+#include <geolib/Shape.h>
+
+#include <angles/angles.h>
+
 #include "simplified_world_model.h"
 #include <ropod_ros_msgs/ropod_door_detection.h>
 
@@ -56,13 +65,13 @@ public:
     ros::Time stamp_start;
     ros::Duration stamp_wait;
 
-    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
+    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;      
 
 
     ElevatorNavigation();
     ~ElevatorNavigation();
 
-    void startNavigation(wm::Elevator &elevator,nav_msgs::Path Pathmsg);
+    void startNavigation(std::string areaID, const ed::WorldModel& world);
     void pauseNavigation();
     void resumeNavigation();
     void resetNavigation();
@@ -70,7 +79,11 @@ public:
     bool isPositionValid();
     bool isWaypointAchieved();
     bool checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status);
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, wm::Elevator elevator,ropod_ros_msgs::ropod_door_detection door_status);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
+        bool& sendgoal, ropod_ros_msgs::ropod_door_detection door_status);
+    
+private:
+    wm::Elevator elevator;
 };
 
 
