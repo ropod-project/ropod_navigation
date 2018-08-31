@@ -32,6 +32,7 @@
 #include "simplified_world_model.h"
 
 #include <ed/plugin.h>
+#include "ed/featureProperties_info.h"
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -49,12 +50,16 @@ public:
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
     
+    std::string GetEnv( const std::string & var ) ;
+    
             enum {
     NAVTYPE_WAYPOINT = 0,
     NAVTYPE_ELEVATOR,
     NAVTYPE_MOBIDIK_COLLECTION,
     NAVTYPE_NONE
 };
+
+    bool robotReal;
 
 private:
 
@@ -103,11 +108,6 @@ private:
     ros::Publisher sendGoal_pub_;
     
     ros::Subscriber sub_navigation_fb_;
-    
-
-    
-    
-    
 };
 
 #endif

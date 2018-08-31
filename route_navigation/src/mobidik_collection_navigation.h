@@ -17,6 +17,8 @@
 #include <ed/world_model.h>
 #include <ed/update_request.h>
 #include <ed/entity.h>
+#include "ed/featureProperties_info.h"
+#include "demo_navigation.h"
 
 #include "simplified_world_model.h"
 #include "route_navigation_defines.h"
@@ -28,8 +30,6 @@
 #include <geolib/ros/tf_conversions.h>
 #include <geolib/Shape.h>
 #include <math.h>
-
-
 
 #define WAYP_MOBID_COLL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_COLL_REACHED_DIST 0.1 // [m]
@@ -48,6 +48,8 @@
 #define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 0.5 // [m]
 #define DIST_DISCONNECT_MOBID_RELEASE 0.1 // [m]
 
+#define DIST_CONN_SIM 0.1 //[m]
+
 class MobidikCollection
 {
 
@@ -57,7 +59,6 @@ class MobidikCollection
            MOBID_COLL_NAV_BUSY,
            MOBID_COLL_FIND_MOBIDIK,
            MOBID_COLL_FIND_SETPOINT_FRONT,
-           MOBID_COLL_ROTATE_IN_FRONT,
            MOBID_COLL_NAV_GOTOPOINT,
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
@@ -82,6 +83,8 @@ class MobidikCollection
     MobidikCollection();
     
     ~MobidikCollection();
+    
+    ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
 
     bool getMobidik(visualization_msgs::MarkerArray markerArray, visualization_msgs::Marker *marker) ;
 
@@ -89,6 +92,8 @@ class MobidikCollection
     void wrap(T *angle);
 
     void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
+    
+    bool getMobidikPosition( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *mobidikPose );
     
     void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
@@ -110,11 +115,9 @@ class MobidikCollection
     
     void initNavState();
     
-    void initRelState();
-    
     bool isWaypointAchieved();
      
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal);
     
     void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik );
     
@@ -152,6 +155,8 @@ class MobidikCollection
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
     
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
+   
+
 };
 
 

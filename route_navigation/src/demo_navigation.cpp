@@ -125,6 +125,19 @@ RopodNavigation::~RopodNavigation()
 {
 }
 
+std::string RopodNavigation::GetEnv( const std::string & var ) 
+{
+     const char * val = std::getenv( var.c_str() );
+     if ( val == 0 ) 
+     {
+         return "";
+         ROS_ERROR("ROBOT_REAL variable not set. ");
+     }
+     else 
+     {
+         return val;
+     }
+}
 
 void RopodNavigation::initialize ( ed::InitData& init )
 {
@@ -179,6 +192,13 @@ void RopodNavigation::initialize ( ed::InitData& init )
 //     }
 
     send_goal_ = false;
+    
+    std::string robotReal_str = GetEnv("ROBOT_REAL");  
+    robotReal = (robotReal_str.compare( "true" ) == 0);
+    
+    init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featurePropertiesKey, new FeaturPropertiesInfo );
+    
+    ROS_WARN("Robot running in simulation mode");
 
     // Wait for route to be published
     ROS_INFO ( "Wait for route" );
@@ -295,7 +315,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         
     case NAVTYPE_MOBIDIK_COLLECTION:
          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
-        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode, cmd_vel_pub_, bumperWrenches);
+        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode, cmd_vel_pub_, bumperWrenches, robotReal);
        std::cout << "demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
         std::cout << "send_goal_ = " << send_goal_ << std::endl;
         if ( send_goal_ )
