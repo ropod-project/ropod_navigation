@@ -471,8 +471,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 //             break;
         /*************************************/
 
-        cmv_vel_pub.publish ( output_vel );
-
         touched = false;
         bumperWrenchesVector_.push_back ( bumperWrenches );
         if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
@@ -490,6 +488,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
                 controlMode->data = ropodNavigation::LLC_DOCKING;
                 output_vel.linear.x = -BACKWARD_VEL_DOCKING;
+                cmv_vel_pub.publish ( output_vel );
 
                 avgForce = 0.0;
                 avgTorque = 0.0;
