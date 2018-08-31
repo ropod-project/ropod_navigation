@@ -150,7 +150,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
 
     n.param<std::string> ( "move_base_server", moveBaseServerName, "/move_base" );
     n.param<std::string> ( "move_base_feedback_topic", navigationFeedbackTopic, "/maneuver_navigation/feedback" );
-    n.param<std::string> ( "move_base_cancel_topic", navigationCancelTopic, "/move_base/cancel" );
+
     
     sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
@@ -169,7 +169,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     
     sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
-    sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/goal", 1);
+    sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/simple_goal", 1);
+    mn_sendGoal_pub_ = n.advertise<maneuver_navigation::Goal> ("/route_navigation/goal", 1);
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
            
 
@@ -179,7 +180,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     mobidikConnected.data = false;
     
-    movbase_cancel_pub_ = n.advertise<actionlib_msgs::GoalID> ( navigationCancelTopic, 1 );
+    movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
     ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/progress", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
@@ -235,11 +236,10 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         else if ( action_msg.type == "ENTER_ELEVATOR" )
         {
                  ROS_INFO("Enter elevator action set");
-            // here we need to extract the two navigation poses to enter elevator
-            // and pass it to elevator_navigation
-            // geometry_msgs::PoseStamped p = getElevatorPoseFromWorldModel(floor id?)
-//            elevator_navigation.startNavigation(simple_wm.elevator1,path_msg);
+           
             active_nav = NAVTYPE_ELEVATOR;
+            areaID = action_msg.areas[0].area_id; // Get ID of elevator area
+            elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
         }
          else if ( action_msg.type == "COLLECT_MOBIDIK" ) // TODO: integrated in the CCU!?
         {
@@ -291,6 +291,8 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     
     TaskFeedbackCcu nav_state;
     
+    bool send_mn_goal_ = false;
+    
 //     std::cout << "Before state-machine: demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
 //     std::cout << "active nav = " << active_nav << std::endl;
     
@@ -300,12 +302,12 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
     case NAVTYPE_WAYPOINT:
          ROS_INFO("NAV_WAYPOINT");
-        nav_state = waypoint_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_ );
+        nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
         break;
 
     case NAVTYPE_ELEVATOR:
          ROS_INFO("NAV_ELEVATOR");
-        nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, simple_wm.elevator1, door_status );
+        nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, door_status );
         if ( nav_state.fb_nav == NAV_DONE )
         {
             active_nav = NAVTYPE_NONE;
@@ -395,6 +397,10 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // Send navigation command
     if ( send_goal_ )
          sendGoal_pub_.publish(goal_.target_pose); //ac_->sendGoal ( goal_ );
+    if (send_mn_goal_)
+        mn_sendGoal_pub_.publish(mn_goal_);
+         
+    
     
 //     std::cout << "active nav after sending goal = " << active_nav << std::endl;
     ObjectMarkers_pub_.publish( markerArray );

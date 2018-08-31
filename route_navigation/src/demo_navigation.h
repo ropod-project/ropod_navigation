@@ -28,11 +28,11 @@
 #include "route_navigation_defines.h"
 #include "mobidik_collection_navigation.h"
 
-/* Simple world model */
-#include "simplified_world_model.h"
-
 #include <ed/plugin.h>
 #include "ed/featureProperties_info.h"
+#include <maneuver_navigation/Goal.h>
+#include <maneuver_navigation/Configuration.h>
+#include <maneuver_navigation/Feedback.h>
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -101,11 +101,17 @@ private:
 
     move_base_msgs::MoveBaseGoal goal_;
     
+    maneuver_navigation::Goal mn_goal_;
+    
+    maneuver_navigation::Feedback mn_feedback_;    
+    
     bool send_goal_;
     
     ros::Subscriber sub_model_med_commands_;
     
     ros::Publisher sendGoal_pub_;
+    
+    ros::Publisher mn_sendGoal_pub_;
     
     ros::Subscriber sub_navigation_fb_;
 };

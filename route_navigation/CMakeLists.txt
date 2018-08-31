@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   ed
+  maneuver_navigation
 )
 
 ## System dependencies are found with CMake's conventions

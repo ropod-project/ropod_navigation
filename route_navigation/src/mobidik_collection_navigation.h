@@ -142,7 +142,7 @@ class MobidikCollection
     
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
-    actionlib_msgs::GoalID emptyGoalID_;
+    std_msgs::Bool true_bool_msg_;
     move_base_msgs::MoveBaseGoal goal_;
     ros::Time stamp_start_;
     ros::Duration stamp_wait_;
