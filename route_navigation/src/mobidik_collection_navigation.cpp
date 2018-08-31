@@ -4,7 +4,7 @@
 /*--------------------------------------------------------*/
 MobidikCollection::MobidikCollection()
 {
-
+    true_bool_msg_.data = true;
 };
 
 /*--------------------------------------------------------*/
@@ -601,7 +601,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         ROS_INFO("Navigation done");
         tfb_nav.fb_nav = NAV_DONE;
         stopNavigation();
-        movbase_cancel_pub.publish(emptyGoalID_);
+        movbase_cancel_pub.publish(true_bool_msg_);
         nav_next_state_ = MOBID_COLL_NAV_IDLE;
         break;
 
@@ -616,7 +616,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             ROS_INFO("MOBID_COLL_NAV_PAUSED");
         if(nav_paused_req_)
         {
-            movbase_cancel_pub.publish(emptyGoalID_);
+            movbase_cancel_pub.publish(true_bool_msg_);
             nav_paused_req_ = false;
         }
         break;
@@ -846,7 +846,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         tfb_nav.fb_nav = NAV_DONE;
         controlMode->data = ropodNavigation::LLC_NORMAL;
         stopNavigation();
-        movbase_cancel_pub.publish ( emptyGoalID_ );
+        movbase_cancel_pub.publish ( true_bool_msg_ );
         nav_next_state_release_ = MOBID_COLL_NAV_IDLE;
         break;
 
@@ -861,7 +861,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         ROS_INFO ( "MOBID_REL_NAV_PAUSED" );
         if ( nav_paused_req_ )
         {
-            movbase_cancel_pub.publish ( emptyGoalID_ );
+            movbase_cancel_pub.publish ( true_bool_msg_ );
             nav_paused_req_ = false;
         }
         break;

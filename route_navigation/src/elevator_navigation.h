@@ -7,6 +7,7 @@
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <std_msgs/Bool.h>
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
 #include <string>
@@ -59,8 +60,8 @@ public:
     int nav_next_state_wp;
     geometry_msgs::PoseStamped::ConstPtr base_position;
     tf::Transform base_positiontf_;
-    tf::Transform waypoint_tf_;
-    actionlib_msgs::GoalID emptyGoalID;
+    tf::Transform waypoint_tf_;    
+    std_msgs::Bool true_boool_msg;
     move_base_msgs::MoveBaseGoal goal;
     ros::Time stamp_start;
     ros::Duration stamp_wait;
@@ -79,8 +80,9 @@ public:
     bool isPositionValid();
     bool isWaypointAchieved();
     bool checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status);
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
         bool& sendgoal, ropod_ros_msgs::ropod_door_detection door_status);
+    
     
 private:
     wm::Elevator elevator;

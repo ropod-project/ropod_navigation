@@ -3,7 +3,7 @@
 /*--------------------------------------------------------*/
 ElevatorNavigation::ElevatorNavigation()
 {
-
+    true_boool_msg.data = true;
 };
 
 /*--------------------------------------------------------*/
@@ -199,8 +199,7 @@ bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::ropod_door_detection do
 }
 
 /*--------------------------------------------------------*/
-
-TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
+TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
         bool& sendgoal, ropod_ros_msgs::ropod_door_detection door_status)
 {
     TaskFeedbackCcu tfb_nav;
@@ -308,7 +307,7 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &m
         ROS_INFO("Navigation done");
         tfb_nav.fb_nav = NAV_DONE;
         stopNavigation();
-        movbase_cancel_pub.publish(emptyGoalID);
+        navigation_cancel_pub.publish(true_boool_msg);
         nav_next_state = ELEV_NAV_IDLE;
         break;
 
@@ -321,7 +320,7 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &m
     case ELEV_NAV_PAUSED: // this state is reached via a callback
         if(nav_paused_req)
         {
-            movbase_cancel_pub.publish(emptyGoalID);
+            navigation_cancel_pub.publish(true_boool_msg);
             nav_paused_req = false;
         }
         break;

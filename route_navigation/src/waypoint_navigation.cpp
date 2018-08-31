@@ -3,7 +3,7 @@
 /*--------------------------------------------------------*/
 WaypointNavigation::WaypointNavigation()
 {
-
+    true_bool_msg_.data = true;
     resetNavigation();
 };
 
@@ -184,7 +184,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
         tfb_nav.fb_nav = NAV_DONE;
         ROS_INFO("Navigation done");
         stopNavigation();
-        movbase_cancel_pub.publish(emptyGoalID);
+        movbase_cancel_pub.publish(true_bool_msg_);
         nav_next_state = WAYP_NAV_IDLE;	
         break;
 	
@@ -197,7 +197,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &m
     case WAYP_NAV_PAUSED: // this state is reached via a callback
         if (nav_paused_req) 
         {
-            movbase_cancel_pub.publish(emptyGoalID);
+            movbase_cancel_pub.publish(true_bool_msg_);
             nav_paused_req = false;
         }
         break;

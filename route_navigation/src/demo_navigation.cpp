@@ -137,7 +137,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
 
     n.param<std::string> ( "move_base_server", moveBaseServerName, "/move_base" );
     n.param<std::string> ( "move_base_feedback_topic", navigationFeedbackTopic, "/maneuver_navigation/feedback" );
-    n.param<std::string> ( "move_base_cancel_topic", navigationCancelTopic, "/move_base/cancel" );
+
     
     sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
@@ -166,7 +166,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
     mobidikConnected.data = false;
     
-    movbase_cancel_pub_ = n.advertise<actionlib_msgs::GoalID> ( navigationCancelTopic, 1 );
+    movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
     ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/progress", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
