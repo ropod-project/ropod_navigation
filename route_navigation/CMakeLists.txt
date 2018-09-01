@@ -114,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ropod_demo_dec_2017
-  CATKIN_DEPENDS message_generation  geometry_msgs   actionlib  move_base_msgs    nav_msgs  ropod_ros_msgs  roscpp  tf
+  CATKIN_DEPENDS message_generation  geometry_msgs   actionlib  move_base_msgs  nav_msgs  ropod_ros_msgs  roscpp  tf
 #  DEPENDS system_lib
 )
 

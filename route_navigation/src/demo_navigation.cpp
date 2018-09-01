@@ -13,7 +13,6 @@ std::string areaID;
 
 int active_nav = RopodNavigation::NAVTYPE_NONE;
 bool action_msg_received = false;
-bool prepare_next_loc = false;
 std_msgs::Bool mobidikConnected;
 ropod_ros_msgs::Action action_msg;
 ropod_ros_msgs::Action action_msg_rec;
@@ -278,7 +277,8 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                     waypoint_ids_.push_back ( curr_wayp->semantic_id );
                 }
             }
-            waypoint_navigation.startNavigation ( path_msg_ );
+           // waypoint_navigation.startNavigation ( path_msg_ );
+            waypoint_navigation.startNavigation(robot_action_msg.navigation_areas);
             active_nav = NAVTYPE_WAYPOINT;
         }
         else 
@@ -301,22 +301,21 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     {
 
     case NAVTYPE_WAYPOINT:
-         ROS_INFO("NAV_WAYPOINT");
+//          ROS_INFO("NAV_WAYPOINT");
         nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
         break;
 
     case NAVTYPE_ELEVATOR:
-         ROS_INFO("NAV_ELEVATOR");
+//          ROS_INFO("NAV_ELEVATOR");
         nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, door_status );
         if ( nav_state.fb_nav == NAV_DONE )
         {
             active_nav = NAVTYPE_NONE;
-            prepare_next_loc = true;
         }
         break;
         
     case NAVTYPE_MOBIDIK_COLLECTION:
-         ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
+//          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
         nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode, cmd_vel_pub_, bumperWrenches, robotReal);
        std::cout << "demo navigation.cpp: nav_state.fb_nav = " << nav_state.fb_nav << std::endl;
         std::cout << "send_goal_ = " << send_goal_ << std::endl;
@@ -336,7 +335,6 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
             active_nav = NAVTYPE_NONE;
-            prepare_next_loc = true;
             mobidikConnected.data = true;
         }
         break;
@@ -351,9 +349,8 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // TODO: how to properly give feedback when taking elevator since waypoints are not fixed? e.g. multiple possible waiting areas outside elevator
     if ( nav_state.fb_nav == NAV_DONE )
     {
-        ROS_INFO ( "NAV_ELEVATOR/MOBIDIK DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
+        ROS_INFO ( "NAV DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
         active_nav = NAVTYPE_NONE;
-        prepare_next_loc = true;
     }
     else if ( nav_state.fb_nav == NAV_WAYPOINT_DONE )
     {

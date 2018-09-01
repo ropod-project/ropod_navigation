@@ -10,6 +10,9 @@
 #include <tf/transform_datatypes.h>
 #include <string>
 
+#include <ropod_ros_msgs/NavigationArea.h>
+#include <ropod_ros_msgs/Waypoint.h>
+
 #include <maneuver_navigation/Goal.h>
 #include <maneuver_navigation/Configuration.h>
 #include <maneuver_navigation/Feedback.h>
@@ -39,7 +42,14 @@ class WaypointNavigation
 
 public:
     nav_msgs::Path planned_route;
-    int planned_route_size;
+    std::vector<ropod_ros_msgs::NavigationArea> planned_full_route;
+    std::vector<ropod_ros_msgs::NavigationArea>::const_iterator curr_nav_area;
+    std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_nav_waypoint;
+    std::vector<ropod_ros_msgs::Waypoint>::const_iterator prev_nav_waypoint;
+    maneuver_navigation::Configuration nav_configuration;
+    bool change_of_area;
+    bool last_area_loaded;
+    bool last_waypoint_loaded;
     bool route_busy;
     bool nav_paused_req;
     int waypoint_cnt;
@@ -55,8 +65,7 @@ public:
 
     WaypointNavigation();
     ~WaypointNavigation();
-
-    void startNavigation(nav_msgs::Path Pathmsg);
+    void startNavigation(std::vector<ropod_ros_msgs::NavigationArea>& navigation_areas_plan_msg);
     void pauseNavigation();
     void resumeNavigation();
     void resetNavigation();
@@ -65,9 +74,9 @@ public:
     bool isWaypointAchieved(const geometry_msgs::PoseStamped &goal);
     bool isLastWaypoint();
 
-    geometry_msgs::Pose getNextWaypoint(void);
+    bool getNextWaypoint(maneuver_navigation::Goal &mn_goal);
 
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal_, maneuver_navigation::Feedback &mn_feedback_, bool& sendgoal);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, maneuver_navigation::Feedback &mn_feedback, bool& sendgoal);
 private:
 };
 
