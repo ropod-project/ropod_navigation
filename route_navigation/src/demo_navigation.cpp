@@ -324,9 +324,16 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         if ( nav_state.fb_nav == NAV_DONE )
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
-            active_nav = NAVTYPE_NONE;
-            mobidikConnected_ = true;
+            active_nav = NAVTYPE_NONE;      
         }
+        
+        if ( nav_state.fb_nav == NAV_DOCKED )
+        {
+                ROS_INFO("nav_state.fb_nav == NAV_DOCKED");
+            mobidikConnected_ = true;
+            mobidikConnected.data = mobidikConnected_;
+            loadAttachedSet_pub_.publish(mobidikConnected);            
+        }        
         break;
 
         
@@ -338,9 +345,15 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
             active_nav = NAVTYPE_NONE;
-            mobidikConnected_ = false;
 
         }
+        if ( nav_state.fb_nav == NAV_UNDOCKED )
+        {
+                ROS_INFO("nav_state.fb_nav == NAV_UNDOCKED");
+            mobidikConnected_ = false;
+            mobidikConnected.data = mobidikConnected_;
+            loadAttachedSet_pub_.publish(mobidikConnected);            
+        }          
         break;
 
 
@@ -409,9 +422,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     
     ObjectMarkers_pub_.publish( markerArray );
     LLCmodeSet_pub_.publish(controlMode_);
-    
-    mobidikConnected.data = mobidikConnected_;
-    loadAttachedSet_pub_.publish(mobidikConnected);
+        
 
 }
 

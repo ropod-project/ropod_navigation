@@ -400,6 +400,9 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     float avgForce, avgTorque;
     bool touched, forceCheck, torqueCheck;
     
+    tf::Pose base_position_pose;
+    double robot_yaw;
+    
     visualization_msgs::Marker points, line_strip, line_list;
     points.header.frame_id = line_strip.header.frame_id = line_list.header.frame_id = "/map";
     points.header.stamp = line_strip.header.stamp = line_list.header.stamp = ros::Time::now();
@@ -446,6 +449,11 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         
     case MOBID_COLL_FIND_MOBIDIK:
             ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
+            
+            // Configure holonomic robot to move more accurately towards target
+            system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.5 &");
+            system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_nh 0 &");
+            system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_forward_drive 0 &");
 
             if( getMobidik(markerArray,  &marker)  ) // Assumption: there is only 1 mobidik available at the moment
             {           
@@ -559,8 +567,11 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         {
             if ( ! robotReal )
             {
-                nav_next_state_  = MOBID_COLL_NAV_DONE;
+                tfb_nav.fb_nav = NAV_DOCKED;
+                nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
                 bumperWrenchesVector_.clear();
+                stamp_start_ = ros::Time::now();
+                stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
                 ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be connected now." );
                 break;
             }
@@ -606,9 +617,27 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
         if ( touched )
         {
-            nav_next_state_  = MOBID_COLL_NAV_DONE;
+            // Docking done!
+            tfb_nav.fb_nav = NAV_DOCKED;
+            nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
             bumperWrenchesVector_.clear();
+            stamp_start_ = ros::Time::now();
+            stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
         }
+        break;
+        
+    case MOBID_COLL_NAV_EXIT_COLLECT_AREA:
+            ROS_INFO("MOBID_COLL_NAV_EXIT_COLLECT_AREA");
+        if( ros::Time::now() - stamp_start_< stamp_wait_)    
+            break;
+        // For now just move a bit forward. Later the mobidik should exit the rail area.
+        tf::poseMsgToTF(base_position_->pose,base_position_pose);
+        robot_yaw = tf::getYaw(base_position_pose.getRotation());
+        goal_.target_pose.pose = base_position_->pose;
+        goal_.target_pose.pose.position.x += DIST_MOVE_FRONT_POSTDOCKING*std::cos(robot_yaw);
+        goal_.target_pose.pose.position.y += DIST_MOVE_FRONT_POSTDOCKING*std::sin(robot_yaw);
+        nav_next_state_wp_ = MOBID_COLL_NAV_DONE;
+        nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;      
         break;
 
     case MOBID_COLL_NAV_GOTOPOINT:
@@ -651,7 +680,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     case MOBID_COLL_NAV_DONE: //
             ROS_INFO("MOBID_COLL_NAV_DONE");
         ROS_INFO("Navigation done");
-        tfb_nav.fb_nav = NAV_DONE;
+        tfb_nav.fb_nav = NAV_DONE;        
         stopNavigation();
         movbase_cancel_pub.publish(true_bool_msg_);
         nav_next_state_ = MOBID_COLL_NAV_IDLE;
@@ -872,15 +901,22 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         }
         
         if ( touched )
-        {
-            point2goal(&disconnectSetpoint_);            
+        {                 
             *mobidikConnected = false;
-
-            nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
-            nav_next_state_wp_release_ = MOBID_REL_ROTATE;
+            tfb_nav.fb_nav = NAV_UNDOCKED;
+            nav_next_state_release_ = MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT;
+            stamp_start_ = ros::Time::now();
+            stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
             controlMode->data = ropodNavigation::LLC_VEL;
         }
         
+        break;
+    case MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT:
+        if( ros::Time() - stamp_start_ < stamp_wait_ )
+            break;
+        point2goal(&disconnectSetpoint_);       
+        nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+        nav_next_state_wp_release_ = MOBID_REL_ROTATE;
         break;
         
     case MOBID_REL_ROTATE: // TODO should be removed: rotating now done to measure the environment again, while we actually know that we just disconnected the mobidik

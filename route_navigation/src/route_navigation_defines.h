@@ -16,6 +16,8 @@ enum
     NAV_GETPOINT,
     NAV_GOTOPOINT,
     NAV_WAYPOINT_DONE,
+    NAV_DOCKED,
+    NAV_UNDOCKED,
     NAV_DONE
 };
 

@@ -50,6 +50,9 @@
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
 #define DIST_CONN_SIM 0.1 //[m]
 
+#define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
+#define TIME_WAIT_CHANGE_OF_FOOTPRINT 0.5 //[s]
+
 class MobidikCollection
 {
 
@@ -63,6 +66,7 @@ class MobidikCollection
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
            MOBID_COLL_NAV_COUPLING,
+           MOBID_COLL_NAV_EXIT_COLLECT_AREA,
            MOBID_COLL_NAV_DONE           
          };
          
@@ -74,6 +78,7 @@ class MobidikCollection
            MOBID_REL_NAV_GOTOPOINT,
            MOBID_REL_NAV_BUSY,
            MOBID_REL_NAV_WAYPOINT_DONE,
+           MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT,
            MOBID_REL_NAV_DONE,
            MOBID_REL_NAV_HOLD,
            MOBID_REL_NAV_PAUSED         
