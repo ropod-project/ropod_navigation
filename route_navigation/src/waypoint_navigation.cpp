@@ -153,6 +153,9 @@ bool WaypointNavigation::isLastWaypoint()
 
 bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
 {    
+
+    
+    
     if(last_waypoint_loaded)
         return false;
     
@@ -165,10 +168,28 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
             // Later we can create a maneuver that takes care of that
             // TODO: Important. Docking navigation should put a waypoint in front to avoid colliding when turning.In any case, when in a rail, the docking navigation should take care
             // of leaving the docking area in a proper way. Or this can be put as part of the semantic behavior around those areas.
-            mn_goal.goal.pose = curr_nav_waypoint->waypoint_pose;
-            mn_goal.start.pose.position = base_position->pose.position;
-            mn_goal.start.pose.orientation = mn_goal.goal.pose.orientation;
-            ROS_INFO("Load first waypoint");
+            tf::Pose base_position_TF;
+            tf::Pose goal_TF;
+            tf::poseMsgToTF(base_position->pose,base_position_TF);
+            tf::poseMsgToTF(curr_nav_waypoint->waypoint_pose,goal_TF);
+            
+            tf::Transform diff_tf = base_position_TF.inverseTimes(goal_TF);
+            
+            if(fabs(diff_tf.getRotation().getAngle()) > GOAL_REACHED_ANG)
+            {
+                mn_goal.start.pose = base_position->pose;
+                mn_goal.goal.pose.position = base_position->pose.position;
+                mn_goal.goal.pose.orientation = curr_nav_waypoint->waypoint_pose.orientation;  
+                return true;
+                
+            }
+            else
+            {
+                mn_goal.goal.pose = curr_nav_waypoint->waypoint_pose;
+                mn_goal.start.pose.position = base_position->pose.position;
+                mn_goal.start.pose.orientation = mn_goal.goal.pose.orientation;                
+            }                        
+            
         }
         else
         {
@@ -251,19 +272,15 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &n
     case WAYP_NAV_GETPOINT: //we'll send the the next goal to the robot
         //mn_goal.goal.pose = getNextWaypoint();	
         getNextWaypoint(mn_goal);        
-        nav_next_state = WAYP_NAV_GOTOPOINT;
-        break;
-	
-    case WAYP_NAV_GOTOPOINT:
         mn_goal.goal.header.frame_id = "map";
         mn_goal.goal.header.stamp = ros::Time::now();
         mn_goal.start.header.frame_id = "map";
         mn_goal.start.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
-        sendgoal = true;	
-	tfb_nav.fb_nav = NAV_GOTOPOINT;
+        sendgoal = true;        
+        tfb_nav.fb_nav = NAV_GOTOPOINT;
         nav_next_state = WAYP_NAV_BUSY;
-        break;
+        break;        	    
 	
     case WAYP_NAV_BUSY: //
         if (!isPositionValid()) 
@@ -272,16 +289,13 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &n
             break;
         }
         if (isWaypointAchieved(mn_goal.goal))
-            nav_next_state = WAYP_NAV_WAYPOINT_DONE;
-        break;
-	
-    case WAYP_NAV_WAYPOINT_DONE: //
-        tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
-        if (isLastWaypoint())
-            nav_next_state = WAYP_NAV_DONE;
-        else
-            nav_next_state = WAYP_NAV_GETPOINT;
-	
+        {
+            tfb_nav.fb_nav = NAV_WAYPOINT_DONE;
+            if (isLastWaypoint())
+                nav_next_state = WAYP_NAV_DONE;
+            else
+                nav_next_state = WAYP_NAV_GETPOINT;         
+        }        
         break;
 	
     case WAYP_NAV_DONE: //

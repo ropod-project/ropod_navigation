@@ -4,6 +4,44 @@ type: 'GOTO'
 navigation_areas: 
   - 
     area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Opposite_Hallway_AL_RL_doors_CW'
+    type: 'Corridor'
+    waypoints:
+      - 
+        semantic_id: 'test-semantic_id-1'
+        area_id: 'test-area_id-1'
+        floor_number: 0
+        waypoint_pose: 
+            position: 
+                x: 10.5979862213
+                y: 7.00600481033
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.117797618108
+                w: 0.993037623239
+  - 
+    area_id: '1d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Intersection_ALcorridor_NOdoor'
+    type: 'Intersection'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-2'
+          area_id: 'test-area_id-2'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 11.5537433624
+                y: 6.32479286194
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.561771290222
+                w: 0.827292582755
+  - 
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
     name: 'ParallerlAL_RL_CW'
     type: 'Corridor'
     waypoints:
