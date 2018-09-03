@@ -165,7 +165,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     wrenchRight_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_right", 10, wrenchRightCallback );
     
     LLCmodeSet_pub_ = n.advertise<std_msgs::UInt16> ( "/ropod/Set_LLCmode", 1 );
-    loadAttachedSet_pub_ = n.advertise<std_msgs::Bool> ( "/ropod/Set_load_attached", 1 );
+    loadAttachedSet_pub_ = n.advertise<std_msgs::Bool> ( "/route_navigation/set_load_attached", 1 );
     
     sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
     sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/simple_goal", 1);
@@ -339,6 +339,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
             active_nav = NAVTYPE_NONE;
             mobidikConnected_ = false;
+
         }
         break;
 
@@ -411,6 +412,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     
     mobidikConnected.data = mobidikConnected_;
     loadAttachedSet_pub_.publish(mobidikConnected);
+
 }
 
 ED_REGISTER_PLUGIN(RopodNavigation)
