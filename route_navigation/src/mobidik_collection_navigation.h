@@ -46,8 +46,8 @@
 #define MAX_TORQUE_TOUCHED 3 // [Nm]
 
 #define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 0.5 // [m]
-#define DIST_DISCONNECT_MOBID_RELEASE 0.1 // [m]
-
+#define DIST_DISCONNECT_MOBID_RELEASE (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) + 0.2) // [m]
+// #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
 #define DIST_CONN_SIM 0.1 //[m]
 
 class MobidikCollection
@@ -68,8 +68,9 @@ class MobidikCollection
          
     enum { MOBID_REL_NAV_IDLE = 0,
            MOBID_REL_GET_SETPOINT_FRONT,
-           MOBID_REL_GET_FINAL_MOBIDIK_POS,
+           MOBID_REL_GOTO_FINAL_MOBIDIK_POS,
            MOBID_REL_DECOUPLING,
+           MOBID_REL_ROTATE,
            MOBID_REL_NAV_GOTOPOINT,
            MOBID_REL_NAV_BUSY,
            MOBID_REL_NAV_WAYPOINT_DONE,
@@ -115,13 +116,17 @@ class MobidikCollection
     
     void initNavState();
     
+    void initNavStateRelease();
+    
     bool isWaypointAchieved();
      
     TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal);
     
-    void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik );
+    void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik, visualization_msgs::Marker* points );
     
-    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected);
+    void point2goal(geo::Pose3D *setpoint);
+    
+    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected, const bool robotReal);    
     
     geometry_msgs::PoseStamped::ConstPtr base_position_;
     
@@ -155,6 +160,8 @@ class MobidikCollection
     ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
     
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
+    
+    geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
    
 
 };

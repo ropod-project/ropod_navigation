@@ -301,6 +301,16 @@ void MobidikCollection::initNavState()
         initAvgWrench(&avgWrenches_.right);
 }
 
+void MobidikCollection::initNavStateRelease()
+{
+        nav_state_release_ = MOBID_REL_GET_SETPOINT_FRONT;
+        avgWrenchesDetermined_ = false;
+        initAvgWrench(&avgWrenches_.front);
+        initAvgWrench(&avgWrenches_.left);
+        initAvgWrench(&avgWrenches_.back);
+        initAvgWrench(&avgWrenches_.right);
+}
+
 geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector)
 {
         float sumForcex = 0.0, sumForcey = 0.0, sumForcez = 0.0, sumTorquex = 0.0, sumTorquey = 0.0, sumTorquez = 0.0;
@@ -432,11 +442,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     case MOBID_COLL_NAV_IDLE: // No waypoints received yet.
         tfb_nav.fb_nav = NAV_IDLE;
         ROS_INFO("NAV_IDLE");
-//         if (route_busy_ == true)
-//         {
-//              nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-//             ROS_INFO("Waiting for door");
-//         }
         break;
         
     case MOBID_COLL_FIND_MOBIDIK:
@@ -458,13 +463,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     case MOBID_COLL_FIND_SETPOINT_FRONT:
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
             getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
-            goal_.target_pose.pose.position.x = setpoint_.getOrigin().getX();
-            goal_.target_pose.pose.position.y = setpoint_.getOrigin().getY();
-            goal_.target_pose.pose.position.z = setpoint_.getOrigin().getZ();            
-            goal_.target_pose.pose.orientation.x = setpoint_.getQuaternion().getX();
-            goal_.target_pose.pose.orientation.y = setpoint_.getQuaternion().getY();
-            goal_.target_pose.pose.orientation.z = setpoint_.getQuaternion().getZ();
-            goal_.target_pose.pose.orientation.w = setpoint_.getQuaternion().getW();
+            point2goal(&setpoint_);
+            
             markerArraytest->markers.push_back ( points );
 
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
@@ -566,8 +566,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             }
 
             nav_next_state_  = MOBID_COLL_NAV_COUPLING;
-//              bumperWrenchesVector_.clear();
-
         }
 
         break;
@@ -645,6 +643,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     case MOBID_COLL_NAV_WAYPOINT_DONE: //
             ROS_INFO("MOBID_COLL_NAV_DONE");
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
+        controlMode->data = ropodNavigation::LLC_NORMAL;
         nav_next_state_ = nav_next_state_wp_;
 
         break;
@@ -686,129 +685,148 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 }
 
 
-void MobidikCollection::getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik )
+void MobidikCollection::getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik, visualization_msgs::Marker* points )
 {
-    for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
+    std::string orientationWPID = "orient_wp_" +  mobidikAreaID;
+    for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it ) // find corresponding orientation
     {
         const ed::EntityConstPtr& e = *it;
-
-        if ( mobidikAreaID.compare ( e.get()->id().str() )  == 0 ) // Correct mobidikarea found
+        if ( orientationWPID.compare ( e.get()->id().str() ) == 0 ) // function returns 0 if strings are equal
         {
-            // It is assumed here that there is a navigation task, so only points on the ground are taken into consideration
+            geo::Pose3D poseWP = e.get()->pose();
+            geo::Quaternion rotationWP = poseWP.getQuaternion();
 
-            std::vector<geo::Vector3> points = e.get()->shape().get()->getMesh().getPoints();
-            std::vector<geo::Vector3> groundPoints;
-            const geo::Vec3T<double> pose = e.get()->pose().getOrigin();
+            tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
+            tf::Matrix3x3 matrix ( q );
+            double WP_roll, WP_pitch, WP_yaw;
+            matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
 
-            float sumX = 0;
-            float sumY = 0;
-            for ( unsigned int iPoints = 0; iPoints < points.size(); iPoints++ )
-            {
+            geo::Mat3 rotation;
+            rotation.setRPY ( WP_roll, WP_pitch, WP_yaw );
 
-                if ( points[iPoints].getZ() == 0 )
-                {
-                    sumX+= points[iPoints].getX();
-                    sumY+= points[iPoints].getY();
-                }
-            }
-            double centerX = sumX / points.size();
-            double centerY = sumY / points.size();
-            
-            geo::Vec3d originMobidik ( centerX, centerY, 0.0 ); // Assumption: mobidikArea's are rectangular, so the centerpoint is always within the mobidik-area
+            geo::Vec3d finalPosMobidik ( poseWP.getOrigin().getX(), poseWP.getOrigin().getY(), 0.0 );
+            mobidikPosition->setOrigin ( finalPosMobidik );
+            mobidikPosition->setBasis ( rotation );
 
-            std::string orientationWPID = "orient_wp_" +  mobidikAreaID;
-            for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it ) // find corresponding orientation 
-            {
-                const ed::EntityConstPtr& e = *it;
-                if ( orientationWPID.compare ( e.get()->id().str() ) == 0 ) // function returns 0 if strings are equal
-                {
-                    geo::Pose3D poseWP = e.get()->pose();
-                    geo::Quaternion rotationWP = poseWP.getQuaternion();
 
-                    tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
-                    tf::Matrix3x3 matrix ( q );
-                    double WP_roll, WP_pitch, WP_yaw;
-                    matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
+            geo::Vec3d originInFrontOfMobidik ( mobidikPosition->getOrigin().getX() + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *cos ( WP_yaw ), mobidikPosition->getOrigin().getY() + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *sin ( WP_yaw ), 0.0 );
+            setpointInFrontOfMobidik->setOrigin ( originInFrontOfMobidik );
+            setpointInFrontOfMobidik->setBasis ( rotation );
 
-                    geo::Mat3 rotation;
-                    rotation.setRPY ( WP_roll, WP_pitch, WP_yaw );
+            geo::Vec3d originAfterDisconnection ( mobidikPosition->getOrigin().getX() + DIST_DISCONNECT_MOBID_RELEASE *cos ( WP_yaw ), mobidikPosition->getOrigin().getY() + DIST_DISCONNECT_MOBID_RELEASE *sin ( WP_yaw ), 0.0 );
+            disconnectSetpoint->setOrigin ( originAfterDisconnection );
+            disconnectSetpoint->setBasis ( rotation );
 
-                    mobidikPosition->setOrigin( originMobidik );
-                    mobidikPosition->setBasis( rotation );
-                    
-                    geo::Vec3d originInFrontOfMobidik(centerX + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *cos(WP_yaw), centerY + DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE *sin(WP_yaw), 0.0);
-                    setpointInFrontOfMobidik->setOrigin( originInFrontOfMobidik );
-                    setpointInFrontOfMobidik->setBasis( rotation );
-                    
-                    geo::Vec3d originAfterDisconnection(centerX + DIST_DISCONNECT_MOBID_RELEASE *cos(WP_yaw), centerY + DIST_DISCONNECT_MOBID_RELEASE *sin(WP_yaw), 0.0);
-                    disconnectSetpoint->setOrigin( originAfterDisconnection );
-                    disconnectSetpoint->setBasis( rotation );
-                    return;
-                    
-                    
-                }
-            }            
+            geometry_msgs::Point p;
+            p.x = mobidikPosition->getOrigin().getX();
+            p.y = mobidikPosition->getOrigin().getY();
+            p.z= 0.0;
+            points->points.push_back ( p );
+
+            p.x = setpointInFrontOfMobidik->getOrigin().getX();
+            p.y = setpointInFrontOfMobidik->getOrigin().getY();
+            p.z= 0.0;
+            points->points.push_back ( p );
+
+            p.x = disconnectSetpoint->getOrigin().getX();
+            p.y = disconnectSetpoint->getOrigin().getY();
+            p.z= 0.0;
+            points->points.push_back ( p );
+            return;
         }
     }
-
+    
     return;
 }
 
-TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected )
+void MobidikCollection::point2goal(geo::Pose3D *setpoint)
+{
+        goal_.target_pose.pose.position.x = setpoint->getOrigin().getX();
+        goal_.target_pose.pose.position.y = setpoint->getOrigin().getY();
+        goal_.target_pose.pose.position.z = setpoint->getOrigin().getZ();
+        goal_.target_pose.pose.orientation.x = setpoint->getQuaternion().getX();
+        goal_.target_pose.pose.orientation.y = setpoint->getQuaternion().getY();
+        goal_.target_pose.pose.orientation.z = setpoint->getQuaternion().getZ();
+        goal_.target_pose.pose.orientation.w = setpoint->getQuaternion().getW();
+}
+
+TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,  const bool robotReal )
 {
     //TODO set controlmode in all the states
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
     tfb_nav.fb_nav = NAV_BUSY;
     sendgoal = false;
-    geo::Pose3D finalMobidikPosition, setpoint, disconnectSetpoint;
+    geo::Quaternion rotationWP;
+    geo::Pose3D rotationSetpoint;
     tf::Quaternion q;
+    tf::Matrix3x3 matrix;
+    double WP_roll, WP_pitch, WP_yaw;
+    geo::Mat3 rotation;
     geometry_msgs::Twist output_vel;
     bool touched;
     float avgForce;
+    
+    /* Just for visualisation purposes TODO to be removed */
+    visualization_msgs::Marker points, line_strip, line_list;
+    points.header.frame_id = line_strip.header.frame_id = line_list.header.frame_id = "/map";
+    points.header.stamp = line_strip.header.stamp = line_list.header.stamp = ros::Time::now();
+    points.ns = line_strip.ns = line_list.ns = "points_and_lines";
+    points.action = line_strip.action = line_list.action = visualization_msgs::Marker::ADD;
+    points.pose.orientation.w = line_strip.pose.orientation.w = line_list.pose.orientation.w = 1.0;
 
+    points.id = 0;
+    line_strip.id = 1;
+    line_list.id = 2;
+
+    points.type = visualization_msgs::Marker::POINTS;
+    line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+    line_list.type = visualization_msgs::Marker::LINE_LIST;
+    
+     // POINTS markers use x and y scale for width/height respectively
+    points.scale.x = 0.1;
+    points.scale.y = 0.1;
+
+    // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
+    line_strip.scale.x = 0.1;
+    line_list.scale.x = 0.1;
+
+    // Points are green
+    points.color.g = 1.0f;
+    points.color.a = 1.0;
+
+    // Line strip is blue
+    line_strip.color.b = 1.0;
+    line_strip.color.a = 1.0;
+
+    // Line list is red
+    line_list.color.r = 1.0;
+    line_list.color.a = 1.0;
+// ---------------------------------------------------------------------------
+    
     switch ( nav_state_release_ )
     {
 
     case MOBID_REL_NAV_IDLE: // No waypoints received yet.
         tfb_nav.fb_nav = NAV_IDLE;
         ROS_INFO ( "MOBID_REL_NAV_IDLE" );
-//         if (route_busy_ == true)
-//         {
-//              nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-//             ROS_INFO("Waiting for door");
-//         }
         break;
 
     case MOBID_REL_GET_SETPOINT_FRONT:
         ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
-        // getFinalMobidikPos(markerArray);
-        // navigate to final setpoint + offset to front
-        getFinalMobidikPos ( world, areaID, &finalMobidikPosition, &disconnectSetpoint, &setpoint );
+        getFinalMobidikPos ( world, areaID, &finalMobidikPosition_, &disconnectSetpoint_, &setpoint_, &points );
+        point2goal(&setpoint_);
 
-        goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
-        goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
-        goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
-        goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
-        goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
-        goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
-        goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
-
+        markerArraytest->markers.push_back( points );
+        
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
-        nav_next_state_wp_release_ = MOBID_REL_GET_FINAL_MOBIDIK_POS;
+        nav_next_state_wp_release_ = MOBID_REL_GOTO_FINAL_MOBIDIK_POS;
         break;
 
-    case MOBID_REL_GET_FINAL_MOBIDIK_POS:
+    case MOBID_REL_GOTO_FINAL_MOBIDIK_POS:
         ROS_INFO ( "MOBID_REL_GOTO_FINAL_MOBIDIK_POS" );
         // navigate to final setpoint
-        setpoint = finalMobidikPosition;
-        goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
-        goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
-        goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
-        goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
-        goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
-        goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
-        goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
+        point2goal(&finalMobidikPosition_);
 
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
         nav_next_state_wp_release_ = MOBID_REL_DECOUPLING;
@@ -820,41 +838,70 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         // Wait untill signal is given with force sensor at the front and go to the position which is slightly in front of the robot.
 
         touched = false;
-        bumperWrenchesVector_.push_back ( bumperWrenches );
-        if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+
+        if ( !robotReal )
         {
-            bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
-            avgForce = 0.0;
-            for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+            touched = true;
+            ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be disconnected now." );
+        }
+        else
+        {
+            bumperWrenchesVector_.push_back ( bumperWrenches );
+            if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
             {
-                avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
-            }
+                bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
 
-            avgForce /= bumperWrenchesVector_.size();
+                if ( !avgWrenchesDetermined_ )
+                {
+                    determineAvgWrenches();
+                }
+                avgForce = 0.0;
+                for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+                {
+                    avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
+                }
 
-            if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
-            {
-                touched = true;
+                avgForce /= bumperWrenchesVector_.size();
+
+                if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+                {
+                    touched = true;
+                }
+
             }
         }
-
+        
         if ( touched )
         {
-            setpoint = disconnectSetpoint;
-            goal_.target_pose.pose.position.x = setpoint.getOrigin().getX();
-            goal_.target_pose.pose.position.y = setpoint.getOrigin().getY();
-            goal_.target_pose.pose.position.z = setpoint.getOrigin().getZ();
-            goal_.target_pose.pose.orientation.x = setpoint.getQuaternion().getX();
-            goal_.target_pose.pose.orientation.y = setpoint.getQuaternion().getY();
-            goal_.target_pose.pose.orientation.z = setpoint.getQuaternion().getZ();
-            goal_.target_pose.pose.orientation.w = setpoint.getQuaternion().getW();
-            
+            point2goal(&disconnectSetpoint_);            
             *mobidikConnected = false;
 
             nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
-            nav_next_state_wp_release_ = MOBID_REL_NAV_DONE;
+            nav_next_state_wp_release_ = MOBID_REL_ROTATE;
+            controlMode->data = ropodNavigation::LLC_VEL;
         }
         
+        break;
+        
+    case MOBID_REL_ROTATE: // TODO should be removed: rotating now done to measure the environment again, while we actually know that we just disconnected the mobidik
+        rotationSetpoint = disconnectSetpoint_;
+        rotationWP = rotationSetpoint.getQuaternion();
+        q.setX( rotationWP.getX() );
+        q.setY( rotationWP.getY() );
+        q.setZ( rotationWP.getZ() );
+        q.setW( rotationWP.getW() );
+        
+        matrix.setRotation(q);
+        matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
+        
+        rotation.setRPY ( WP_roll, WP_pitch, WP_yaw + M_PI);
+        rotationSetpoint.setBasis( rotation );
+        
+        point2goal(&rotationSetpoint);
+        controlMode->data = ropodNavigation::LLC_NORMAL;
+        
+        nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+        nav_next_state_wp_release_ = MOBID_REL_NAV_DONE;
         break;
 
     case MOBID_REL_NAV_GOTOPOINT:
@@ -864,20 +911,20 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         ROS_INFO ( "Sending goal" );
         sendgoal = true;
         tfb_nav.fb_nav = NAV_GOTOPOINT;
-        nav_next_state_release_ = MOBID_COLL_NAV_BUSY;
+        nav_next_state_release_ = MOBID_REL_NAV_BUSY;
         break;
 
     case MOBID_REL_NAV_BUSY:
         ROS_INFO ( "MOBID_REL_NAV_BUSY" );
         if ( !isPositionValid() )
         {
-            nav_next_state_release_ = MOBID_COLL_NAV_HOLD;
+            nav_next_state_release_ = MOBID_REL_NAV_HOLD;
             break;
         }
         if ( isWaypointAchieved() ) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
         {
             ROS_INFO ( "Waypoint achieved" );
-            nav_next_state_release_ = MOBID_COLL_NAV_WAYPOINT_DONE;
+            nav_next_state_release_ = MOBID_REL_NAV_WAYPOINT_DONE;
         }
         else
         {
@@ -890,7 +937,6 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         ROS_INFO ( "MOBID_REL_NAV_WAYPOINT_DONE" );
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
         nav_next_state_release_ = nav_next_state_wp_release_;
-
         break;
 
     case MOBID_REL_NAV_DONE: //
@@ -900,14 +946,14 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         controlMode->data = ropodNavigation::LLC_NORMAL;
         stopNavigation();
         movbase_cancel_pub.publish ( true_bool_msg_ );
-        nav_next_state_release_ = MOBID_COLL_NAV_IDLE;
+        nav_next_state_release_ = MOBID_REL_NAV_IDLE;
         break;
 
     case MOBID_REL_NAV_HOLD: //
         ROS_INFO ( "MOBID_REL_NAV_HOLD" );
         ROS_INFO ( "Navigation on hold to receive feedback" );
         if ( isPositionValid() ) // check we have a valid position
-            nav_next_state_ = MOBID_COLL_NAV_BUSY;
+            nav_next_state_ = MOBID_REL_NAV_BUSY;
         break;
 
     case MOBID_REL_NAV_PAUSED: // this state is reached via a callback
@@ -923,8 +969,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         nav_next_state_ = MOBID_REL_NAV_IDLE;
     }
 
-    nav_state_ = nav_next_state_;
-
+    nav_state_release_ = nav_next_state_release_;
     *goal_ptr = goal_;
 
     return tfb_nav;

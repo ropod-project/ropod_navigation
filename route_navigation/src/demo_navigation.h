@@ -56,6 +56,7 @@ public:
     NAVTYPE_WAYPOINT = 0,
     NAVTYPE_ELEVATOR,
     NAVTYPE_MOBIDIK_COLLECTION,
+    NAVTYPE_MOBIDIK_RELEASE,
     NAVTYPE_NONE
 };
 
@@ -106,6 +107,10 @@ private:
     maneuver_navigation::Feedback mn_feedback_;    
     
     bool send_goal_;
+    
+    bool mobidikConnected_;
+    
+    std_msgs::UInt16 controlMode_;
     
     ros::Subscriber sub_model_med_commands_;
     
