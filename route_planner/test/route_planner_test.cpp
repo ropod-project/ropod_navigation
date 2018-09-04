@@ -1,3 +1,7 @@
+/*
+Provides simple example path for independent testing of this package
+*/
+
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <iostream>
@@ -22,14 +26,13 @@ int main(int argc, char **argv)
   temp1.waypoints.push_back(wtemp1);
   path_areas.push_back(temp1);
 
-
   ropod_ros_msgs::Area temp2;
   temp2.area_id = std::to_string(3113);
   temp2.name = "AMK_B_L-1_C29_Door1";
-  ropod_ros_msgs::Waypoint wtemp2;
-  wtemp2.semantic_id = "AMK_B_L-1_C29_Door1";
-  wtemp2.area_id = "3113";
-  temp2.waypoints.push_back(wtemp2);
+  // ropod_ros_msgs::Waypoint wtemp2;
+  // wtemp2.semantic_id = "AMK_B_L-1_C29_Door1";
+  // wtemp2.area_id = "3113";
+  // temp2.waypoints.push_back(wtemp2);
   path_areas.push_back(temp2);
 
   ropod_ros_msgs::Area temp3;
@@ -59,7 +62,6 @@ int main(int argc, char **argv)
   temp5.waypoints.push_back(wtemp5);  
   path_areas.push_back(temp5);
 
-
   ropod_ros_msgs::route_planner route_planner_msg;
   route_planner_msg.request.areas = path_areas;
 
@@ -72,6 +74,5 @@ int main(int argc, char **argv)
   {
     ROS_ERROR("Failed to call service route_planner_service");
   }
-
   return 0;
 }

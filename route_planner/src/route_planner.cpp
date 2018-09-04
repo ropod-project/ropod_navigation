@@ -1,5 +1,10 @@
-#include <route_planner/route_planner.hpp>
+/*
+An abstract class for route planning. Advertises 'route_planner_service' which takes list of areas sent by CCU as inputs 
+and returns list of area with waypoint (poses) in local co-ordinate system 
 
+'compute_route' is a pure virtual method which needs to be implemented in derived class. 
+*/
+#include <route_planner/route_planner.hpp>
 
 RoutePlanner::RoutePlanner(): nh("~")
 {
@@ -14,7 +19,7 @@ bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::route_planner::Re
   std::vector<ropod_ros_msgs::Area> path_areas;
   for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = req.areas.begin(); curr_area != req.areas.end(); ++curr_area)
   {
-     path_areas.push_back(*curr_area);
+    path_areas.push_back(*curr_area);
   }
   std::vector<ropod_ros_msgs::Area> path_areas2 = this->compute_route(path_areas);  // implemented in derived classes
   std::vector<ropod_ros_msgs::Area> path_areas3 = compute_orientations(path_areas2);
@@ -22,6 +27,9 @@ bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::route_planner::Re
   return true;
 }
 
+/*
+Computes orientation based on next pose
+*/
 std::vector<ropod_ros_msgs::Area> RoutePlanner::compute_orientations(std::vector<ropod_ros_msgs::Area> path_areas)
 {
   bool isFirstWaypt = true;
