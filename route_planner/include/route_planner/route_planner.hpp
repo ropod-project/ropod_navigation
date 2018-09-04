@@ -4,9 +4,11 @@
 /* ROS includes */
 #include <ros/ros.h>
 #include <std_msgs/String.h>
+#include <tf/tf.h>
 
 /* C++ */
 #include <iostream>
+#include <queue>
 
 
 /* OSM messages */
@@ -26,13 +28,13 @@ private:
 
 public:
   ros::NodeHandle nh;
-  ros::ServiceClient osm_query_client;
 
   RoutePlanner();
   virtual ~RoutePlanner();
 
   bool routePlannerServiceCallback(ropod_ros_msgs::route_planner::Request &req,ropod_ros_msgs::route_planner::Response &res);
   virtual std::vector<ropod_ros_msgs::Area> compute_route(std::vector<ropod_ros_msgs::Area>) = 0;
+  std::vector<ropod_ros_msgs::Area> compute_orientations(std::vector<ropod_ros_msgs::Area>);
 };
 
 #endif /* ROUTE_PLANNER_HPP */
