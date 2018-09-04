@@ -32,6 +32,7 @@ public:
   virtual ~RoutePlanner();
 
   bool routePlannerServiceCallback(ropod_ros_msgs::route_planner::Request &req,ropod_ros_msgs::route_planner::Response &res);
+  virtual std::vector<ropod_ros_msgs::Area> compute_route(std::vector<ropod_ros_msgs::Area>) = 0;
 };
 
 #endif /* ROUTE_PLANNER_HPP */
