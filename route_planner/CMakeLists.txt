@@ -34,4 +34,6 @@ add_executable(route_planner_node ${PROJECT_SOURCE_DIR}/src/route_planner_node.c
 add_dependencies(route_planner_node ropod_ros_msgs_gencpp)
 target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} route_planner simple_osm_route_planner)
 
-
+add_executable(route_planner_test ${PROJECT_SOURCE_DIR}/test/route_planner_test.cpp ${HEADER_FILES})
+add_dependencies(route_planner_test ropod_ros_msgs_gencpp)
+target_link_libraries(route_planner_test ${LIBS} ${catkin_LIBRARIES})

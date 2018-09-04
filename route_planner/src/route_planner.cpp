@@ -17,7 +17,8 @@ bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::route_planner::Re
      path_areas.push_back(*curr_area);
   }
   std::vector<ropod_ros_msgs::Area> path_areas2 = this->compute_route(path_areas);  // implemented in derived classes
-  res.areas = path_areas2;
+  std::vector<ropod_ros_msgs::Area> path_areas3 = compute_orientations(path_areas2);
+  res.areas = path_areas3;
   return true;
 }
 
