@@ -83,6 +83,7 @@ void WaypointNavigation::resetNavigation()
     change_of_area = false;
     last_area_loaded = false;
     last_waypoint_loaded = false;
+    perform_initial_rotation = false;
     // Setd efault goal configuration
     nav_configuration.precise_goal = true;
     nav_configuration.use_line_planner = true;
@@ -128,7 +129,7 @@ bool WaypointNavigation::isWaypointAchieved(const geometry_msgs::PoseStamped &go
 
     if ( !isLastWaypoint() ) 
     { // Check succced only by looking at distance to waypoint
-        if (pow(v3temp.x(), 2) + pow(v3temp.y(), 2) < pow(WAYP_REACHED_DIST, 2)) 
+        if (pow(v3temp.x(), 2) + pow(v3temp.y(), 2) < pow(WAYP_REACHED_DIST, 2) && (!perform_initial_rotation || fabs(qtemp.getAngle() < GOAL_REACHED_ANG ) ) )
         {
             ROS_INFO("Hooray, Intermediate waypoint passed");
             return true;
@@ -180,11 +181,13 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
                 mn_goal.start.pose = base_position->pose;
                 mn_goal.goal.pose.position = base_position->pose.position;
                 mn_goal.goal.pose.orientation = curr_nav_waypoint->waypoint_pose.orientation;  
+                perform_initial_rotation = true;
                 return true;
                 
             }
             else
             {
+                perform_initial_rotation = false;
                 mn_goal.goal.pose = curr_nav_waypoint->waypoint_pose;
                 mn_goal.start.pose.position = base_position->pose.position;
                 mn_goal.start.pose.orientation = mn_goal.goal.pose.orientation;                

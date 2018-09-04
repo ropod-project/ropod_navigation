@@ -299,6 +299,8 @@ void MobidikCollection::initNavState()
         initAvgWrench(&avgWrenches_.left);
         initAvgWrench(&avgWrenches_.back);
         initAvgWrench(&avgWrenches_.right);
+        xy_goal_tolerance_  = GOAL_MOBID_COLL_REACHED_DIST;
+        yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG;
 }
 
 void MobidikCollection::initNavStateRelease()
@@ -309,6 +311,8 @@ void MobidikCollection::initNavStateRelease()
         initAvgWrench(&avgWrenches_.left);
         initAvgWrench(&avgWrenches_.back);
         initAvgWrench(&avgWrenches_.right);
+        xy_goal_tolerance_  = GOAL_MOBID_LOAD_REACHED_DIST; // we start with lower tolerance
+        yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG;        
 }
 
 geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector)
@@ -360,7 +364,7 @@ void MobidikCollection::determineAvgWrenches()
 // }
 
 /*--------------------------------------------------------*/
-bool MobidikCollection::isWaypointAchieved()
+bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle_tolerance)
 {
 
     // In elevator we checked whether teh specific position is reached.
@@ -377,8 +381,8 @@ bool MobidikCollection::isWaypointAchieved()
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
     
-    if (pow( v3temp.x(),2) + pow(v3temp.y(),2) < pow(GOAL_MOBID_COLL_REACHED_DIST,2)
-            && fabs(qtemp.getAngle()) < GOAL_MOBID_REACHED_ANG)
+    if (pow( v3temp.x(),2) + pow(v3temp.y(),2) < pow(dist_tolerance,2)
+            && fabs(qtemp.getAngle()) < angle_tolerance)
         return true;
     else
         return false;
@@ -657,7 +661,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             nav_next_state_ = MOBID_COLL_NAV_HOLD;
             break;
         }
-        if (isWaypointAchieved()) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
+        if (isWaypointAchieved(xy_goal_tolerance_,yaw_goal_tolerance_)) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
         {
                 ROS_INFO("Waypoint achieved");
             nav_next_state_ = MOBID_COLL_NAV_WAYPOINT_DONE;
@@ -759,7 +763,7 @@ void MobidikCollection::getFinalMobidikPos ( const ed::WorldModel& world, std::s
 
             p.x = disconnectSetpoint->getOrigin().getX();
             p.y = disconnectSetpoint->getOrigin().getY();
-            p.z= 0.0;
+            p.z = 0.0;
             points->points.push_back ( p );
             return;
         }
@@ -795,6 +799,10 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     geometry_msgs::Twist output_vel;
     bool touched;
     float avgForce;
+    tf::Pose goal_tfpose;
+    tf::Quaternion quat_temp;
+    double robot_yaw;
+    
     
     /* Just for visualisation purposes TODO to be removed */
     visualization_msgs::Marker points, line_strip, line_list;
@@ -840,18 +848,24 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         tfb_nav.fb_nav = NAV_IDLE;
         ROS_INFO ( "MOBID_REL_NAV_IDLE" );
         break;
-
     case MOBID_REL_GET_SETPOINT_FRONT:
         ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
+        
+                    // Configure slow movement
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.4 &");
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.2 &");
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.5 &");     
+//         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS global_plan_overwrite_orientation True &");
+        
+
         getFinalMobidikPos ( world, areaID, &finalMobidikPosition_, &disconnectSetpoint_, &setpoint_, &points );
         point2goal(&setpoint_);
-
-        markerArraytest->markers.push_back( points );
         
+        markerArraytest->markers.push_back( points );
+     
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
         nav_next_state_wp_release_ = MOBID_REL_GOTO_FINAL_MOBIDIK_POS;
-        break;
-
+        break;        
     case MOBID_REL_GOTO_FINAL_MOBIDIK_POS:
         ROS_INFO ( "MOBID_REL_GOTO_FINAL_MOBIDIK_POS" );
         // navigate to final setpoint
@@ -908,32 +922,32 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
             stamp_start_ = ros::Time::now();
             stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
             controlMode->data = ropodNavigation::LLC_VEL;
+            xy_goal_tolerance_  = GOAL_MOBID_REL_REACHED_DIST; // for the last part we decrease tolerance
+            yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG; 
         }
         
         break;
     case MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT:
-        if( ros::Time() - stamp_start_ < stamp_wait_ )
+        ROS_INFO ( "MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT" );
+        if( ros::Time::now() - stamp_start_< stamp_wait_)
             break;
-        point2goal(&disconnectSetpoint_);       
+        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        robot_yaw = tf::getYaw(goal_tfpose.getRotation());
+        goal_.target_pose.pose = base_position_->pose;
+        goal_.target_pose.pose.position.x += DIST_MOVE_FRONT_POSTRELEASING*std::cos(robot_yaw);
+        goal_.target_pose.pose.position.y += DIST_MOVE_FRONT_POSTRELEASING*std::sin(robot_yaw);  
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
         nav_next_state_wp_release_ = MOBID_REL_ROTATE;
         break;
         
     case MOBID_REL_ROTATE: // TODO should be removed: rotating now done to measure the environment again, while we actually know that we just disconnected the mobidik
-        rotationSetpoint = disconnectSetpoint_;
-        rotationWP = rotationSetpoint.getQuaternion();
-        q.setX( rotationWP.getX() );
-        q.setY( rotationWP.getY() );
-        q.setZ( rotationWP.getZ() );
-        q.setW( rotationWP.getW() );
+        ROS_INFO ( "MOBID_REL_ROTATE" );
+        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        robot_yaw = tf::getYaw(goal_tfpose.getRotation());        
+        quat_temp.setRPY(0.0,0.0,angles::normalize_angle(robot_yaw+M_PI));
+        goal_tfpose.setRotation(quat_temp);
+        tf::poseTFToMsg(goal_tfpose,goal_.target_pose.pose);  
         
-        matrix.setRotation(q);
-        matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
-        
-        rotation.setRPY ( WP_roll, WP_pitch, WP_yaw + M_PI);
-        rotationSetpoint.setBasis( rotation );
-        
-        point2goal(&rotationSetpoint);
         controlMode->data = ropodNavigation::LLC_NORMAL;
         
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
@@ -957,7 +971,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
             nav_next_state_release_ = MOBID_REL_NAV_HOLD;
             break;
         }
-        if ( isWaypointAchieved() ) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
+        if ( isWaypointAchieved(xy_goal_tolerance_,yaw_goal_tolerance_) ) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
         {
             ROS_INFO ( "Waypoint achieved" );
             nav_next_state_release_ = MOBID_REL_NAV_WAYPOINT_DONE;
