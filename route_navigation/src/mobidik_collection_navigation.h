@@ -108,6 +108,8 @@ class MobidikCollection
     
     bool isPositionValid();
     
+    void printWrenches(geometry_msgs::WrenchStamped wrench);
+    
     geometry_msgs::WrenchStamped determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector);
     
     void determineAvgWrenches();

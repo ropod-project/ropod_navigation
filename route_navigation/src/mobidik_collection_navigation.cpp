@@ -335,6 +335,16 @@ geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<g
             return avgWrench;            
 }
 
+void MobidikCollection::printWrenches(geometry_msgs::WrenchStamped wrench)
+{
+        std::cout << wrench.wrench.force.x << ", " << 
+        wrench.wrench.force.y << ", " << 
+        wrench.wrench.force.z << ", " << 
+        wrench.wrench.torque.x << ", " << 
+        wrench.wrench.torque.y << ", " << 
+        wrench.wrench.torque.z << std::endl;
+}
+
 void MobidikCollection::determineAvgWrenches()
 {
         std::vector<geometry_msgs::WrenchStamped> wrenchesFront, wrenchesLeft, wrenchesBack, wrenchesRight;
@@ -350,6 +360,11 @@ void MobidikCollection::determineAvgWrenches()
         avgWrenches_.left = determineAvgWrench( wrenchesLeft );
         avgWrenches_.back = determineAvgWrench( wrenchesBack );
         avgWrenches_.right = determineAvgWrench( wrenchesRight );
+        
+        printWrenches(avgWrenches_.front);
+        printWrenches(avgWrenches_.left);
+        printWrenches(avgWrenches_.back);
+        printWrenches(avgWrenches_.right);
         
         avgWrenchesDetermined_ = true;
 }
@@ -544,6 +559,9 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                     avgForce /= bumperWrenchesVector_.size();
                     avgTorque /= bumperWrenchesVector_.size();
 
+                    std::cout << "avgForce Now= " << avgForce << ", avgTorque = " << avgTorque << std::endl;
+                    std::cout << "Avg initially: " <<  avgWrenches_.back.wrench.force.x << ", " <<  avgWrenches_.back.wrench.torque.x << std::endl;
+                    
                     forceCheck = std::fabs ( avgForce - avgWrenches_.back.wrench.force.x ) > MIN_FORCE_TOUCHED;
                     torqueCheck = std::fabs ( avgTorque - avgWrenches_.back.wrench.torque.x ) > MAX_TORQUE_TOUCHED;
 
@@ -622,7 +640,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         break;
          
     case MOBID_COLL_NAV_BUSY:
-            ROS_INFO("MOBID_COLL_NAV_BUSY");
+            ROS_INFO("MOBID_COLL_NAV_BUSY"); std::cout << "nav_next_state_ = " << nav_next_state_ << std::endl;
         if (!isPositionValid())
         {
             nav_next_state_ = MOBID_COLL_NAV_HOLD;
