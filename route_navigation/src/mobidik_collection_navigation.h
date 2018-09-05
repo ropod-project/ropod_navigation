@@ -33,6 +33,8 @@
 
 #define WAYP_MOBID_COLL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_COLL_REACHED_DIST 0.1 // [m]
+#define GOAL_MOBID_LOAD_REACHED_DIST 0.2 // [m]
+#define GOAL_MOBID_REL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_REACHED_ANG  5.0*3.141592/180.0 // [rad]
 
 #define ROPOD_LENGTH 0.6 // [m]
@@ -50,6 +52,10 @@
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
 #define DIST_CONN_SIM 0.1 //[m]
 
+#define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
+#define DIST_MOVE_FRONT_POSTRELEASING (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) - 0.5*ROPOD_LENGTH + 0.2) //[m]
+#define TIME_WAIT_CHANGE_OF_FOOTPRINT 0.5 //[s]
+
 class MobidikCollection
 {
 
@@ -63,6 +69,7 @@ class MobidikCollection
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
            MOBID_COLL_NAV_COUPLING,
+           MOBID_COLL_NAV_EXIT_COLLECT_AREA,
            MOBID_COLL_NAV_DONE           
          };
          
@@ -74,6 +81,7 @@ class MobidikCollection
            MOBID_REL_NAV_GOTOPOINT,
            MOBID_REL_NAV_BUSY,
            MOBID_REL_NAV_WAYPOINT_DONE,
+           MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT,
            MOBID_REL_NAV_DONE,
            MOBID_REL_NAV_HOLD,
            MOBID_REL_NAV_PAUSED         
@@ -120,7 +128,7 @@ class MobidikCollection
     
     void initNavStateRelease();
     
-    bool isWaypointAchieved();
+    bool isWaypointAchieved(double& dist_tolerance, double& angle_tolerance);
      
     TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal);
     
@@ -146,6 +154,9 @@ class MobidikCollection
     int nav_state_bpause_;
     int nav_next_state_wp_;
     int nav_next_state_wp_release_;
+    
+    double xy_goal_tolerance_;
+    double yaw_goal_tolerance_;
     
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;

@@ -50,6 +50,7 @@ public:
     bool change_of_area;
     bool last_area_loaded;
     bool last_waypoint_loaded;
+    bool perform_initial_rotation;
     bool route_busy;
     bool nav_paused_req;
     int waypoint_cnt;

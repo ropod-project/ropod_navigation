@@ -3,7 +3,7 @@ action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
 type: 'RELEASE_MOBIDIK'
 areas: 
   - 
-    area_id: 'MobidikArea1'
+    area_id: 'MobidikArea2'
     name: 'WP01'
     waypoints: []
 waypoints: []

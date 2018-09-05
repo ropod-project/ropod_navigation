@@ -12,9 +12,9 @@ navigation_areas:
           area_id: 'test-area_id-1'
           floor_number: 0
           waypoint_pose: 
-            position: 
-                x: 11.603228569
-                y: 3.94579124451
+            position:             
+                x: 11.89
+                y: 4.8
                 z: 0.0
             orientation: 
                 x: 0.0

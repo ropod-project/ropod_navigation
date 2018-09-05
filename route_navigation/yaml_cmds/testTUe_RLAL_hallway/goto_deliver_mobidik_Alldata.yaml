@@ -112,23 +112,4 @@ navigation_areas:
                 y: 0.0
                 z: 0.619226624927
                 w: 0.785212319683
-  -               
-    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
-    name: 'Point_to_deliver_up_mobidik'
-    type: 'deliver_area'
-    waypoints:
-        - 
-          semantic_id: 'test-semantic_id-1'
-          area_id: 'test-area_id-1'
-          floor_number: 0
-          waypoint_pose: 
-            position: 
-                x: 11.6910362244
-                y: 3.22420835495
-                z: 0.0
-            orientation: 
-                x: 0.0
-                y: 0.0
-                z: 0.992191523198
-                w: 0.124723619632
 "
