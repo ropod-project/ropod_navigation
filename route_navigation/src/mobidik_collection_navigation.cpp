@@ -577,6 +577,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                     
                     forceCheck = std::fabs ( avgForce - avgWrenches_.back.wrench.force.x ) > MIN_FORCE_TOUCHED;
                     torqueCheck = std::fabs ( avgTorque - avgWrenches_.back.wrench.torque.x ) > MAX_TORQUE_TOUCHED;
+                    
+                    std::cout << "Checks " << forceCheck << ", " << torqueCheck << std::endl;
 
                     if ( forceCheck && torqueCheck )
                     {
