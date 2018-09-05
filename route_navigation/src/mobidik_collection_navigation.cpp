@@ -323,9 +323,9 @@ geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<g
                 sumForcex += wrenchVector[ii].wrench.force.x;
                 sumForcey += wrenchVector[ii].wrench.force.y;
                 sumForcez += wrenchVector[ii].wrench.force.z;
-                sumTorquex += wrenchVector[ii].wrench.force.x;
-                sumTorquey += wrenchVector[ii].wrench.force.y;
-                sumTorquez += wrenchVector[ii].wrench.force.z;
+                sumTorquex += wrenchVector[ii].wrench.torque.x;
+                sumTorquey += wrenchVector[ii].wrench.torque.y;
+                sumTorquez += wrenchVector[ii].wrench.torque.z;
             }
 
             geometry_msgs::WrenchStamped avgWrench;
@@ -341,7 +341,8 @@ geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<g
 
 void MobidikCollection::printWrenches(geometry_msgs::WrenchStamped wrench)
 {
-        std::cout << wrench.wrench.force.x << ", " << 
+        std::cout <<
+        wrench.wrench.force.x << ", " << 
         wrench.wrench.force.y << ", " << 
         wrench.wrench.force.z << ", " << 
         wrench.wrench.torque.x << ", " << 
