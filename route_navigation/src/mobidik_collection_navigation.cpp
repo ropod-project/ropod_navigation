@@ -827,7 +827,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     double WP_roll, WP_pitch, WP_yaw;
     geo::Mat3 rotation;
     geometry_msgs::Twist output_vel;
-    bool touched;
+    bool touched, forceCheck;
     float avgForce;
     tf::Pose goal_tfpose;
     tf::Quaternion quat_temp;
@@ -886,7 +886,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         
                     // Configure slow movement
         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.3 &");
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.5 &");                       
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.8 &");                       
                 
         
         
@@ -919,7 +919,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
 
     case MOBID_REL_GET_SETPOINT_FRONT:
         ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.0 &");    
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.3 &");    
         point2goal(&setpoint_);
      
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
@@ -965,8 +965,13 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
                 }
 
                 avgForce /= bumperWrenchesVector_.size();
+                forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
+                
+                std::cout << "avgForce Now= " << avgForce << std::endl;
+                std::cout << "Avg initially: " <<  avgWrenches_.front.wrench.force.x << std::endl;
+                std::cout << "Check " << forceCheck << std::endl;
 
-                if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+                if ( forceCheck )
                 {
                     touched = true;
                 }
@@ -983,10 +988,11 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
             stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
             controlMode->data = ropodNavigation::LLC_VEL;
             xy_goal_tolerance_  = GOAL_MOBID_REL_REACHED_DIST; // for the last part we decrease tolerance
-            yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG; 
+            yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG_UNDOCK; 
         }
         
         break;
+        
     case MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT:
         ROS_INFO ( "MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT" );
         if( ros::Time::now() - stamp_start_< stamp_wait_)
