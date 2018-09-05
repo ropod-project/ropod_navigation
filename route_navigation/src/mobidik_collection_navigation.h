@@ -74,6 +74,7 @@ class MobidikCollection
          };
          
     enum { MOBID_REL_NAV_IDLE = 0,
+           MOBID_REL_GET_SETPOINT_FRONT_PARALLEL,
            MOBID_REL_GET_SETPOINT_FRONT,
            MOBID_REL_GOTO_FINAL_MOBIDIK_POS,
            MOBID_REL_DECOUPLING,

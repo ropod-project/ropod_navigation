@@ -305,7 +305,7 @@ void MobidikCollection::initNavState()
 
 void MobidikCollection::initNavStateRelease()
 {
-        nav_state_release_ = MOBID_REL_GET_SETPOINT_FRONT;
+        nav_state_release_ = MOBID_REL_GET_SETPOINT_FRONT_PARALLEL;
         avgWrenchesDetermined_ = false;
         initAvgWrench(&avgWrenches_.front);
         initAvgWrench(&avgWrenches_.left);
@@ -832,6 +832,8 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     tf::Pose goal_tfpose;
     tf::Quaternion quat_temp;
     double robot_yaw;
+    double ref_vector_yaw;
+    double setpoint_yaw;
     
     
     /* Just for visualisation purposes TODO to be removed */
@@ -878,26 +880,54 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         tfb_nav.fb_nav = NAV_IDLE;
         ROS_INFO ( "MOBID_REL_NAV_IDLE" );
         break;
-    case MOBID_REL_GET_SETPOINT_FRONT:
-        ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
+
+    case MOBID_REL_GET_SETPOINT_FRONT_PARALLEL:
+        ROS_INFO ( "MOBID_REL_GET_SETPOINT_FRONT_PARALLEL" );
         
                     // Configure slow movement
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.4 &");
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.2 &");
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.5 &");     
-//         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS global_plan_overwrite_orientation True &");
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.3 &");
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.5 &");                       
+                
         
-
+        
         getFinalMobidikPos ( world, areaID, &finalMobidikPosition_, &disconnectSetpoint_, &setpoint_, &points );
-        point2goal(&setpoint_);
+        
+        // Find pose parallel to the delvery area
+        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        robot_yaw = tf::getYaw(goal_tfpose.getRotation());
+        quat_temp.setW(setpoint_.getQuaternion().getW());
+        quat_temp.setX(setpoint_.getQuaternion().getX());
+        quat_temp.setY(setpoint_.getQuaternion().getY());
+        quat_temp.setZ(setpoint_.getQuaternion().getZ());
+        ref_vector_yaw = tf::getYaw(quat_temp);
+        if ( std::cos( (ref_vector_yaw + 0.5*M_PI) -  robot_yaw)> 0.0 )
+            setpoint_yaw = angles::normalize_angle(ref_vector_yaw + 0.5*M_PI);
+        else            
+            setpoint_yaw = angles::normalize_angle(ref_vector_yaw - 0.5*M_PI);
+        
+        quat_temp.setRPY(0.0,0.0,setpoint_yaw);
+        
+        goal_tfpose.setOrigin(tf::Vector3(setpoint_.getOrigin().getX(), setpoint_.getOrigin().getY(), setpoint_.getOrigin().getZ()));
+        goal_tfpose.setRotation(quat_temp);
+        tf::poseTFToMsg(goal_tfpose,goal_.target_pose.pose);  
         
         markerArraytest->markers.push_back( points );
+        
+        nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
+        nav_next_state_wp_release_ = MOBID_REL_GET_SETPOINT_FRONT;
+        break;
+
+    case MOBID_REL_GET_SETPOINT_FRONT:
+        ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.0 &");    
+        point2goal(&setpoint_);
      
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
         nav_next_state_wp_release_ = MOBID_REL_GOTO_FINAL_MOBIDIK_POS;
         break;        
     case MOBID_REL_GOTO_FINAL_MOBIDIK_POS:
         ROS_INFO ( "MOBID_REL_GOTO_FINAL_MOBIDIK_POS" );
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.3 &");         
         // navigate to final setpoint
         point2goal(&finalMobidikPosition_);
 
