@@ -614,6 +614,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         controlMode->data = ropodNavigation::LLC_VEL;
         // couple mobidik manually and wait for signal;
 
+        touched = false;
+        
         bumperWrenchesVector_.push_back ( bumperWrenches );
         if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) 
         {
