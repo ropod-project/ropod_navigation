@@ -827,7 +827,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     double WP_roll, WP_pitch, WP_yaw;
     geo::Mat3 rotation;
     geometry_msgs::Twist output_vel;
-    bool touched;
+    bool touched, forceCheck;
     float avgForce;
     tf::Pose goal_tfpose;
     tf::Quaternion quat_temp;
@@ -965,8 +965,13 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
                 }
 
                 avgForce /= bumperWrenchesVector_.size();
+                forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
+                
+                std::cout << "avgForce Now= " << avgForce << std::endl;
+                std::cout << "Avg initially: " <<  avgWrenches_.front.wrench.force.x << std::endl;
+                std::cout << "Check " << forceCheck << std::endl;
 
-                if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+                if ( forceCheck )
                 {
                     touched = true;
                 }
@@ -987,6 +992,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         }
         
         break;
+        
     case MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT:
         ROS_INFO ( "MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT" );
         if( ros::Time::now() - stamp_start_< stamp_wait_)
