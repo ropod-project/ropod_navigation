@@ -366,10 +366,11 @@ void MobidikCollection::determineAvgWrenches()
         avgWrenches_.back = determineAvgWrench( wrenchesBack );
         avgWrenches_.right = determineAvgWrench( wrenchesRight );
         
-        printWrenches(avgWrenches_.front);
+/*        printWrenches(avgWrenches_.front);
         printWrenches(avgWrenches_.left);
         printWrenches(avgWrenches_.back);
         printWrenches(avgWrenches_.right);
+*/
         
         avgWrenchesDetermined_ = true;
 }
@@ -571,14 +572,9 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
                     avgForce /= bumperWrenchesVector_.size();
                     avgTorque /= bumperWrenchesVector_.size();
-
-                    std::cout << "avgForce Now= " << avgForce << ", avgTorque = " << avgTorque << std::endl;
-                    std::cout << "Avg initially: " <<  avgWrenches_.back.wrench.force.x << ", " <<  avgWrenches_.back.wrench.torque.z << std::endl;
                     
                     forceCheck = std::fabs ( avgForce - avgWrenches_.back.wrench.force.x ) > MIN_FORCE_TOUCHED;
                     torqueCheck = std::fabs ( avgTorque - avgWrenches_.back.wrench.torque.z ) < MAX_TORQUE_TOUCHED;
-                    
-                    std::cout << "Checks " << forceCheck << ", " << torqueCheck << std::endl;
 
                     if ( forceCheck && torqueCheck )
                     {
@@ -590,7 +586,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
         if ( touched )
         {
-                std::cout << "robotReal = " << robotReal << std::endl;
             if ( ! robotReal )
             {
                 tfb_nav.fb_nav = NAV_DOCKED;
@@ -637,10 +632,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                 avgForce /= bumperWrenchesVector_.size();
                 
                 forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
-                
-                 std::cout << "avgForce Now= " << avgForce << std::endl;
-                    std::cout << "Avg initially: " <<  avgWrenches_.front.wrench.force.x << std::endl;
-                     std::cout << "Check " << forceCheck << std::endl;
 
                 if ( forceCheck )
                 {
@@ -685,7 +676,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         break;
          
     case MOBID_COLL_NAV_BUSY:
-            ROS_INFO("MOBID_COLL_NAV_BUSY"); std::cout << "nav_next_state_ = " << nav_next_state_ << std::endl;
+            ROS_INFO("MOBID_COLL_NAV_BUSY");
         if (!isPositionValid())
         {
             nav_next_state_ = MOBID_COLL_NAV_HOLD;
@@ -966,10 +957,6 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
 
                 avgForce /= bumperWrenchesVector_.size();
                 forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
-                
-                std::cout << "avgForce Now= " << avgForce << std::endl;
-                std::cout << "Avg initially: " <<  avgWrenches_.front.wrench.force.x << std::endl;
-                std::cout << "Check " << forceCheck << std::endl;
 
                 if ( forceCheck )
                 {
