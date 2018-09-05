@@ -988,7 +988,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
             stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
             controlMode->data = ropodNavigation::LLC_VEL;
             xy_goal_tolerance_  = GOAL_MOBID_REL_REACHED_DIST; // for the last part we decrease tolerance
-            yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG; 
+            yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG_UNDOCK; 
         }
         
         break;
