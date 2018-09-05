@@ -286,7 +286,7 @@ void MobidikCollection::initAvgWrench(geometry_msgs::WrenchStamped *wrench)
         wrench->wrench.force.x = INFINITY;
         wrench->wrench.force.y = INFINITY;
         wrench->wrench.force.z = INFINITY;
-        wrench->wrench.force.x = INFINITY;
+        wrench->wrench.torque.x = INFINITY;
         wrench->wrench.torque.y = INFINITY;
         wrench->wrench.torque.z = INFINITY;
 }
@@ -566,14 +566,14 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                     for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ ) // TODO can be more efficient by storing the sum
                     {
                         avgForce += bumperWrenchesVector_[ii].back.wrench.force.x;
-                        avgTorque += bumperWrenchesVector_[ii].back.wrench.torque.x;
+                        avgTorque += bumperWrenchesVector_[ii].back.wrench.torque.z;
                     }
 
                     avgForce /= bumperWrenchesVector_.size();
                     avgTorque /= bumperWrenchesVector_.size();
 
                     std::cout << "avgForce Now= " << avgForce << ", avgTorque = " << avgTorque << std::endl;
-                    std::cout << "Avg initially: " <<  avgWrenches_.back.wrench.force.x << ", " <<  avgWrenches_.back.wrench.torque.x << std::endl;
+                    std::cout << "Avg initially: " <<  avgWrenches_.back.wrench.force.x << ", " <<  avgWrenches_.back.wrench.torque.z << std::endl;
                     
                     forceCheck = std::fabs ( avgForce - avgWrenches_.back.wrench.force.x ) > MIN_FORCE_TOUCHED;
                     torqueCheck = std::fabs ( avgTorque - avgWrenches_.back.wrench.torque.x ) > MAX_TORQUE_TOUCHED;
