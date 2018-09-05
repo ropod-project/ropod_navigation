@@ -590,18 +590,20 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
 
         if ( touched )
         {
+                std::cout << "robotReal = " << robotReal << std::endl;
             if ( ! robotReal )
             {
                 tfb_nav.fb_nav = NAV_DOCKED;
                 nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
-                bumperWrenchesVector_.clear();
-                stamp_start_ = ros::Time::now();
-                stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);
                 ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be connected now." );
-                break;
+            }  else {
+                bumperWrenchesVector_.clear();
+                controlMode->data = ropodNavigation::LLC_NORMAL;
+                nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+                
             }
-
-            nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+                stamp_start_ = ros::Time::now();
+                stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);         
         }
 
         break;
