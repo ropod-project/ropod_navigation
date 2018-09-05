@@ -886,7 +886,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         
                     // Configure slow movement
         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.3 &");
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.5 &");                       
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.8 &");                       
                 
         
         
@@ -919,7 +919,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
 
     case MOBID_REL_GET_SETPOINT_FRONT:
         ROS_INFO ( "MOBID_REL_GOTO_SETPOINT_FRONT" );
-        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.0 &");    
+        system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x_backwards 0.3 &");    
         point2goal(&setpoint_);
      
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
