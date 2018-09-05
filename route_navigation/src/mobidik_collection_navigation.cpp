@@ -598,6 +598,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                 ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be connected now." );
             }  else {
                 bumperWrenchesVector_.clear();
+                avgWrenchesDetermined_ = false;
                 controlMode->data = ropodNavigation::LLC_NORMAL;
                 nav_next_state_  = MOBID_COLL_NAV_COUPLING;
                 
@@ -634,8 +635,12 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
                 avgForce /= bumperWrenchesVector_.size();
                 
                 forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
+                
+                 std::cout << "avgForce Now= " << avgForce << std::endl;
+                    std::cout << "Avg initially: " <<  avgWrenches_.front.wrench.force.x << std::endl;
+                     std::cout << "Check " << forceCheck << std::endl;
 
-                if ( std::fabs ( avgForce ) > MIN_FORCE_TOUCHED )
+                if ( forceCheck )
                 {
                     touched = true;
                 }
