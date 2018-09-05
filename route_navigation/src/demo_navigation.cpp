@@ -14,13 +14,12 @@
 
 #include <ropod_ros_msgs/Action.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
+#include <ropod_ros_msgs/route_planner.h>
 
 
 #include "waypoint_navigation.h"
 #include "elevator_navigation.h"
 #include "route_navigation_defines.h"
-/* Simple world model */
-#include "simplified_world_model.h"
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -59,33 +58,6 @@ void actionCallback(const ropod_ros_msgs::Action::ConstPtr& action_msg_)
 void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& DoorStmsg)
 {
     door_status = *DoorStmsg;
-}
-
-// this needs to be replaced with a query to the world model
-geometry_msgs::PoseStamped getPoseFromWorldModel(const std::string &area_name)
-{
-    std::string param_name = "/areas/" + area_name;
-    std::vector<double> waypoint;
-    ros::param::get(param_name, waypoint);
-    geometry_msgs::PoseStamped p;
-    p.pose.position.x = waypoint[0];
-    p.pose.position.y = waypoint[1];
-    tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, waypoint[2]);
-    q.normalize();
-    p.pose.orientation.x = q.x();
-    p.pose.orientation.y = q.y();
-    p.pose.orientation.z = q.z();
-    p.pose.orientation.w = q.w();
-    return p;
-}
-
-// this needs to be replaced with a query to the world model
-std::string getAreaTypeFromWorldModel(const std::string &area_name)
-{
-    std::string param_name = "/area_types/" + area_name;
-    std::string area_type;
-    ros::param::get(param_name, area_type);
-    return area_type;
 }
 
 int main(int argc, char** argv)
@@ -147,14 +119,33 @@ int main(int argc, char** argv)
 
             if (action_msg.type == "GOTO")
             {
-                // Extract all areas and waypoints to go the corresponding location
-                for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = action_msg.areas.begin();
-                        curr_area != action_msg.areas.end(); ++curr_area)
+                ropod_ros_msgs::route_planner route_planner_msg;
+                route_planner_msg.request.areas = action_msg.areas;
+
+                ROS_INFO("Now requesting route from route planner");                
+                ros::ServiceClient route_planner_client = n.serviceClient<ropod_ros_msgs::route_planner>("/route_planner/route_planner_service");
+                if (route_planner_client.call(route_planner_msg))
                 {
-                    geometry_msgs::PoseStamped p = getPoseFromWorldModel(curr_area->name);
-                    std::string area_type = getAreaTypeFromWorldModel(curr_area->name);
-                    path_msg.poses.push_back(p);
-                    waypoint_ids.push_back(curr_area->name);
+                    ROS_INFO("Route received from route planner");
+                }
+                else
+                {
+                    ROS_ERROR("Failed to call service route_planner_service");
+                }
+
+                // Extract all waypoints to go the corresponding location
+                for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = route_planner_msg.response.areas.begin();
+                        curr_area != route_planner_msg.response.areas.end(); ++curr_area)
+                {
+                    for (std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_way = curr_area->waypoints.begin(); 
+                        curr_way != curr_area->waypoints.end(); ++curr_way)
+                    {
+                        geometry_msgs::PoseStamped p; 
+                        p.pose = curr_way->waypoint_pose;
+                        std::string area_type = curr_way->semantic_id;
+                        path_msg.poses.push_back(p);
+                        waypoint_ids.push_back(area_type);
+                    }
                 }
                 waypoint_navigation.startNavigation(path_msg);
                 active_nav = NAVTYPE_WAYPOINT;
