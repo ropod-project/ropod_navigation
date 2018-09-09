@@ -5,8 +5,8 @@ Computes route solely based on topological nodes present in OSM
 
 std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
 {
-  ros::ServiceClient osm_query_client = nh.serviceClient<ropod_ros_msgs::osm_query>("/ropod_wm_mediator/osm_query");
-  ropod_ros_msgs::osm_query osm_query_msg;
+  ros::ServiceClient osm_query_client = nh.serviceClient<ropod_ros_msgs::OSMQuery>("/ropod_wm_mediator/osm_query");
+  ropod_ros_msgs::OSMQuery osm_query_msg;
 
   for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
     int no_of_waypts = 0;

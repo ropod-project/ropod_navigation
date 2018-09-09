@@ -8,7 +8,7 @@ Provides simple example path for independent testing of this package
 #include <array>
 #include <ropod_ros_msgs/Area.h>
 #include <ropod_ros_msgs/Waypoint.h>
-#include <ropod_ros_msgs/route_planner.h>
+#include <ropod_ros_msgs/RoutePlanner.h>
 
 int main(int argc, char **argv)
 {
@@ -62,10 +62,10 @@ int main(int argc, char **argv)
   temp5.waypoints.push_back(wtemp5);  
   path_areas.push_back(temp5);
 
-  ropod_ros_msgs::route_planner route_planner_msg;
+  ropod_ros_msgs::RoutePlanner route_planner_msg;
   route_planner_msg.request.areas = path_areas;
 
-  ros::ServiceClient route_planner_client = nh.serviceClient<ropod_ros_msgs::route_planner>("/route_planner/route_planner_service");
+  ros::ServiceClient route_planner_client = nh.serviceClient<ropod_ros_msgs::RoutePlanner>("/route_planner/route_planner_service");
   if (route_planner_client.call(route_planner_msg))
   {
     ROS_INFO("Connection successful");

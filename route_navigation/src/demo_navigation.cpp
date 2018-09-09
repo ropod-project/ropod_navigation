@@ -14,7 +14,7 @@
 
 #include <ropod_ros_msgs/Action.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
-#include <ropod_ros_msgs/route_planner.h>
+#include <ropod_ros_msgs/RoutePlanner.h>
 
 
 #include "waypoint_navigation.h"
@@ -119,11 +119,11 @@ int main(int argc, char** argv)
 
             if (action_msg.type == "GOTO")
             {
-                ropod_ros_msgs::route_planner route_planner_msg;
+                ropod_ros_msgs::RoutePlanner route_planner_msg;
                 route_planner_msg.request.areas = action_msg.areas;
 
                 ROS_INFO("Now requesting route from route planner");                
-                ros::ServiceClient route_planner_client = n.serviceClient<ropod_ros_msgs::route_planner>("/route_planner/route_planner_service");
+                ros::ServiceClient route_planner_client = n.serviceClient<ropod_ros_msgs::RoutePlanner>("/route_planner/route_planner_service");
                 if (route_planner_client.call(route_planner_msg))
                 {
                     ROS_INFO("Route received from route planner");

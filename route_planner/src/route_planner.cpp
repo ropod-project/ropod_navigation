@@ -14,7 +14,7 @@ RoutePlanner::~RoutePlanner()
 {
 }
 
-bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::route_planner::Request &req,ropod_ros_msgs::route_planner::Response &res)
+bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::RoutePlanner::Request &req,ropod_ros_msgs::RoutePlanner::Response &res)
 {
   std::vector<ropod_ros_msgs::Area> path_areas;
   for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = req.areas.begin(); curr_area != req.areas.end(); ++curr_area)
