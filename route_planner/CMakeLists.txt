@@ -11,6 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   roscpp
   ropod_ros_msgs
+  genmsg 
+  actionlib_msgs 
+  actionlib
 )
 
 include_directories(
@@ -19,10 +22,14 @@ include_directories(
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp ropod_ros_msgs
+  CATKIN_DEPENDS
+  roscpp
+  ropod_ros_msgs
+  actionlib_msgs
 )
 
-add_library(route_planner ${PROJECT_SOURCE_DIR}/src/route_planner.cpp)
+
+add_library(route_planner ${PROJECT_SOURCE_DIR}/src/route_planner.cpp ${HEADER_FILES})
 add_dependencies(route_planner ropod_ros_msgs_gencpp)
 target_link_libraries(route_planner ${LIBS} ${catkin_LIBRARIES})
 
@@ -32,7 +39,7 @@ target_link_libraries(simple_osm_route_planner ${LIBS} ${catkin_LIBRARIES} route
 
 add_executable(route_planner_node ${PROJECT_SOURCE_DIR}/src/route_planner_node.cpp ${HEADER_FILES})
 add_dependencies(route_planner_node ropod_ros_msgs_gencpp)
-target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} route_planner simple_osm_route_planner)
+target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} simple_osm_route_planner)
 
 add_executable(route_planner_test ${PROJECT_SOURCE_DIR}/test/route_planner_test.cpp ${HEADER_FILES})
 add_dependencies(route_planner_test ropod_ros_msgs_gencpp)

@@ -1,81 +1,78 @@
 /*
-An abstract class for route planning. Advertises 'route_planner_service' which takes list of areas sent by CCU as inputs 
+An abstract class for route planning. Provides 'route_planner' action server which takes list of areas sent by CCU as inputs 
 and returns list of area with waypoint (poses) in local co-ordinate system 
 
-'compute_route' is a pure virtual method which needs to be implemented in derived class. 
+'compute_route' and 'compute_orientation' are pure virtual method which needs to be implemented in derived class. 
 */
 #include <route_planner/route_planner.hpp>
 
-RoutePlanner::RoutePlanner(): nh("~")
+RoutePlanner::RoutePlanner(): nh("~"),route_planner_server(nh,"/route_planner",
+  boost::bind(&RoutePlanner::RoutePlannerExecute, this, _1),false),get_waypt_position_action_client("/get_waypt_position", true), 
+  get_waypt_shape_action_client("/get_waypt_shape", true), waypt_position_result(), waypt_shape_result()
 {
+    route_planner_server.start();
+    get_waypt_position_action_client.waitForServer();
+    get_waypt_shape_action_client.waitForServer();
 }
 
 RoutePlanner::~RoutePlanner()
 {
 }
 
-bool RoutePlanner::routePlannerServiceCallback(ropod_ros_msgs::RoutePlanner::Request &req,ropod_ros_msgs::RoutePlanner::Response &res)
+void RoutePlanner::RoutePlannerExecute(const ropod_ros_msgs::RoutePlannerGoalConstPtr& req)
 {
-  std::vector<ropod_ros_msgs::Area> path_areas;
-  for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = req.areas.begin(); curr_area != req.areas.end(); ++curr_area)
-  {
-    path_areas.push_back(*curr_area);
-  }
-  std::vector<ropod_ros_msgs::Area> path_areas2 = this->compute_route(path_areas);  // implemented in derived classes
-  std::vector<ropod_ros_msgs::Area> path_areas3 = compute_orientations(path_areas2);
-  res.areas = path_areas3;
-  return true;
+    std::vector<ropod_ros_msgs::Area> path_areas;
+    ropod_ros_msgs::RoutePlannerResult route_planner_result;
+    for(std::vector<ropod_ros_msgs::Area>::const_iterator curr_area = req->areas.begin(); curr_area != req->areas.end(); ++curr_area)
+    {
+      path_areas.push_back(*curr_area);
+    }
+    std::vector<ropod_ros_msgs::Area> path_areas2 = this->compute_route(path_areas);  // implemented in derived classes
+    route_planner_result.areas = compute_orientations(path_areas2);
+    route_planner_server.setSucceeded(route_planner_result);
 }
 
-/*
-Computes orientation based on next pose
-*/
-std::vector<ropod_ros_msgs::Area> RoutePlanner::compute_orientations(std::vector<ropod_ros_msgs::Area> path_areas)
+
+void RoutePlanner::GetWayptPositionResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetWayptPositionResultConstPtr& result)
 {
-  bool isFirstWaypt = true;
-  double last_x = 0;
-  double last_y = 0;
-  double last_orientation = 0;
-  // ropod_ros_msgs::Waypoint *wpt_addr_ref = nullptr;
-  std::queue<double> orientations;
-
-
-  for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
-
-    for (auto it2 = it1->waypoints.begin(); it2 != it1->waypoints.end(); it2++)
-    {
-      if(!isFirstWaypt)
-      {
-        double angle = -atan2(it2->waypoint_pose.position.y-last_y,it2->waypoint_pose.position.x-last_x)*180/3.1457;        
-        // wpt_addr_ref->waypoint_pose.orientation.z = angle;
-        orientations.push(angle);
-        last_orientation = angle;
-      }
-      else
-      {
-        isFirstWaypt = false;
-      }
-      last_x = it2->waypoint_pose.position.x;
-      last_y = it2->waypoint_pose.position.y;           
-      //wpt_addr_ref = it2;
-    }
-  }
-  orientations.push(last_orientation);
-
-  for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
-
-    for (auto it2 = it1->waypoints.begin(); it2 != it1->waypoints.end(); it2++)
-    {
-      tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, orientations.front());
-      std::cout << "(" << it2->waypoint_pose.position.x << "," << it2->waypoint_pose.position.y << "," << orientations.front() << ")" << std::endl; 
-      q.normalize();
-      it2->waypoint_pose.orientation.x = q.x();
-      it2->waypoint_pose.orientation.y = q.y();
-      it2->waypoint_pose.orientation.z = q.z();
-      it2->waypoint_pose.orientation.w = q.w();
-      orientations.pop();
-    }
-  }
-  return path_areas;
+    waypt_position_result = *result;
 }
 
+void RoutePlanner::GetWayptShapeResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetWayptShapeResultConstPtr& result)
+{
+    waypt_shape_result = *result;
+}
+
+ropod_ros_msgs::Position RoutePlanner::CallGetWayptPositionAction(int id)
+{
+    ropod_ros_msgs::GetWayptPositionGoal req;
+    req.ids = {id};
+    ropod_ros_msgs::Position pos;
+    get_waypt_position_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetWayptPositionResultCb, this, _1, _2));
+    bool finished_before_timeout = get_waypt_position_action_client.waitForResult(ros::Duration(5.0));
+    if (get_waypt_position_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        for (auto it = waypt_position_result.positions.begin(); it != waypt_position_result.positions.end(); it++)
+        {
+            pos = *it;
+        }
+    }
+    return pos;
+}
+
+ropod_ros_msgs::Shape RoutePlanner::CallGetWayptShapeAction(int id)
+{
+    ropod_ros_msgs::GetWayptShapeGoal req;
+    req.ids = {id};
+    ropod_ros_msgs::Shape shape;
+    get_waypt_shape_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetWayptShapeResultCb, this, _1, _2));
+    bool finished_before_timeout = get_waypt_shape_action_client.waitForResult(ros::Duration(5.0));
+    if (get_waypt_shape_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        for (auto it = waypt_shape_result.shapes.begin(); it != waypt_shape_result.shapes.end(); it++)
+        {
+            shape = *it;
+        }
+    }
+    return shape;
+}

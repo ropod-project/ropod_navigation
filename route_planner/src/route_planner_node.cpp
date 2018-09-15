@@ -7,8 +7,6 @@ int main(int argc, char **argv)
 
   SimpleOSMRoutePlanner route_planner;
 
-  ros::ServiceServer service = nh.advertiseService("route_planner_service", &SimpleOSMRoutePlanner::routePlannerServiceCallback, (RoutePlanner*)&route_planner);
-
   ros::spin();
 
   return 0;
