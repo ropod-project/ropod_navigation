@@ -23,8 +23,8 @@
 #include "simplified_world_model.h"
 #include "route_navigation_defines.h"
 
-#include <ropod_ros_msgs/ropod_door_detection.h>
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
+#include <ropod_ros_msgs/DoorDetection.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <geolib/ros/tf_conversions.h>

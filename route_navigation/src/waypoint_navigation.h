@@ -12,6 +12,7 @@
 
 #include <ropod_ros_msgs/NavigationArea.h>
 #include <ropod_ros_msgs/Waypoint.h>
+#include <ropod_ros_msgs/DoorDetection.h>
 
 #include <maneuver_navigation/Goal.h>
 #include <maneuver_navigation/Configuration.h>
