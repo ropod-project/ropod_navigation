@@ -7,5 +7,7 @@
         <param name="move_base_feedback_topic" value="/move_base/feedback" />
         <param name="move_base_cancel_topic" value="/move_base/cancel" />
         <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
+        <remap from="~dock_action" to="/ropod_task_executor/DOCK" />
+        <remap from="~undock_action" to="/ropod_task_executor/UNDOCK" />
     </node>
 </launch>
