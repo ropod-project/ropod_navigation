@@ -27,6 +27,7 @@ bool robot_action_msg_received = false;
 ropod_ros_msgs::RobotAction robot_action_msg;
 ropod_ros_msgs::RobotAction robot_action_msg_rec;
 
+
 void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& robot_action_msg_)
 {
 //     ROS_INFO("Action message from Model mediator received. Action ID %s, %d areas", robot_action_msg_->action_id.c_str(), (int) robot_action_msg_->navigation_areas.size());
@@ -34,6 +35,40 @@ void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& ro
     robot_action_msg_rec = *robot_action_msg_;
     robot_action_msg_received = true;
 }
+
+void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::RoutePlannerResultConstPtr& result)
+{
+         
+  // Extract waypoints into RobotActionMessage
+  ropod_ros_msgs::NavigationArea robot_nav_area;  
+  robot_action_msg_rec.navigation_areas.clear();
+  
+  ropod_ros_msgs::RoutePlannerResult result_internal = *result;
+  
+    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = result_internal.areas.begin(); area_it != result_internal.areas.end(); area_it++) 
+    {
+        int no_of_waypts = 0;
+        robot_nav_area.waypoints.clear();
+        
+        for (std::vector<ropod_ros_msgs::Waypoint>::iterator wayp_area_it = area_it->waypoints.begin(); wayp_area_it != area_it->waypoints.end(); wayp_area_it++)
+        {
+            robot_nav_area.area_id = wayp_area_it->area_id;
+            robot_nav_area.name = wayp_area_it->semantic_id;
+            robot_nav_area.type = area_it->type;
+            robot_nav_area.waypoints.push_back(*wayp_area_it);
+            std::cout << "Waypoint" << std::endl;
+            std::cout << "Type: " << area_it->type << std::endl;
+            std::cout << "ID: " << wayp_area_it->area_id << std::endl;
+            std::cout << "pos(" << wayp_area_it->waypoint_pose.position.x << "," << wayp_area_it->waypoint_pose.position.y << ")" << std::endl; 
+            std::cout << "quat(" << wayp_area_it->waypoint_pose.orientation.w << "," << wayp_area_it->waypoint_pose.orientation.x << "," << wayp_area_it->waypoint_pose.orientation.y << "," << wayp_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
+           
+        }
+        robot_action_msg_rec.navigation_areas.push_back(robot_nav_area);
+    }
+     
+     robot_action_msg_received = true;
+}
+
 
 void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
@@ -89,39 +124,13 @@ void loadAttachedCallback(const std_msgs::Bool::ConstPtr& loadAttachedStmsg)
 }
 
 
-// TODO this needs to be replaced with a query to the world model
-geometry_msgs::PoseStamped getPoseFromWorldModel(const std::string &area_name)
-{
-    std::string param_name = "/areas/" + area_name;
-    std::vector<double> waypoint;
-    ros::param::get(param_name, waypoint);    
-    geometry_msgs::PoseStamped p;
-    p.pose.position.x = waypoint[0];
-    p.pose.position.y = waypoint[1];
-    tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, waypoint[2]);
-    q.normalize();
-    p.pose.orientation.x = q.x();
-    p.pose.orientation.y = q.y();
-    p.pose.orientation.z = q.z();
-    p.pose.orientation.w = q.w();
-    return p;
-}
-
-// this needs to be replaced with a query to the world model
-std::string getAreaTypeFromWorldModel(const std::string &area_name)
-{
-    std::string param_name = "/area_types/" + area_name;
-    std::string area_type;
-    ros::param::get(param_name, area_type);
-    return area_type;
-}
-
 RopodNavigation::RopodNavigation()
 {
 }
 
 RopodNavigation::~RopodNavigation()
 {
+    delete route_planner_action_client_ptr_;
 }
 
 std::string RopodNavigation::GetEnv( const std::string & var ) 
@@ -176,6 +185,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/progress", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
+    poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
+    
 
     send_goal_ = false;
     
@@ -199,7 +210,10 @@ void RopodNavigation::initialize ( ed::InitData& init )
     init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featurePropertiesKey, new FeaturPropertiesInfo );
     controlMode_.data = ropodNavigation::LLC_NORMAL;
     
-    
+
+    route_planner_action_client_ptr_ = new actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction>("/route_planner",true);    
+    route_planner_action_client_ptr_->waitForServer();    
+
 
     // Wait for route to be published
     ROS_INFO ( "Wait for route" );
@@ -229,6 +243,13 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                  ROS_INFO("GOTO-action set");
             // Here query world model mediator with OSM to obtain waypoints from the area id path plan
+                 
+            ropod_ros_msgs::RoutePlannerGoal req;
+            req.areas = action_msg.areas;
+            route_planner_action_client_ptr_->sendGoal(req, boost::bind(&RopodNavigation::actionRoutePlannerCallback, this, _1, _2));
+            // Make request and wait for result in a callback
+
+                 
         }
         else if ( action_msg.type == "ENTER_ELEVATOR" )
         {
@@ -264,34 +285,39 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         robot_action_msg = robot_action_msg_rec;
         waypoint_ids_.clear();
         path_msg_.poses.clear();
+        
+        geometry_msgs::PoseArray vispos_array;
+        vispos_array.header.frame_id = "map";       
 
-        if ( robot_action_msg.type == "GOTO" )
+        ROS_INFO("GOTO-action set");
+        // Extract all areas and waypoints to go the corresponding location
+        for ( std::vector<ropod_ros_msgs::NavigationArea>::const_iterator curr_area = robot_action_msg.navigation_areas.begin();
+                curr_area != robot_action_msg.navigation_areas.end(); ++curr_area )
         {
-                 ROS_INFO("GOTO-action set");
-            // Extract all areas and waypoints to go the corresponding location
-            for ( std::vector<ropod_ros_msgs::NavigationArea>::const_iterator curr_area = robot_action_msg.navigation_areas.begin();
-                    curr_area != robot_action_msg.navigation_areas.end(); ++curr_area )
+            if (curr_area->type == "door")
+                continue;
+            for ( std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_wayp = curr_area->waypoints.begin();
+                curr_wayp != curr_area->waypoints.end(); ++curr_wayp )
             {
-                if (curr_area->type == "Intersection")
-                    continue;
-                for ( std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_wayp = curr_area->waypoints.begin();
-                    curr_wayp != curr_area->waypoints.end(); ++curr_wayp )
-                {
-                    geometry_msgs::PoseStamped p;
-                    p.pose = curr_wayp->waypoint_pose ;
-                    std::string area_type = curr_area->type;
-                    path_msg_.poses.push_back ( p );
-                    waypoint_ids_.push_back ( curr_wayp->semantic_id );
-                }
+                geometry_msgs::PoseStamped p;
+                p.pose = curr_wayp->waypoint_pose ;
+                std::string area_type = curr_area->type;
+                path_msg_.poses.push_back ( p );
+                vispos_array.poses.push_back(p.pose);
+                
+            std::cout << "Waypoint" << std::endl;
+            std::cout << "Type: " << curr_area->type << std::endl;
+            std::cout << "pos(" << curr_wayp->waypoint_pose.position.x << "," << curr_wayp->waypoint_pose.position.y << ")" << std::endl; 
+            std::cout << "quat(" << curr_wayp->waypoint_pose.orientation.w << "," << curr_wayp->waypoint_pose.orientation.x << "," << curr_wayp->waypoint_pose.orientation.y << "," << curr_wayp->waypoint_pose.orientation.z << ") \n" << std::endl; 
+                
+                waypoint_ids_.push_back ( curr_wayp->semantic_id );
             }
-           // waypoint_navigation.startNavigation ( path_msg_ );
-            waypoint_navigation.startNavigation(robot_action_msg.navigation_areas);
-            active_nav = NAVTYPE_WAYPOINT;
         }
-        else 
-        {
-            ROS_ERROR("Wrong message: Commands other than GOTO do not need World model mediation");
-        }
+        // waypoint_navigation.startNavigation ( path_msg_ );
+        waypoint_navigation.startNavigation(robot_action_msg.navigation_areas);
+        active_nav = NAVTYPE_WAYPOINT;
+        poses_waypoints_pub_.publish(vispos_array);
+        
 
     }    
    

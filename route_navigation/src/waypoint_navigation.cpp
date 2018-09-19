@@ -236,7 +236,7 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
             curr_nav_area++;
             if ( curr_nav_area < planned_full_route.end())
             {
-                if( curr_nav_area->type != "Intersection" && curr_nav_area->waypoints.size() != 0)
+                if( curr_nav_area->type != "door" && curr_nav_area->waypoints.size() != 0)
                 {
                     next_area_is_valid = true;
                     curr_nav_waypoint = curr_nav_area->waypoints.begin();
