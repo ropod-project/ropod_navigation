@@ -186,7 +186,7 @@ bool ElevatorNavigation::isWaypointAchieved()
 }
 
 /*--------------------------------------------------------*/
-bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status)
+bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::DoorDetection door_status)
 {
     if(door_status.undetectable)
         return false;
@@ -200,7 +200,7 @@ bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::ropod_door_detection do
 
 /*--------------------------------------------------------*/
 TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
-        bool& sendgoal, ropod_ros_msgs::ropod_door_detection door_status)
+        bool& sendgoal, ropod_ros_msgs::DoorDetection door_status)
 {
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt;

@@ -6,7 +6,7 @@ wm::SimplifiedWorldModel simple_wm;
 WaypointNavigation waypoint_navigation;
 ElevatorNavigation elevator_navigation;
 MobidikCollection mobidik_collection_navigation;
-ropod_ros_msgs::ropod_door_detection door_status;
+ropod_ros_msgs::DoorDetection door_status;
 ropod_ros_msgs::TaskProgressGOTO ropod_progress_msg;
 ropod_ros_msgs::TaskProgressDOCK ropod_progress_dock_msg;
 visualization_msgs::MarkerArray objectMarkerArray;
@@ -84,7 +84,7 @@ void actionCallback(const ropod_ros_msgs::Action::ConstPtr& action_msg_)
     action_msg_rec = *action_msg_;
     action_msg_received = true;
 }
-void doorDetectCallback(const ropod_ros_msgs::ropod_door_detection::ConstPtr& DoorStmsg)
+void doorDetectCallback(const ropod_ros_msgs::DoorDetection::ConstPtr& DoorStmsg)
 {
     door_status = *DoorStmsg;
 }
@@ -166,7 +166,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sub_ccu_dock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "dock_action", 10, actionCallback );
     sub_ccu_undock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "undock_action", 10, actionCallback );
 
-    subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
+    subdoor_status_ = n.subscribe<ropod_ros_msgs::DoorDetection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
     LLCmodeApplied_ = n.subscribe<std_msgs::UInt16> ( "/ropod/LLCmode_Applied", 10, LLCmodeAppliedCallback );
     loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_Applied", 10, loadAttachedCallback ); 

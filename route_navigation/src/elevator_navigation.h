@@ -22,7 +22,7 @@
 #include <angles/angles.h>
 
 #include "simplified_world_model.h"
-#include <ropod_ros_msgs/ropod_door_detection.h>
+#include <ropod_ros_msgs/DoorDetection.h>
 
 #include <ropod_ros_msgs/ropod_demo_status_update.h>
 
@@ -79,11 +79,9 @@ public:
     void stopNavigation();
     bool isPositionValid();
     bool isWaypointAchieved();
-    bool checkDoorStatus(ropod_ros_msgs::ropod_door_detection door_status);
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, 
-        bool& sendgoal, ropod_ros_msgs::ropod_door_detection door_status);
-    
-    
+    bool checkDoorStatus(ropod_ros_msgs::DoorDetection door_status);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr,
+        bool& sendgoal, ropod_ros_msgs::DoorDetection door_status);
 private:
     wm::Elevator elevator;
 };

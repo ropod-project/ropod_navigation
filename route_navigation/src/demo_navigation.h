@@ -21,7 +21,7 @@
 #include <iostream>
 
 /* ROPOD ROS messages */
-#include <ropod_ros_msgs/ropod_door_detection.h>
+#include <ropod_ros_msgs/DoorDetection.h>
 
 #include <ropod_ros_msgs/Action.h>
 #include <ropod_ros_msgs/RobotAction.h>
