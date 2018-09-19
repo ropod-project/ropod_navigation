@@ -24,8 +24,6 @@
 #include "simplified_world_model.h"
 #include <ropod_ros_msgs/DoorDetection.h>
 
-#include <ropod_ros_msgs/ropod_demo_status_update.h>
-
 #define WAYP_REACHED_DIST 0.5
 #define GOAL_REACHED_DIST 0.3
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
@@ -65,9 +63,6 @@ public:
     move_base_msgs::MoveBaseGoal goal;
     ros::Time stamp_start;
     ros::Duration stamp_wait;
-
-    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;      
-
 
     ElevatorNavigation();
     ~ElevatorNavigation();

@@ -23,7 +23,6 @@
 #include "simplified_world_model.h"
 #include "route_navigation_defines.h"
 
-#include <ropod_ros_msgs/ropod_demo_status_update.h>
 #include <ropod_ros_msgs/DoorDetection.h>
 #include <ropod_ros_msgs/TaskProgressDOCK.h>
 #include <visualization_msgs/Marker.h>
@@ -173,8 +172,6 @@ class MobidikCollection
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
 
-    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg_;
-    
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
     
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;

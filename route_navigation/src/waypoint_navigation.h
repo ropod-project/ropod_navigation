@@ -18,8 +18,6 @@
 #include <maneuver_navigation/Configuration.h>
 #include <maneuver_navigation/Feedback.h>
 
-#include <ropod_ros_msgs/ropod_demo_status_update.h>
-
 #include "route_navigation_defines.h"
 
 #define WAYP_REACHED_DIST 0.5
@@ -63,7 +61,6 @@ public:
     tf::Transform waypoint_tf_;
     std_msgs::Bool true_bool_msg_;
 
-    ropod_ros_msgs::ropod_demo_status_update ropod_fb_msg;
 
     WaypointNavigation();
     ~WaypointNavigation();
