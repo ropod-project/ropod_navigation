@@ -256,7 +256,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
                  
         }
-        else if ( action_msg.type == "ENTER_ELEVATOR" )
+        else if ( action_msg.type == "GOTO_ELEVATOR" )
         {
                  ROS_INFO("Enter elevator action set");
            
@@ -363,7 +363,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             ropod_progress_dock_msg.action_id = action_msg.action_id;
             ropod_progress_dock_msg.action_type = action_msg.type;
             ropod_progress_dock_msg.status = ropod_ros_msgs::TaskProgressDOCK::DOCKED;
-            ropod_task_dock_fb_pub_.publish ( ropod_progress_msg );
+            ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
 
         }
 
@@ -392,7 +392,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             ropod_progress_dock_msg.action_id = action_msg.action_id;
             ropod_progress_dock_msg.action_type = action_msg.type;
             ropod_progress_dock_msg.status = ropod_ros_msgs::TaskProgressDOCK::UNDOCKED;
-            ropod_task_dock_fb_pub_.publish ( ropod_progress_msg );
+            ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
 
         }
         if ( nav_state.fb_nav == NAV_UNDOCKED )

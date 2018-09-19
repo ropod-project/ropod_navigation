@@ -8,22 +8,6 @@ areas:
     floor_number: -1
     waypoints: 
       - 
-        semantic_id: 'AMK_A_L-1_C42_LA2'
-        area_id: '4989'
-        floor_number: 0
-        waypoint_pose: 
-          position: 
-            x: -1.0
-            y: -1.0
-            z: 0.0
-          orientation: 
-            x: 0.0
-            y: 0.0
-            z: 0.0
-            w: 1.0
-        entry_points: []
-        exit_points: []
-      - 
         semantic_id: 'AMK_A_L-1_C42_LA1'
         area_id: '4990'
         floor_number: 0
