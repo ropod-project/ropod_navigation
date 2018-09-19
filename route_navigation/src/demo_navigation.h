@@ -77,8 +77,6 @@ private:
 
     ros::CallbackQueue cb_queue_;    
         
-    ros::Subscriber sub_ccu_commands_;
-        
     ros::Subscriber subdoor_status_; 
     
     ros::Subscriber objectMarkers_; 
@@ -95,10 +93,18 @@ private:
     
     ros::Subscriber loadAttachedApplied_; 
     
+    ros::Subscriber sub_ccu_goto_commands_;
+
+    ros::Subscriber sub_ccu_dock_commands_;
+
+    ros::Subscriber sub_ccu_undock_commands_;
+
     ros::Publisher movbase_cancel_pub_;
-    
-    ros::Publisher ropod_task_fb_pub_;
-    
+
+    ros::Publisher ropod_task_goto_fb_pub_;
+
+    ros::Publisher ropod_task_dock_fb_pub_;
+
     ros::Publisher ObjectMarkers_pub_; // TODO remove
     
     ros::Publisher LLCmodeSet_pub_; 

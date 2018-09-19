@@ -8,6 +8,7 @@ ElevatorNavigation elevator_navigation;
 MobidikCollection mobidik_collection_navigation;
 ropod_ros_msgs::ropod_door_detection door_status;
 ropod_ros_msgs::TaskProgressGOTO ropod_progress_msg;
+ropod_ros_msgs::TaskProgressDOCK ropod_progress_dock_msg;
 visualization_msgs::MarkerArray objectMarkerArray;
 std::string areaID;
 
@@ -161,7 +162,10 @@ void RopodNavigation::initialize ( ed::InitData& init )
     n.param<std::string> ( "move_base_server", moveBaseServerName, "/move_base" );
     n.param<std::string> ( "move_base_feedback_topic", navigationFeedbackTopic, "/maneuver_navigation/feedback" );
 
-    sub_ccu_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
+    sub_ccu_goto_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
+    sub_ccu_dock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "dock_action", 10, actionCallback );
+    sub_ccu_undock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "undock_action", 10, actionCallback );
+
     subdoor_status_ = n.subscribe<ropod_ros_msgs::ropod_door_detection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
     LLCmodeApplied_ = n.subscribe<std_msgs::UInt16> ( "/ropod/LLCmode_Applied", 10, LLCmodeAppliedCallback );
@@ -182,7 +186,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
 
     movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
-    ropod_task_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/progress", 1 );
+    ropod_task_goto_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/task_progress/goto", 1 );
+    ropod_task_dock_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressDOCK> ( "/task_progress/dock", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
     poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
@@ -259,14 +264,14 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             areaID = action_msg.areas[0].area_id; // Get ID of elevator area
             elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
         }
-         else if ( action_msg.type == "COLLECT_MOBIDIK" ) // TODO: integrated in the CCU!?
+         else if ( action_msg.type == "DOCK" ) // TODO: integrated in the CCU!?
         {
                 ROS_INFO("Collect mobidik-action set");
             active_nav = NAVTYPE_MOBIDIK_COLLECTION;
             mobidik_collection_navigation.initNavState();
             areaID = action_msg.areas[0].area_id;
         }
-        else if ( action_msg.type == "RELEASE_MOBIDIK" ) // TODO: integrated in the CCU!?
+        else if ( action_msg.type == "UNDOCK" ) // TODO: integrated in the CCU!?
         {
                 ROS_INFO("Release mobidik-action set");
             active_nav = NAVTYPE_MOBIDIK_RELEASE;
@@ -350,9 +355,18 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         if ( nav_state.fb_nav == NAV_DONE )
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
-            active_nav = NAVTYPE_NONE;      
+            active_nav = NAVTYPE_NONE;
+
+            // Sending feedback to ropod_task_executor
+            if ( nav_state.wayp_n<=waypoint_ids_.size() )
+                ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+            ropod_progress_dock_msg.action_id = action_msg.action_id;
+            ropod_progress_dock_msg.action_type = action_msg.type;
+            ropod_progress_dock_msg.status = ropod_ros_msgs::TaskProgressDOCK::DOCKED;
+            ropod_task_dock_fb_pub_.publish ( ropod_progress_msg );
+
         }
-            
+
         if ( nav_state.fb_nav == NAV_DOCKED )
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DOCKED");
@@ -371,6 +385,14 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
             active_nav = NAVTYPE_NONE;
+
+            // Sending feedback to ropod_task_executor
+            if ( nav_state.wayp_n<=waypoint_ids_.size() )
+                ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+            ropod_progress_dock_msg.action_id = action_msg.action_id;
+            ropod_progress_dock_msg.action_type = action_msg.type;
+            ropod_progress_dock_msg.status = ropod_ros_msgs::TaskProgressDOCK::UNDOCKED;
+            ropod_task_dock_fb_pub_.publish ( ropod_progress_msg );
 
         }
         if ( nav_state.fb_nav == NAV_UNDOCKED )
@@ -410,12 +432,12 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             ROS_INFO ( "Waypoint done notification received" );
             if ( nav_state.wayp_n<=waypoint_ids_.size() )
                 ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
-            ropod_progress_msg.action_id = action_msg.action_id;
-            ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status = "reached";
-            ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
-            ropod_progress_msg.totalNumber = waypoint_ids_.size();
-            ropod_task_fb_pub_.publish ( ropod_progress_msg );
+                ropod_progress_msg.action_id = action_msg.action_id;
+                ropod_progress_msg.action_type = action_msg.type;
+                ropod_progress_msg.status = ropod_ros_msgs::TaskProgressGOTO::REACHED;
+                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+                ropod_progress_msg.totalNumber = waypoint_ids_.size();
+                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
             // Update coming waypoint
         }
     }
@@ -434,11 +456,11 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                 ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status = "reaching";
+            ropod_progress_msg.status = ropod_ros_msgs::TaskProgressGOTO::ONGOING;
             ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
             ropod_progress_msg.totalNumber = waypoint_ids_.size();
-            ropod_task_fb_pub_.publish ( ropod_progress_msg );
-        }      
+            ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+        }
     }
 
     // Send navigation command
