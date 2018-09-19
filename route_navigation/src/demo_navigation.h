@@ -15,6 +15,10 @@
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
 #include <string>
+#include <geometry_msgs/PoseArray.h>
+
+/* C++ */
+#include <iostream>
 
 /* ROPOD ROS messages */
 #include <ropod_ros_msgs/DoorDetection.h>
@@ -22,6 +26,11 @@
 #include <ropod_ros_msgs/Action.h>
 #include <ropod_ros_msgs/RobotAction.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
+#include <ropod_ros_msgs/Area.h>
+#include <ropod_ros_msgs/Waypoint.h>
+
+#include <actionlib/client/simple_action_client.h>
+#include <ropod_ros_msgs/RoutePlannerAction.h>
 
 #include "waypoint_navigation.h"
 #include "elevator_navigation.h"
@@ -60,7 +69,9 @@ public:
     NAVTYPE_NONE
 };
 
-    bool robotReal;
+   bool robotReal;
+    
+   void actionRoutePlannerCallback(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::RoutePlannerResultConstPtr& result);
 
 private:
 
@@ -101,8 +112,12 @@ private:
     ros::Publisher loadAttachedSet_pub_; 
     
     ros::Publisher cmd_vel_pub_;
+    
+    ros::Publisher poses_waypoints_pub_;
             
     nav_msgs::Path path_msg_;
+    
+    
     
     std::vector<std::basic_string< char > > waypoint_ids_;
 
@@ -125,6 +140,8 @@ private:
     ros::Publisher mn_sendGoal_pub_;
     
     ros::Subscriber sub_navigation_fb_;
+    
+    actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction> * route_planner_action_client_ptr_;
 };
 
 #endif

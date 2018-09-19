@@ -1,43 +1,138 @@
 rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "
-action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
+action_id: 'from_delivery_to_elevator'
 type: 'GOTO'
-areas: 
+areas:
+  -
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'corridor'
+    waypoints:
+      -
+        semantic_id: 'non-used-now'
+        area_id: '4990'
+        floor_number: 1
+        waypoint_pose:
+          position: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+          orientation: 
+              x: 0.0
+              y: 0.0
+              z: 0.0
+              w: 0.0
+        entry_points: []
+        exit_points: []  
   - 
-    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
-    name: 'WP01'
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'junction'
     waypoints:
         - 
-          semantic_id: 'test-semantic_id-1'
-          area_id: 'test-area_id-1'
-          floor_number: 0
-          waypoint_pose: 
-              position: 
-                  x: 1.842681
-                  y: 1.084743
-                  z: 0.0
-              orientation: 
-                  x: -0.030137
-                  y: 0.0
-                  z: 0.0
-                  w: 0.0 
+          semantic_id: 'non-used-now'
+          area_id: '4849'
+          floor_number: -1
+          waypoint_pose:
+            position: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+                w: 0.0
+          entry_points: []
+          exit_points: []          
   - 
-    area_id: '1d19dded-806f-43f0-8777-888de32507fb'
-    name: 'WP02'
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'corridor'
     waypoints:
         - 
-          semantic_id: 'test-semantic_id-2'
-          area_id: 'test-area_id-2'
-          floor_number: 0
-          waypoint_pose: 
-              position: 
-                  x: 2.304686
-                  y: 0.998834
-                  z: 0.0
-              orientation: 
-                  x: -0.109854
-                  y: 0.0
-                  z: 0.0
-                  w: 0.0 
+          semantic_id: 'non-used-now'
+          area_id: '4848'
+          floor_number: -1
+          waypoint_pose:
+            position: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+                w: 0.0
+          entry_points: []
+          exit_points: []          
+  - 
+    area_id: '3116'
+    name: 'non-used-now'
+    type: 'door'
+    waypoints: []
+  - 
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'corridor'
+    waypoints:
+        - 
+          semantic_id: 'non-used-now'
+          area_id: '4847'
+          floor_number: -1
+          waypoint_pose:
+            position: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+                w: 0.0
+          entry_points: []
+          exit_points: []          
+  - 
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'junction'
+    waypoints:
+        - 
+          semantic_id: 'non-used-now'
+          area_id: '4870'
+          floor_number: -1
+          waypoint_pose:
+            position: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+                w: 0.0
+          entry_points: []
+          exit_points: []          
+  - 
+    area_id: '4991'
+    name: 'non-used-now'
+    type: 'corridor'
+    waypoints:
+        - 
+          semantic_id: 'non-used-now'
+          area_id: '4867'
+          floor_number: -1
+          waypoint_pose:
+            position: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.0
+                w: 0.0 
+          entry_points: []
+          exit_points: []             
 waypoints: []
 start_floor: 0
 goal_floor: 0
