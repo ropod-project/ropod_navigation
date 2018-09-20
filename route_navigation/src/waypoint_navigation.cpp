@@ -178,10 +178,10 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
             diff_quat.setRPY(0.0,0.0,yaw_diff);
             double base_yaw = tf::getYaw(base_position_TF.getRotation());            
             
-            if(fabs(diff_quat.getAngle()) > GOAL_REACHED_ANG)
+            if(fabs( base_yaw-yaw_diff) > GOAL_REACHED_ANG)
             {
                 tf::Quaternion quat_tf_pose;
-                quat_tf_pose.setRPY(0.0,0.0,base_yaw+yaw_diff);                
+                quat_tf_pose.setRPY(0.0,0.0,yaw_diff);                
                 mn_goal.start.pose = base_position->pose;
                 mn_goal.goal.pose.position = base_position->pose.position;                                                          
                 mn_goal.goal.pose.orientation.w = quat_tf_pose.getW();
@@ -196,8 +196,7 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
             {
                 perform_initial_rotation = false;
                 mn_goal.goal.pose = curr_nav_waypoint->waypoint_pose;
-                mn_goal.start.pose.position = base_position->pose.position;
-                mn_goal.start.pose.orientation = mn_goal.goal.pose.orientation;                
+                mn_goal.start.pose = base_position->pose;             
             }                        
             
         }
