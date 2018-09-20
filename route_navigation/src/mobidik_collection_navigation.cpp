@@ -407,7 +407,7 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
 
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal)
+TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal,bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal)
 {
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
@@ -459,6 +459,14 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     line_list.color.r = 1.0;
     line_list.color.a = 1.0;
 
+    mn_goal.conf.precise_goal = false;
+    mn_goal.conf.use_line_planner = false;
+    mn_goal.start.pose = base_position_->pose; // always plan from current pose
+    
+    mn_goal.goal.header.frame_id = "map";
+    mn_goal.goal.header.stamp = ros::Time::now();
+    mn_goal.start.header.frame_id = "map";
+    mn_goal.start.header.stamp = ros::Time::now();
 
     switch(nav_state_)
     { 
@@ -494,8 +502,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
             point2goal(&setpoint_);
             
-            markerArraytest->markers.push_back ( points );
-
+            markerArraytest->markers.push_back ( points );           
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
             nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
 
@@ -594,7 +601,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             }  else {
                 bumperWrenchesVector_.clear();
                 avgWrenchesDetermined_ = false;
-                controlMode->data = ropodNavigation::LLC_NORMAL;
+                controlMode->data = ropodNavigation::LLC_VEL; //LLC_NORMAL
                 nav_next_state_  = MOBID_COLL_NAV_COUPLING;
                 
             }
@@ -671,6 +678,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         goal_.target_pose.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
         sendgoal = true;
+        if (nav_next_state_wp_ == MOBID_COLL_NAV_CONNECTING) // if we are just before connecting, do a precise goal
+            mn_goal.conf.precise_goal = true;
         tfb_nav.fb_nav = NAV_GOTOPOINT;
         nav_next_state_ = MOBID_COLL_NAV_BUSY;
         break;
@@ -697,7 +706,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     case MOBID_COLL_NAV_WAYPOINT_DONE: //
             ROS_INFO("MOBID_COLL_NAV_DONE");
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
-        controlMode->data = ropodNavigation::LLC_NORMAL;
+        controlMode->data = ropodNavigation::LLC_VEL; // LLC_NORMAL
         nav_next_state_ = nav_next_state_wp_;
 
         break;
@@ -707,7 +716,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
         ROS_INFO("Navigation done");
         tfb_nav.fb_nav = NAV_DONE;        
         stopNavigation();
-        movbase_cancel_pub.publish(true_bool_msg_);
+        nav_cancel_pub.publish(true_bool_msg_);
         nav_next_state_ = MOBID_COLL_NAV_IDLE;
         break;
 
@@ -722,7 +731,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
             ROS_INFO("MOBID_COLL_NAV_PAUSED");
         if(nav_paused_req_)
         {
-            movbase_cancel_pub.publish(true_bool_msg_);
+            nav_cancel_pub.publish(true_bool_msg_);
             nav_paused_req_ = false;
         }
         break;
@@ -732,8 +741,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &mo
     }
 
     nav_state_ = nav_next_state_;
-
-    *goal_ptr = goal_;
+    
+    mn_goal.goal = goal_.target_pose;
 
     return tfb_nav;
 }
@@ -1001,7 +1010,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         goal_tfpose.setRotation(quat_temp);
         tf::poseTFToMsg(goal_tfpose,goal_.target_pose.pose);  
         
-        controlMode->data = ropodNavigation::LLC_NORMAL;
+        controlMode->data = ropodNavigation::LLC_VEL; //LLC_NORMAL
         
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
         nav_next_state_wp_release_ = MOBID_REL_NAV_DONE;
@@ -1046,7 +1055,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         ROS_INFO ( "MOBID_REL_NAV_DONE" );
         ROS_INFO ( "Navigation done" );
         tfb_nav.fb_nav = NAV_DONE;
-        controlMode->data = ropodNavigation::LLC_NORMAL;
+        controlMode->data = ropodNavigation::LLC_VEL; //LLC_NORMAL
         stopNavigation();
         movbase_cancel_pub.publish ( true_bool_msg_ );
         nav_next_state_release_ = MOBID_REL_NAV_IDLE;

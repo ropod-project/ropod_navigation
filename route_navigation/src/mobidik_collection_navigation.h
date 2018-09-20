@@ -31,6 +31,10 @@
 #include <geolib/Shape.h>
 #include <math.h>
 
+#include <maneuver_navigation/Goal.h>
+#include <maneuver_navigation/Configuration.h>
+#include <maneuver_navigation/Feedback.h>
+
 #define WAYP_MOBID_COLL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_COLL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_LOAD_REACHED_DIST 0.2 // [m]
@@ -132,7 +136,7 @@ class MobidikCollection
     
     bool isWaypointAchieved(double& dist_tolerance, double& angle_tolerance);
      
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal);
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal);
     
     void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik, visualization_msgs::Marker* points );
     
