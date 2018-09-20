@@ -173,7 +173,7 @@ void OSMWaypointsRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs
     std::cout << "Shape request" << std::endl;
     for (auto it_vert = area_nodes.begin(); it_vert != area_nodes.end(); it_vert++ )
     {
-        it_vert->y = - it_vert->y;
+        //it_vert->y = - it_vert->y;
         std::cout << it_vert->x << " , " <<it_vert->y << std::endl;
     }    
     area_type = (*wayp_areas_areait)->type;
