@@ -1,0 +1,262 @@
+rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "action_id: 'b266a723-cdb2-4030-845a-d5340e02d3a0'
+type: 'GOTO'
+areas: 
+  - 
+    area_id: '3127'
+    name: 'AMK_A_L-1_C11'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_A_L-1_C11_LA2'
+        area_id: '4842'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3128'
+    name: 'AMK_A_L-1_C12'
+    type: 'junction'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_A_L-1_C12_LA1'
+        area_id: '4849'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3130'
+    name: 'AMK_B_L-1_C13'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C13_LA2'
+        area_id: '4848'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3116'
+    name: 'AMK_A_L-1_C13_Door1'
+    type: 'door'
+    floor_number: -1
+    waypoints: []
+  - 
+    area_id: '3131'
+    name: 'AMK_B_L-1_C14'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C14_LA1'
+        area_id: '4847'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3133'
+    name: 'AMK_B_L-1_C15'
+    type: 'junction'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C15_LA1'
+        area_id: '4870'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3134'
+    name: 'AMK_B_L-1_C16'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C16_LA1'
+        area_id: '4867'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '4978'
+    name: 'AMK_B_L-1_C16_Door1'
+    type: 'door'
+    floor_number: -1
+    waypoints: []
+  - 
+    area_id: '3135'
+    name: 'AMK_B_L-1_C17'
+    type: 'junction'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C17_LA1'
+        area_id: '4872'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3138'
+    name: 'AMK_B_L-1_C5'
+    type: 'junction'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C5_LA1'
+        area_id: '4881'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3139'
+    name: 'AMK_B_L-1_C4'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C4_LA1'
+        area_id: '4880'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3140'
+    name: 'AMK_B_L-1_C3'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C3_LA1'
+        area_id: '4884'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+  - 
+    area_id: '3142'
+    name: 'AMK_B_L-1_C2'
+    type: 'corridor'
+    floor_number: -1
+    waypoints: 
+      - 
+        semantic_id: 'AMK_B_L-1_C2_LA1'
+        area_id: '4883'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+        entry_points: []
+        exit_points: []
+waypoints: []
+start_floor: 0
+goal_floor: 0
+execution_status: ''
+estimated_duration: -1.0"
