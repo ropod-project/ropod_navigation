@@ -20,7 +20,7 @@
 
 #include "route_navigation_defines.h"
 
-#define WAYP_REACHED_DIST 0.5
+#define WAYP_REACHED_DIST 1.0
 #define GOAL_REACHED_DIST 0.3
 #define GOAL_REACHED_ANG  20.0*3.141592/180.0
 

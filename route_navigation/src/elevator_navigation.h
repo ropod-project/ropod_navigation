@@ -24,9 +24,9 @@
 #include "simplified_world_model.h"
 #include <ropod_ros_msgs/DoorDetection.h>
 
-#define WAYP_REACHED_DIST 0.5
-#define GOAL_REACHED_DIST 0.3
-#define GOAL_REACHED_ANG  20.0*3.141592/180.0
+#define ELEV_WAYP_REACHED_DIST 0.5
+#define ELEV_GOAL_REACHED_DIST 0.3
+#define ELEV_GOAL_REACHED_ANG  20.0*3.141592/180.0
 
 
 class ElevatorNavigation

@@ -213,7 +213,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
             }
     
     init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featurePropertiesKey, new FeaturPropertiesInfo );
-    controlMode_.data = ropodNavigation::LLC_NORMAL;
+    controlMode_.data = ropodNavigation::LLC_VEL; //LLC_NORMAL
     
 
     route_planner_action_client_ptr_ = new actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction>("/route_planner",true);    

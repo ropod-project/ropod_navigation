@@ -178,8 +178,8 @@ bool ElevatorNavigation::isWaypointAchieved()
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
 
-    if (pow( v3temp.x(),2) + pow(v3temp.y(),2) < pow(GOAL_REACHED_DIST,2)
-            && fabs(qtemp.getAngle()) < GOAL_REACHED_ANG)
+    if (pow( v3temp.x(),2) + pow(v3temp.y(),2) < pow(ELEV_GOAL_REACHED_DIST,2)
+            && fabs(qtemp.getAngle()) < ELEV_GOAL_REACHED_ANG)
         return true;
     else
         return false;

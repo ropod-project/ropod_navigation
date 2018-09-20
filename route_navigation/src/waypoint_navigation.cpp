@@ -173,14 +173,21 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
             tf::Pose goal_TF;
             tf::poseMsgToTF(base_position->pose,base_position_TF);
             tf::poseMsgToTF(curr_nav_waypoint->waypoint_pose,goal_TF);
+            double yaw_diff = std::atan2(curr_nav_waypoint->waypoint_pose.position.y - base_position->pose.position.y, curr_nav_waypoint->waypoint_pose.position.x - base_position->pose.position.x);
+            tf::Quaternion diff_quat;
+            diff_quat.setRPY(0.0,0.0,yaw_diff);
+            double base_yaw = tf::getYaw(base_position_TF.getRotation());            
             
-            tf::Transform diff_tf = base_position_TF.inverseTimes(goal_TF);
-            
-            if(fabs(diff_tf.getRotation().getAngle()) > GOAL_REACHED_ANG)
+            if(fabs(diff_quat.getAngle()) > GOAL_REACHED_ANG)
             {
+                tf::Quaternion quat_tf_pose;
+                quat_tf_pose.setRPY(0.0,0.0,base_yaw+yaw_diff);                
                 mn_goal.start.pose = base_position->pose;
-                mn_goal.goal.pose.position = base_position->pose.position;
-                mn_goal.goal.pose.orientation = curr_nav_waypoint->waypoint_pose.orientation;  
+                mn_goal.goal.pose.position = base_position->pose.position;                                                          
+                mn_goal.goal.pose.orientation.w = quat_tf_pose.getW();
+                mn_goal.goal.pose.orientation.x = quat_tf_pose.getX();
+                mn_goal.goal.pose.orientation.y = quat_tf_pose.getY();
+                mn_goal.goal.pose.orientation.z = quat_tf_pose.getZ();
                 perform_initial_rotation = true;
                 return true;
                 
