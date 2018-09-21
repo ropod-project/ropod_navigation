@@ -70,11 +70,11 @@ void ElevatorNavigation::startNavigation(std::string ElevatorareaID, const ed::W
     elevator.wayp2_elevator.position.x = poseWP.getOrigin().getX();
     elevator.wayp2_elevator.position.y = poseWP.getOrigin().getY();
     elevator.wayp2_elevator.position.z = poseWP.getOrigin().getZ();
-    elevator.wayp2_elevator.orientation.w = rotationWP.getW();
+/*    elevator.wayp2_elevator.orientation.w = rotationWP.getW();
     elevator.wayp2_elevator.orientation.x = rotationWP.getX();
     elevator.wayp2_elevator.orientation.y = rotationWP.getY();
-    elevator.wayp2_elevator.orientation.z = rotationWP.getZ();        
-/*    tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
+    elevator.wayp2_elevator.orientation.z = rotationWP.getZ();   */     
+    tf::Quaternion q ( rotationWP.getX(), rotationWP.getY(), rotationWP.getZ(), rotationWP.getW() );
     tf::Matrix3x3 matrix ( q );
     double WP_roll, WP_pitch, WP_yaw;
     matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );   
@@ -84,7 +84,7 @@ void ElevatorNavigation::startNavigation(std::string ElevatorareaID, const ed::W
     elevator.wayp2_elevator.orientation.w = q.getW();
     elevator.wayp2_elevator.orientation.x = q.getX();
     elevator.wayp2_elevator.orientation.y = q.getY();
-    elevator.wayp2_elevator.orientation.z = q.getZ();  */            
+    elevator.wayp2_elevator.orientation.z = q.getZ();              
 
     
     poseWP = poseWP_orientationWP_waiting_ID;
@@ -188,14 +188,15 @@ bool ElevatorNavigation::isWaypointAchieved()
 /*--------------------------------------------------------*/
 bool ElevatorNavigation::checkDoorStatus(ropod_ros_msgs::DoorDetection door_status)
 {
-    if(door_status.undetectable)
-        return false;
-    else if(door_status.closed)
-        return false;
-    else if(door_status.open)
-        return true;
-    else
-        return false;
+    return true; // TODO: Use detector node?
+//     if(door_status.undetectable)
+//         return false;
+//     else if(door_status.closed)
+//         return false;
+//     else if(door_status.open)
+//         return true;
+//     else
+//         return false;
 }
 
 /*--------------------------------------------------------*/
@@ -214,11 +215,23 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &n
         tfb_nav.fb_nav = NAV_IDLE;
         if (route_busy == true)
         {
-            nav_next_state = ELEV_NAV_CHECKDOOR_IN;
+            nav_next_state = ELEV_WAIT_AREA;
             ROS_INFO("Waiting for door");
         }
         break;
-
+    case ELEV_WAIT_AREA:
+        waypoint_cnt = waypoint_cnt +1;
+        goal.target_pose.pose.position.x=elevator.wayp_wait.position.x;
+        goal.target_pose.pose.position.y=elevator.wayp_wait.position.y;
+        goal.target_pose.pose.position.z=elevator.wayp_wait.position.z;
+        goal.target_pose.pose.orientation.x=elevator.wayp_wait.orientation.x;
+        goal.target_pose.pose.orientation.y=elevator.wayp_wait.orientation.y;
+        goal.target_pose.pose.orientation.z=elevator.wayp_wait.orientation.z;
+        goal.target_pose.pose.orientation.w=elevator.wayp_wait.orientation.w;
+        nav_next_state_wp = ELEV_NAV_CHECKDOOR_IN;
+        nav_next_state = ELEV_NAV_GOTOPOINT;
+        ROS_INFO("Goto waiting area");        
+        break;
     case ELEV_NAV_CHECKDOOR_IN:         //we'll send the the next goal to the robot
         if(checkDoorStatus(door_status))
         {
@@ -231,8 +244,6 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &n
             goal.target_pose.pose.orientation.z=elevator.wayp1_elevator.orientation.z;
             goal.target_pose.pose.orientation.w=elevator.wayp1_elevator.orientation.w;
             nav_next_state_wp = ELEV_NAV_TURN_FACING_EXIT;
-            stamp_start = ros::Time::now();
-            stamp_wait = ros::Duration(20.0); // wait from the moment you want to enter to checl way out. This will be replaced by communication with elevator system
             nav_next_state = ELEV_NAV_GOTOPOINT;
             ROS_INFO("Door is open. Entering elevator");
         }
@@ -266,9 +277,12 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(ros::Publisher &n
         goal.target_pose.pose.orientation.y=elevator.wayp2_elevator.orientation.y;
         goal.target_pose.pose.orientation.z=elevator.wayp2_elevator.orientation.z;
         goal.target_pose.pose.orientation.w=elevator.wayp2_elevator.orientation.w;
+        stamp_start = ros::Time::now();
+        stamp_wait = ros::Duration(10.0); // wait from the moment you want to enter to checl way out. This will be replaced by communication with elevator system        
         nav_next_state_wp = ELEV_NAV_WAIT_FLOOR_CHANGE;
         nav_next_state = ELEV_NAV_GOTOPOINT;
         ROS_INFO("Turn to face elevator exit");
+        break;
     case ELEV_NAV_WAIT_FLOOR_CHANGE: //
         // wait for signal that we have arrived to the floor. For now just time based
         if( ros::Time::now() - stamp_start > stamp_wait)

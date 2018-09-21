@@ -36,6 +36,7 @@ class ElevatorNavigation
            ELEV_NAV_IDLE,
            ELEV_NAV_PAUSED,
            ELEV_NAV_BUSY,
+           ELEV_WAIT_AREA,
            ELEV_NAV_CHECKDOOR_IN,
            ELEV_NAV_CHECKDOOR_OUT,
 	   ELEV_NAV_TURN_FACING_EXIT,
