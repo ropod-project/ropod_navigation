@@ -28,6 +28,7 @@
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
 #include <ropod_ros_msgs/Area.h>
 #include <ropod_ros_msgs/Waypoint.h>
+#include <ropod_ros_msgs/Status.h>
 
 #include <actionlib/client/simple_action_client.h>
 #include <ropod_ros_msgs/RoutePlannerAction.h>
@@ -58,9 +59,9 @@ public:
     void initialize(ed::InitData& init);
 
     void process(const ed::WorldModel& world, ed::UpdateRequest& req);
-    
+
     std::string GetEnv( const std::string & var ) ;
-    
+
             enum {
     NAVTYPE_WAYPOINT = 0,
     NAVTYPE_ELEVATOR,
