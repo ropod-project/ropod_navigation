@@ -312,7 +312,7 @@ void MobidikCollection::initNavStateRelease()
         initAvgWrench(&avgWrenches_.back);
         initAvgWrench(&avgWrenches_.right);
         xy_goal_tolerance_  = GOAL_MOBID_LOAD_REACHED_DIST; // we start with lower tolerance
-        yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG;        
+        yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG_UNDOCK;        
 }
 
 geometry_msgs::WrenchStamped MobidikCollection::determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector)
@@ -407,7 +407,7 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
 
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal,bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal)
+TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal)
 {
     TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
@@ -459,14 +459,16 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
     line_list.color.r = 1.0;
     line_list.color.a = 1.0;
 
-    mn_goal.conf.precise_goal = false;
-    mn_goal.conf.use_line_planner = false;
+    mn_goal.conf.precise_goal = true;
+    mn_goal.conf.use_line_planner = true;
     mn_goal.start.pose = base_position_->pose; // always plan from current pose
     
     mn_goal.goal.header.frame_id = "map";
     mn_goal.goal.header.stamp = ros::Time::now();
     mn_goal.start.header.frame_id = "map";
     mn_goal.start.header.stamp = ros::Time::now();
+    
+    
 
     switch(nav_state_)
     { 
@@ -504,8 +506,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
             
             markerArraytest->markers.push_back ( points );           
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
-            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;
-
+            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;            
             bumperWrenchesVector_.clear();
         break;
         
@@ -519,7 +520,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
         {
             geo::Pose3D mobidikPose;
             getMobidikPosition ( world, MobidikID_ED_, &mobidikPose );
-
+            controlMode->data = ropodNavigation::LLC_DOCKING;
             output_vel.linear.x = -BACKWARD_VEL_DOCKING;
             cmv_vel_pub.publish ( output_vel );
 
@@ -678,8 +679,6 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
         goal_.target_pose.header.stamp = ros::Time::now();
         ROS_INFO("Sending goal");
         sendgoal = true;
-        if (nav_next_state_wp_ == MOBID_COLL_NAV_CONNECTING) // if we are just before connecting, do a precise goal
-            mn_goal.conf.precise_goal = true;
         tfb_nav.fb_nav = NAV_GOTOPOINT;
         nav_next_state_ = MOBID_COLL_NAV_BUSY;
         break;
@@ -707,6 +706,8 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
             ROS_INFO("MOBID_COLL_NAV_DONE");
         tfb_nav.fb_nav = NAV_WAYPOINT_DONE; // is this still valid when we integrate an extra waypoint for this mobidik-collection? What should we send as feedback?
         controlMode->data = ropodNavigation::LLC_VEL; // LLC_NORMAL
+        if (nav_next_state_wp_ == MOBID_COLL_NAV_CONNECTING)
+            controlMode->data = ropodNavigation::LLC_NORMAL; // for one sample send normal so the Matlab node can jump to docking
         nav_next_state_ = nav_next_state_wp_;
 
         break;
@@ -813,7 +814,7 @@ void MobidikCollection::point2goal(geo::Pose3D *setpoint)
         goal_.target_pose.pose.orientation.w = setpoint->getQuaternion().getW();
 }
 
-TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,  const bool robotReal )
+TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,  const bool robotReal )
 {
     //TODO set controlmode in all the states
     TaskFeedbackCcu tfb_nav;
@@ -872,6 +873,15 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     line_list.color.r = 1.0;
     line_list.color.a = 1.0;
 // ---------------------------------------------------------------------------
+    
+    mn_goal.conf.precise_goal = true;
+    mn_goal.conf.use_line_planner = false;
+    mn_goal.start.pose = base_position_->pose; // always plan from current pose
+    
+    mn_goal.goal.header.frame_id = "map";
+    mn_goal.goal.header.stamp = ros::Time::now();
+    mn_goal.start.header.frame_id = "map";
+    mn_goal.start.header.stamp = ros::Time::now();
     
     switch ( nav_state_release_ )
     {
@@ -1082,7 +1092,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     }
 
     nav_state_release_ = nav_next_state_release_;
-    *goal_ptr = goal_;
+    mn_goal.goal = goal_.target_pose;
 
     return tfb_nav;
 }
