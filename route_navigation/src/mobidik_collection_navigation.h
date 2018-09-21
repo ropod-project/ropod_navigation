@@ -142,7 +142,7 @@ class MobidikCollection
     
     void point2goal(geo::Pose3D *setpoint);
     
-    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected, const bool robotReal);    
+    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected, const bool robotReal);    
     
     geometry_msgs::PoseStamped::ConstPtr base_position_;
     
