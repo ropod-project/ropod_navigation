@@ -259,4 +259,4 @@ waypoints: []
 start_floor: 0
 goal_floor: 0
 execution_status: ''
-estimated_duration: -1.0"
+estimated_duration: -1.0" -1
