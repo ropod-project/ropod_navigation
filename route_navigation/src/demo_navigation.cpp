@@ -260,23 +260,44 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                  ROS_INFO("Enter elevator action set");
            
-            active_nav = NAVTYPE_ELEVATOR;
-            areaID = action_msg.areas[0].area_id; // Get ID of elevator area
-            elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
+            if( action_msg.areas.size() == 1)
+            {
+                active_nav = NAVTYPE_ELEVATOR;            
+                areaID = action_msg.areas[0].area_id; // Get ID of elevator area
+                elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
+            }
+            else
+            {
+                ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
+            }
         }
          else if ( action_msg.type == "DOCK" ) // TODO: integrated in the CCU!?
         {
                 ROS_INFO("Collect mobidik-action set");
-            active_nav = NAVTYPE_MOBIDIK_COLLECTION;
-            mobidik_collection_navigation.initNavState();
-            areaID = action_msg.areas[0].area_id;
+            if( action_msg.areas.size() == 1)
+            {                
+                active_nav = NAVTYPE_MOBIDIK_COLLECTION;
+                mobidik_collection_navigation.initNavState();
+                areaID = action_msg.areas[0].area_id;
+            }
+            else
+            {
+                ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
+            }            
         }
         else if ( action_msg.type == "UNDOCK" ) // TODO: integrated in the CCU!?
         {
+            if( action_msg.areas.size() == 1)
+            { 
                 ROS_INFO("Release mobidik-action set");
-            active_nav = NAVTYPE_MOBIDIK_RELEASE;
-            mobidik_collection_navigation.initNavStateRelease();
-            areaID = action_msg.areas[0].area_id;
+                active_nav = NAVTYPE_MOBIDIK_RELEASE;
+                mobidik_collection_navigation.initNavStateRelease();
+                areaID = action_msg.areas[0].area_id;
+            }
+            else
+            {
+                ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
+            }            
         }
 
     }
