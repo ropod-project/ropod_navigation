@@ -495,6 +495,7 @@ TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &na
              }
             else 
             {
+                    nav_next_state_ = MOBID_COLL_FIND_MOBIDIK;
                     ROS_WARN("Mobidik Collection: No mobidik found"); // TODO Recovery behaviour
             }              
          break;

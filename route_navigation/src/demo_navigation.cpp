@@ -358,6 +358,74 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     case NAVTYPE_WAYPOINT:
          ROS_INFO("NAV_WAYPOINT");
         nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
+        
+        // Send feedback
+        // TODO: how to properly give feedback when taking elevator since waypoints are not fixed? e.g. multiple possible waiting areas outside elevator
+        if ( nav_state.fb_nav == NAV_DONE )
+        {
+            ROS_INFO ( "NAV DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
+            if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+
+            ropod_progress_msg.action_id = action_msg.action_id;
+            ropod_progress_msg.action_type = action_msg.type;
+            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+            ropod_progress_msg.totalNumber = waypoint_ids_.size();
+            ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            active_nav = NAVTYPE_NONE;
+        }
+        else if ( nav_state.fb_nav == NAV_WAYPOINT_DONE )
+        {
+                int state = NAVTYPE_MOBIDIK_COLLECTION;
+                int active_nav_copy = active_nav ;
+                bool check = (active_nav_copy =! state );
+                
+                int state2 = NAVTYPE_MOBIDIK_RELEASE;
+                bool check2 = (active_nav_copy =! state2 );
+                
+                if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                    ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.action_id = action_msg.action_id;
+                ropod_progress_msg.action_type = action_msg.type;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+                ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+                ropod_progress_msg.totalNumber = waypoint_ids_.size();
+                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            if ( check  && check2) // TODO what kind of feedback during mobidik collection?
+            {
+                ROS_INFO ( "Waypoint done notification received" );
+                // Update coming waypoint
+            }
+        }
+        else if ( nav_state.fb_nav == NAV_GOTOPOINT )
+        {
+                int state = NAVTYPE_MOBIDIK_COLLECTION;
+                int active_nav_copy = active_nav ;
+                bool check = (active_nav_copy =! state );
+                
+                int state2 = NAVTYPE_MOBIDIK_RELEASE;
+                bool check2 = (active_nav_copy =! state2 );
+                
+            if ( check  && check2) // TODO what kind of feedback during mobidik collection?
+            {
+                if ( nav_state.wayp_n<=waypoint_ids_.size() )
+                if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                    ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.action_id = action_msg.action_id;
+                ropod_progress_msg.action_type = action_msg.type;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+                ropod_progress_msg.status.status_code = ropod_ros_msgs::TaskProgressGOTO::ONGOING;
+                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+                ropod_progress_msg.totalNumber = waypoint_ids_.size();
+                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            }
+        }        
+        
+        
+        
         break;
 
     case NAVTYPE_ELEVATOR:
@@ -435,70 +503,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         break;
     }
 
-    // Send feedback
-    // TODO: how to properly give feedback when taking elevator since waypoints are not fixed? e.g. multiple possible waiting areas outside elevator
-    if ( nav_state.fb_nav == NAV_DONE )
-    {
-        ROS_INFO ( "NAV DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
-        if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-            ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
 
-        ropod_progress_msg.action_id = action_msg.action_id;
-        ropod_progress_msg.action_type = action_msg.type;
-        ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-        ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
-        ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
-        ropod_progress_msg.totalNumber = waypoint_ids_.size();
-        ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
-        active_nav = NAVTYPE_NONE;
-    }
-    else if ( nav_state.fb_nav == NAV_WAYPOINT_DONE )
-    {
-            int state = NAVTYPE_MOBIDIK_COLLECTION;
-            int active_nav_copy = active_nav ;
-            bool check = (active_nav_copy =! state );
-            
-            int state2 = NAVTYPE_MOBIDIK_RELEASE;
-            bool check2 = (active_nav_copy =! state2 );
-           
-            if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
-            ropod_progress_msg.action_id = action_msg.action_id;
-            ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
-            ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
-            ropod_progress_msg.totalNumber = waypoint_ids_.size();
-            ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
-        if ( check  && check2) // TODO what kind of feedback during mobidik collection?
-        {
-            ROS_INFO ( "Waypoint done notification received" );
-            // Update coming waypoint
-        }
-    }
-    else if ( nav_state.fb_nav == NAV_GOTOPOINT )
-    {
-            int state = NAVTYPE_MOBIDIK_COLLECTION;
-            int active_nav_copy = active_nav ;
-            bool check = (active_nav_copy =! state );
-            
-            int state2 = NAVTYPE_MOBIDIK_RELEASE;
-            bool check2 = (active_nav_copy =! state2 );
-           
-        if ( check  && check2) // TODO what kind of feedback during mobidik collection?
-        {
-            if ( nav_state.wayp_n<=waypoint_ids_.size() )
-            if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
-            ropod_progress_msg.action_id = action_msg.action_id;
-            ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_msg.status.status_code = ropod_ros_msgs::TaskProgressGOTO::ONGOING;
-            ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
-            ropod_progress_msg.totalNumber = waypoint_ids_.size();
-            ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
-        }
-    }
 
     // Send navigation command
     if ( send_goal_ )
