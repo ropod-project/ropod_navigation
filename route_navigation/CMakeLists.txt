@@ -8,7 +8,6 @@ project(route_navigation)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   geometry_msgs
   actionlib
   move_base_msgs
@@ -17,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   ed
+  maneuver_navigation
+  ed_gui_server
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,10 +75,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   geometry_msgs
-)
+#generate_messages(
+#   DEPENDENCIES
+#   geometry_msgs
+#)
 
 
 
@@ -113,7 +114,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ropod_demo_dec_2017
-  CATKIN_DEPENDS message_generation  geometry_msgs   actionlib  move_base_msgs    nav_msgs  ropod_ros_msgs  roscpp  tf
+  CATKIN_DEPENDS geometry_msgs   actionlib  move_base_msgs  nav_msgs  ropod_ros_msgs  roscpp  tf
 #  DEPENDS system_lib
 )
 
@@ -206,6 +207,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_library(ed_route_navigation_plugin src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp)
+add_library(ed_route_navigation_plugin src/demo_navigation.cpp src/waypoint_navigation.cpp src/elevator_navigation.cpp src/simplified_world_model.cpp src/corridor.cpp src/elevator.cpp src/mobidik_collection_navigation.cpp)
 target_link_libraries(ed_route_navigation_plugin ${catkin_LIBRARIES})
-add_dependencies(ed_route_navigation_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ed_route_navigation_plugin ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ed_gui_server_generate_messages_cpp)
