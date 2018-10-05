@@ -217,7 +217,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     
 
     route_planner_action_client_ptr_ = new actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction>("/route_planner",true);    
-    route_planner_action_client_ptr_->waitForServer();    
+    // route_planner_action_client_ptr_->waitForServer();    
 
 
     // Wait for route to be published
