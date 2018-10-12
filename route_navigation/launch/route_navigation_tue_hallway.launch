@@ -71,7 +71,7 @@
     </node>
     
     <!-- Launch navigation -->
-    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run --args">             
+    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" >             
         <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" />       
         <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params_EDhallway.yaml"  command="load" ns="local_costmap" />    
 
