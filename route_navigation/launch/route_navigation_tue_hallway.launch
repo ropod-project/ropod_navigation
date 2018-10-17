@@ -74,6 +74,8 @@
     <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run --args">             
         <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" />       
         <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params_EDhallway.yaml"  command="load" ns="local_costmap" />    
+        <param name="default_ropod_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod.yaml"/>
+        <param name="default_ropod_load_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod_load.yaml"/>        
 
         <rosparam file="$(find ropod_navigation_test)/config/parameters/teb_local_planner_params_ropod.yaml" command="load" />
         <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
