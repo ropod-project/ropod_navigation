@@ -356,7 +356,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     {
 
     case NAVTYPE_WAYPOINT:
-         ROS_INFO("NAV_WAYPOINT");
+//          ROS_INFO("NAV_WAYPOINT");
         nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
         
         // Send feedback
@@ -429,7 +429,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         break;
 
     case NAVTYPE_ELEVATOR:
-         ROS_INFO("NAV_ELEVATOR");
+//          ROS_INFO("NAV_ELEVATOR");
         nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, door_status );
         if ( nav_state.fb_nav == NAV_DONE )
         {
@@ -438,7 +438,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         break;
         
     case NAVTYPE_MOBIDIK_COLLECTION:
-         ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
+//          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
         nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal);
 
         if ( nav_state.fb_nav == NAV_DONE )
@@ -469,7 +469,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
         
     case NAVTYPE_MOBIDIK_RELEASE:
-          ROS_INFO("NAVTYPE_MOBIDIK_RELEASE");
+//           ROS_INFO("NAVTYPE_MOBIDIK_RELEASE");
         nav_state = mobidik_collection_navigation.callReleasingStateMachine (movbase_cancel_pub_,  mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, &mobidikConnected_, robotReal );
         
         if ( nav_state.fb_nav == NAV_DONE )
@@ -498,7 +498,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 
 
     default:
-        ROS_INFO("NAVTYPE_IDLE");
+//         ROS_INFO("NAVTYPE_IDLE");
         nav_state.fb_nav = NAV_IDLE;
         break;
     }

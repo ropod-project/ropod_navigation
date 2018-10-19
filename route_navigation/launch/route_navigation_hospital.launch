@@ -62,15 +62,15 @@
     </node>
     
     <!-- Launch ED -->
-    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-test-ED-hospital-osm-amcl.yaml" output="screen" launch-prefix="gdb -ex run --args">
+    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-test-ED-hospital-osm-amcl.yaml" output="screen" >
         <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
         <remap from="~undock_action" to="/ropod_task_executor/UNDOCK" />
         <remap from="~dock_action" to="/ropod_task_executor/DOCK" />
     </node>
 
     <!-- Launch navigation -->
-    <!--node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run -->             
-    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen">             
+    <!--node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run -_-args-->             
+    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run --args">             
         <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" />       
         <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params EDhospital_osm.yaml"  command="load" ns="local_costmap" />    
         <param name="default_ropod_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod.yaml"/>
