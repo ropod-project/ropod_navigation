@@ -10,7 +10,7 @@ def main():
     rospy.init_node('initial_pose_publisher', anonymous=True)
     tf_buffer = tf2_ros.Buffer()
     listener = tf2_ros.TransformListener(tf_buffer)
-    pub = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
+    pub = rospy.Publisher('~initial_pose', PoseWithCovarianceStamped, queue_size=1)
     rospy.loginfo("Waiting for transform from base to map")
     source_frame = rospy.get_param('~source_frame', 'ropod/base_link')
     target_frame = rospy.get_param('~target_frame', 'map')
