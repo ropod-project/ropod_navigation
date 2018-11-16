@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="initial_pose_publisher" pkg="route_navigation" type="initial_pose_publisher" output="screen">
+        <param name="source_frame" value="ropod/base_link" />
+        <param name="target_frame" value="map" />
+        <rosparam param="default_initial_pose">[-10.0, 2.0, 0.5]</rosparam>
+        <remap from="~initial_pose" to="/initialpose" />
+    </node>
+</launch>
