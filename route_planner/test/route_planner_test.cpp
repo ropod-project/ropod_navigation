@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     path_areas.push_back(temp4);
 
     ropod_ros_msgs::Area temp2;
-    temp2.area_id = std::to_string(3116);
+    temp2.area_id = std::to_string(157);
     temp2.name = "AMK_A_L-1_C13_Door1";
     temp2.type = "door";
     path_areas.push_back(temp2);    

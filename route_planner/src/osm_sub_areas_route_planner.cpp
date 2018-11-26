@@ -1,16 +1,16 @@
 /*
 Computes route based on the intersection between corridors and intersections
 */
-#include <route_planner/osm_waypoints_route_planner.hpp>
+#include <route_planner/osm_sub_areas_route_planner.hpp>
 
 #include <ropod_ros_msgs/RobotAction.h>
 
-bool OSMWaypointsRoutePlanner::is_junction(std::string area_type)
+bool OSMSubAreasRoutePlanner::is_junction(std::string area_type)
 {
     return (area_type == "junction");
 }
 
-double OSMWaypointsRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::Position corridor_node, ropod_ros_msgs::Position line_node_1, ropod_ros_msgs::Position line_node_2)
+double OSMSubAreasRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::Position corridor_node, ropod_ros_msgs::Position line_node_1, ropod_ros_msgs::Position line_node_2)
 {    
     // First compute the coefficients a*x + b*y + c = 0 of the line defined by the two nodes. https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
     double dist_node_to_line;
@@ -23,7 +23,7 @@ double OSMWaypointsRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::P
     double x_line_closest, y_line_closest;
     const double min_value = 10^(-5);
     
-    if ( a>=min_value || b>=min_value)
+    if ( a>=min_value || b>=min_value) 
     {        
         // Compute point on line closest to node
         x_line_closest = ( b * (  b*x0 - a*y0 )- a*c ) / ( a*a + b*b );
@@ -51,7 +51,7 @@ double OSMWaypointsRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::P
     return dist_node_to_line;
 }
 
-geometry_msgs::Pose OSMWaypointsRoutePlanner::compute_waypoint_areas_overlap(std::vector<ropod_ros_msgs::Position>* corridor_nodes_ptr, std::vector<ropod_ros_msgs::Position>*  corridor_junction_nodes_ptr, bool curr_area_is_corridor)
+geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vector<ropod_ros_msgs::Position>* corridor_nodes_ptr, std::vector<ropod_ros_msgs::Position>*  corridor_junction_nodes_ptr, bool curr_area_is_corridor)
 {
     geometry_msgs::Pose sub_area_overlap;
     
@@ -154,7 +154,7 @@ geometry_msgs::Pose OSMWaypointsRoutePlanner::compute_waypoint_areas_overlap(std
     return sub_area_overlap;
 }
 
-void OSMWaypointsRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it, std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait,std::vector<ropod_ros_msgs::Position>& area_nodes, std::string&  area_type)
+void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it, std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait,std::vector<ropod_ros_msgs::Position>& area_nodes, std::string&  area_type)
 {
     ropod_ros_msgs::Shape sub_area_shape;
     
@@ -171,113 +171,72 @@ void OSMWaypointsRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs
     area_type = (*sub_areas_areait)->type;
 }
 
-std::vector<ropod_ros_msgs::Area> OSMWaypointsRoutePlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
+std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
 {
   
   
-  std::vector<ropod_ros_msgs::Position> curr_area_nodes;
-  std::vector<ropod_ros_msgs::Position> next_area_nodes;
-  std::string curr_area_type;
-  std::string next_area_type;
-  std::vector<ropod_ros_msgs::Position>* corridor_nodes_ptr;
-  std::vector<ropod_ros_msgs::Position>* corridor_junction_nodes_ptr;
-  
-  std::vector<ropod_ros_msgs::SubArea> path_osm_wayp; // Here we extract all osm waypoint which has a finer granularity than waypoints.
-  std::vector<std::vector<ropod_ros_msgs::Area>::iterator> sub_area_iterators; // list of pointers to iterator corresponfign to each waypoint
-  
-  // Extract waypoints areas from areas
-  
-    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = path_areas.begin(); area_it != path_areas.end(); area_it++) {
-        int no_of_waypts = 0;
-        for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
-        {
-
-            path_osm_wayp.push_back(*sub_area_it);
-            sub_area_iterators.push_back(area_it);
-            no_of_waypts++;
-        }
-        // For doors and other waypoints which doesn't have any local areas.  later onIgnore them! For now we just use the position of the waypoint node
-        if(no_of_waypts == 0)
-        {
-            ropod_ros_msgs::SubArea sub_area;
-            sub_area.semantic_id = area_it->name;
-            sub_area.area_id = area_it->area_id;
-
-            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(area_it->area_id),"door");  
-            
-            sub_area.waypoint_pose.position.x = p.x;
-            sub_area.waypoint_pose.position.y = p.y;
-
-            area_it->sub_areas.push_back(sub_area);
-        }else
-        {
-            area_it->sub_areas.clear(); // Clear because later we can insert more waypoints than originally we had
-        }
-    }  
-  
-  if (path_osm_wayp.size() < 2 )
-  {
-      ROS_ERROR("A minimum of two waypoint areas is needed");      
-      return path_areas;
-  }
-  
-  ropod_ros_msgs::SubArea area_sub_area_overlap;
-  geometry_msgs::Pose sub_area_overlap;
-  
-  /* First area is treated in a different way since only one waypoint is needed, not two */
-  // Initially request the nodes for first and second area.
-  std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it = path_osm_wayp.begin();
-  std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait = sub_area_iterators.begin();
-  request_nodes_and_tags(sub_areas_it,sub_areas_areait, curr_area_nodes,curr_area_type);
-  request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1,next_area_nodes,next_area_type);
-  
-  bool is_curr_area_junction = is_junction(curr_area_type);
-  bool is_next_area_junction = is_junction(next_area_type);
-  if(is_curr_area_junction && is_next_area_junction)
-      ROS_ERROR("Two adjacent junctions are not allowed");
-  
-  bool curr_area_is_corridor;
-  if( !is_curr_area_junction )
-  {
-      curr_area_is_corridor = true;
-      corridor_nodes_ptr = &curr_area_nodes;
-      corridor_junction_nodes_ptr = &next_area_nodes;
-  }
-  else
-  {
-      curr_area_is_corridor = false;
-      corridor_nodes_ptr = &next_area_nodes;
-      corridor_junction_nodes_ptr = &curr_area_nodes;      
-  }
-     
-  sub_area_overlap = compute_waypoint_areas_overlap(corridor_nodes_ptr,corridor_junction_nodes_ptr,curr_area_is_corridor);
-  area_sub_area_overlap = *(sub_areas_it);
-  area_sub_area_overlap.waypoint_pose = sub_area_overlap;
-  (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);
-
-  curr_area_nodes.clear();
-  std::copy(next_area_nodes.begin(),next_area_nodes.end(),std::back_inserter(curr_area_nodes));
-  next_area_nodes.clear();
-  curr_area_type  =  next_area_type;
-  
-  /* Next continue for other areas */
-  for ( sub_areas_it = path_osm_wayp.begin()+1; sub_areas_it != (path_osm_wayp.end()-1); sub_areas_it++) {      
-    sub_areas_areait++;
-
-    // each area has a waypoint of the previous intersection. In the planner this is not a problem since intersections will be left out (The outmessage shoudl be different!)
-    // Only when there is two adjacent corridors waypoints will be repeated. Later this can be checked.
-    // area_sub_area_overlap = *(sub_areas_it);
-    // area_sub_area_overlap.waypoint_pose = sub_area_overlap;
-    // (*sub_areas_areait)->waypoints.push_back(area_sub_area_overlap);
+    std::vector<ropod_ros_msgs::Position> curr_area_nodes;
+    std::vector<ropod_ros_msgs::Position> next_area_nodes;
+    std::string curr_area_type;
+    std::string next_area_type;
+    std::vector<ropod_ros_msgs::Position>* corridor_nodes_ptr;
+    std::vector<ropod_ros_msgs::Position>* corridor_junction_nodes_ptr;
     
+    std::vector<ropod_ros_msgs::SubArea> path_osm_wayp; // Here we extract all osm waypoint which has a finer granularity than waypoints.
+    std::vector<std::vector<ropod_ros_msgs::Area>::iterator> sub_area_iterators; // list of pointers to iterator corresponfign to each waypoint
     
-    // request the nodes of the next area  
-    request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1, next_area_nodes, next_area_type);
-    is_curr_area_junction = is_junction(curr_area_type);
-    is_next_area_junction = is_junction(next_area_type);
+    // Extract waypoints areas from areas
+    
+      for (std::vector<ropod_ros_msgs::Area>::iterator area_it = path_areas.begin(); area_it != path_areas.end(); area_it++) {
+          int no_of_waypts = 0;
+          for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
+          {
+
+              path_osm_wayp.push_back(*sub_area_it);
+              sub_area_iterators.push_back(area_it);
+              no_of_waypts++;
+          }
+          // For doors and other waypoints which doesn't have any local areas.  later onIgnore them! For now we just use the position of the waypoint node
+          if(no_of_waypts == 0)
+          {
+              ropod_ros_msgs::SubArea sub_area;
+              sub_area.semantic_id = area_it->name;
+              sub_area.area_id = area_it->area_id;
+
+              ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(area_it->area_id),"door");  
+              
+              sub_area.waypoint_pose.position.x = p.x;
+              sub_area.waypoint_pose.position.y = p.y;
+
+              area_it->sub_areas.push_back(sub_area);
+          }else
+          {
+              area_it->sub_areas.clear(); // Clear because later we can insert more waypoints than originally we had
+          }
+      }  
+    
+    if (path_osm_wayp.size() < 2 )
+    {
+        ROS_ERROR("A minimum of two waypoint areas is needed");      
+        return path_areas;
+    }
+    
+    ropod_ros_msgs::SubArea area_sub_area_overlap;
+    geometry_msgs::Pose sub_area_overlap;
+    
+    /* First area is treated in a different way since only one waypoint is needed, not two */
+    // Initially request the nodes for first and second area.
+    std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it = path_osm_wayp.begin();
+    std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait = sub_area_iterators.begin();
+    request_nodes_and_tags(sub_areas_it,sub_areas_areait, curr_area_nodes,curr_area_type);
+    request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1,next_area_nodes,next_area_type);
+    
+    bool is_curr_area_junction = is_junction(curr_area_type);
+    bool is_next_area_junction = is_junction(next_area_type);
     if(is_curr_area_junction && is_next_area_junction)
         ROS_ERROR("Two adjacent junctions are not allowed");
-
+    
+    bool curr_area_is_corridor;
     if( !is_curr_area_junction )
     {
         curr_area_is_corridor = true;
@@ -289,33 +248,69 @@ std::vector<ropod_ros_msgs::Area> OSMWaypointsRoutePlanner::compute_route(std::v
         curr_area_is_corridor = false;
         corridor_nodes_ptr = &next_area_nodes;
         corridor_junction_nodes_ptr = &curr_area_nodes;      
-    }  
-            
-    area_sub_area_overlap = *(sub_areas_it);    
-    sub_area_overlap = compute_waypoint_areas_overlap(corridor_nodes_ptr,corridor_junction_nodes_ptr, curr_area_is_corridor);
+    }
+       
+    sub_area_overlap = compute_sub_areas_overlap(corridor_nodes_ptr,corridor_junction_nodes_ptr,curr_area_is_corridor);
+    area_sub_area_overlap = *(sub_areas_it);
     area_sub_area_overlap.waypoint_pose = sub_area_overlap;
-    (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);    
-    
-    // finally, copy next_area to current_area
+    (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);
+
     curr_area_nodes.clear();
     std::copy(next_area_nodes.begin(),next_area_nodes.end(),std::back_inserter(curr_area_nodes));
     next_area_nodes.clear();
     curr_area_type  =  next_area_type;
+    
+    /* Next continue for other areas */
+    for ( sub_areas_it = path_osm_wayp.begin()+1; sub_areas_it != (path_osm_wayp.end()-1); sub_areas_it++) {      
+        sub_areas_areait++;
 
-  }
-  
-  /* Finally process last area, add last found overlap */
-  sub_areas_it = (path_osm_wayp.end()-1);
-  sub_areas_areait = (sub_area_iterators.end()-1);
-  area_sub_area_overlap = *(sub_areas_it);
-  area_sub_area_overlap.waypoint_pose = sub_area_overlap;
-  (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);
-  
-  
-  
-  // show results
-  
-  
+        // each area has a waypoint of the previous intersection. In the planner this is not a problem since intersections will be left out (The outmessage shoudl be different!)
+        // Only when there is two adjacent corridors waypoints will be repeated. Later this can be checked.
+        // area_sub_area_overlap = *(sub_areas_it);
+        // area_sub_area_overlap.waypoint_pose = sub_area_overlap;
+        // (*sub_areas_areait)->waypoints.push_back(area_sub_area_overlap);
+        
+        
+        // request the nodes of the next area  
+        request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1, next_area_nodes, next_area_type);
+        is_curr_area_junction = is_junction(curr_area_type);
+        is_next_area_junction = is_junction(next_area_type);
+        if(is_curr_area_junction && is_next_area_junction)
+            ROS_ERROR("Two adjacent junctions are not allowed");
+
+        if( !is_curr_area_junction )
+        {
+            curr_area_is_corridor = true;
+            corridor_nodes_ptr = &curr_area_nodes;
+            corridor_junction_nodes_ptr = &next_area_nodes;
+        }
+        else
+        {
+            curr_area_is_corridor = false;
+            corridor_nodes_ptr = &next_area_nodes;
+            corridor_junction_nodes_ptr = &curr_area_nodes;      
+        }  
+                
+        area_sub_area_overlap = *(sub_areas_it);    
+        sub_area_overlap = compute_sub_areas_overlap(corridor_nodes_ptr,corridor_junction_nodes_ptr, curr_area_is_corridor);
+        area_sub_area_overlap.waypoint_pose = sub_area_overlap;
+        (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);    
+        
+        // finally, copy next_area to current_area
+        curr_area_nodes.clear();
+        std::copy(next_area_nodes.begin(),next_area_nodes.end(),std::back_inserter(curr_area_nodes));
+        next_area_nodes.clear();
+        curr_area_type  =  next_area_type;
+    }
+    
+    /* Finally process last area, add last found overlap */
+    sub_areas_it = (path_osm_wayp.end()-1);
+    sub_areas_areait = (sub_area_iterators.end()-1);
+    area_sub_area_overlap = *(sub_areas_it);
+    area_sub_area_overlap.waypoint_pose = sub_area_overlap;
+    (*sub_areas_areait)->sub_areas.push_back(area_sub_area_overlap);
+      
+    // show results
     for (std::vector<ropod_ros_msgs::Area>::iterator area_it = path_areas.begin(); area_it != path_areas.end(); area_it++) {
         int no_of_waypts = 0;
         for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
@@ -324,15 +319,14 @@ std::vector<ropod_ros_msgs::Area> OSMWaypointsRoutePlanner::compute_route(std::v
             std::cout << "Type: " << area_it->type << std::endl;
             std::cout << "ID: " << sub_area_it->area_id << std::endl;
             std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
-            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
-           
+            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl;            
         }
     }  
   
   return path_areas;
 }
 
-std::vector<ropod_ros_msgs::Area> OSMWaypointsRoutePlanner::compute_orientations(std::vector<ropod_ros_msgs::Area> path_areas)
+std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_orientations(std::vector<ropod_ros_msgs::Area> path_areas)
 {
     // The other function is already computing orientations
     return path_areas;
