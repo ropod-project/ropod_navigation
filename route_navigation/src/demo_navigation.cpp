@@ -56,7 +56,12 @@ void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGo
             robot_nav_area.area_id = sub_area_it->area_id;
             robot_nav_area.name = sub_area_it->semantic_id;
             robot_nav_area.type = area_it->type;
-            robot_nav_area.waypoints.push_back(*sub_area_it);
+            ropod_ros_msgs::Waypoint w;
+            w.area_id = sub_area_it->area_id;
+            w.semantic_id = sub_area_it->semantic_id;
+            w.floor_number = sub_area_it->floor_number;
+            w.waypoint_pose = sub_area_it->waypoint_pose;
+            robot_nav_area.waypoints.push_back(w);
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
             std::cout << "ID: " << sub_area_it->area_id << std::endl;
