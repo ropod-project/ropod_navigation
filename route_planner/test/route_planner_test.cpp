@@ -8,7 +8,7 @@ Provides simple example path for independent testing of this package
 #include <array>
 #include <actionlib/client/simple_action_client.h>
 #include <ropod_ros_msgs/Area.h>
-#include <ropod_ros_msgs/Waypoint.h>
+#include <ropod_ros_msgs/SubArea.h>
 #include <ropod_ros_msgs/RoutePlannerAction.h>
 
 int main(int argc, char **argv)
@@ -20,44 +20,38 @@ int main(int argc, char **argv)
 
     std::vector<ropod_ros_msgs::Area>path_areas;
     
-    
-
-
-    
-    
-
     ropod_ros_msgs::Area temp1;
     temp1.area_id = std::to_string(4991);
     temp1.name = " AMK_A_L-1_C42";
     temp1.type = "corridor";
-//     ropod_ros_msgs::Waypoint wtemp1;
-//     wtemp1.semantic_id = " AMK_A_L-1_C42_LA2";
-//     wtemp1.area_id = "4989";
-//     temp1.waypoints.push_back(wtemp1);
-    ropod_ros_msgs::Waypoint wtemp1_1;
+    // ropod_ros_msgs::SubArea wtemp1;
+    // wtemp1.semantic_id = " AMK_A_L-1_C42_LA2";
+    // wtemp1.area_id = "4989";
+    // temp1.sub_areas.push_back(wtemp1);
+    ropod_ros_msgs::SubArea wtemp1_1;
     wtemp1_1.semantic_id = " AMK_A_L-1_C42_LA1";
-    wtemp1_1.area_id = "4990";
-    temp1.waypoints.push_back(wtemp1_1);    
+    wtemp1_1.area_id = "152";
+    temp1.sub_areas.push_back(wtemp1_1);    
     path_areas.push_back(temp1);
 
     ropod_ros_msgs::Area temp3;
     temp3.area_id = std::to_string(3128);
     temp3.name = "AMK_A_L-1_C12";
     temp3.type = "junction";
-    ropod_ros_msgs::Waypoint wtemp3;
+    ropod_ros_msgs::SubArea wtemp3;
     wtemp3.semantic_id = "AMK_A_L-1_C12_LA1";
-    wtemp3.area_id = "4849";
-    temp3.waypoints.push_back(wtemp3);  
+    wtemp3.area_id = "49";
+    temp3.sub_areas.push_back(wtemp3);  
     path_areas.push_back(temp3);
 
     ropod_ros_msgs::Area temp4;
     temp4.area_id = std::to_string(3130);
     temp4.name = "AMK_B_L-1_C13";
     temp4.type = "corridor";
-    ropod_ros_msgs::Waypoint wtemp4;
+    ropod_ros_msgs::SubArea wtemp4;
     wtemp4.semantic_id = "AMK_B_L-1_C13_LA2";
-    wtemp4.area_id = "4848";
-    temp4.waypoints.push_back(wtemp4);  
+    wtemp4.area_id = "39";
+    temp4.sub_areas.push_back(wtemp4);  
     path_areas.push_back(temp4);
 
     ropod_ros_msgs::Area temp2;
@@ -70,36 +64,32 @@ int main(int argc, char **argv)
     temp5.area_id = std::to_string(3131);
     temp5.name = "AMK_B_L-1_C14";
     temp5.type = "corridor";
-    ropod_ros_msgs::Waypoint wtemp5;
+    ropod_ros_msgs::SubArea wtemp5;
     wtemp5.semantic_id = "AMK_B_L-1_C14_LA1";
-    wtemp5.area_id = "4847";
-    temp5.waypoints.push_back(wtemp5);  
+    wtemp5.area_id = "38";
+    temp5.sub_areas.push_back(wtemp5);  
     path_areas.push_back(temp5);
     
     ropod_ros_msgs::Area temp6;
     temp6.area_id = std::to_string(3133);
     temp6.name = "AMK_B_L-1_C15";
     temp6.type = "junction";
-    ropod_ros_msgs::Waypoint wtemp6;
+    ropod_ros_msgs::SubArea wtemp6;
     wtemp6.semantic_id = "AMK_B_L-1_C15_LA1";
-    wtemp6.area_id = "4870";
-    temp6.waypoints.push_back(wtemp6);  
+    wtemp6.area_id = "36";
+    temp6.sub_areas.push_back(wtemp6);  
     path_areas.push_back(temp6);    
 
     ropod_ros_msgs::Area temp7;
     temp7.area_id = std::to_string(3134);
     temp7.name = "AMK_B_L-1_C16";
     temp7.type = "corridor";
-    ropod_ros_msgs::Waypoint wtemp7;
+    ropod_ros_msgs::SubArea wtemp7;
     wtemp7.semantic_id = "AMK_B_L-1_C16_LA1";
-    wtemp7.area_id = "4867";
-    temp7.waypoints.push_back(wtemp7);  
+    wtemp7.area_id = "35";
+    temp7.sub_areas.push_back(wtemp7);  
     path_areas.push_back(temp7);    
     
-
-    
-
-
     actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction> route_planner_action_client("/route_planner",true);
 
     route_planner_action_client.waitForServer();
@@ -111,6 +101,10 @@ int main(int argc, char **argv)
     if (route_planner_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
       ROS_INFO("Conenction successful");
+    }
+    else
+    {
+      ROS_WARN("Conenction failed");
     }
 
 

@@ -11,17 +11,18 @@
 /* C++ */
 #include <iostream>
 #include <queue>
+#include <string>
 
 
 /* ROPOD messages */
 #include <ropod_ros_msgs/Area.h>
-#include <ropod_ros_msgs/Waypoint.h>
+#include <ropod_ros_msgs/SubArea.h>
 #include <ropod_ros_msgs/Position.h>
 #include <ropod_ros_msgs/Shape.h>
 
 #include <ropod_ros_msgs/RoutePlannerAction.h>
-#include <ropod_ros_msgs/GetWayptPositionAction.h> 
-#include <ropod_ros_msgs/GetWayptShapeAction.h> 
+#include <ropod_ros_msgs/GetTopologyNodeAction.h> 
+#include <ropod_ros_msgs/GetShapeAction.h> 
 
 
 class RoutePlanner
@@ -29,16 +30,16 @@ class RoutePlanner
 protected:
     ros::NodeHandle nh;
     actionlib::SimpleActionServer<ropod_ros_msgs::RoutePlannerAction> route_planner_server;
-    actionlib::SimpleActionClient<ropod_ros_msgs::GetWayptPositionAction> get_waypt_position_action_client;
-    actionlib::SimpleActionClient<ropod_ros_msgs::GetWayptShapeAction> get_waypt_shape_action_client;
-    ropod_ros_msgs::GetWayptPositionResult waypt_position_result;
-    ropod_ros_msgs::GetWayptShapeResult waypt_shape_result;
+    actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction> get_topology_node_action_client;
+    actionlib::SimpleActionClient<ropod_ros_msgs::GetShapeAction> get_shape_action_client;
+    ropod_ros_msgs::GetTopologyNodeResult topology_node_result;
+    ropod_ros_msgs::GetShapeResult shape_result;
     
-    void GetWayptPositionResultCb(const actionlib::SimpleClientGoalState& state,const ropod_ros_msgs::GetWayptPositionResultConstPtr& result);
-    void GetWayptShapeResultCb(const actionlib::SimpleClientGoalState& state,const ropod_ros_msgs::GetWayptShapeResultConstPtr& result);
+    void GetTopologyNodeResultCb(const actionlib::SimpleClientGoalState& state,const ropod_ros_msgs::GetTopologyNodeResultConstPtr& result);
+    void GetShapeResultCb(const actionlib::SimpleClientGoalState& state,const ropod_ros_msgs::GetShapeResultConstPtr& result);
     void RoutePlannerExecute(const ropod_ros_msgs::RoutePlannerGoalConstPtr& goal);
-    ropod_ros_msgs::Position CallGetWayptPositionAction(int id);
-    ropod_ros_msgs::Shape CallGetWayptShapeAction(int id);
+    ropod_ros_msgs::Position CallGetTopologyNodeAction(int id, std::string entity_type);
+    ropod_ros_msgs::Shape CallGetShapeAction(int id, std::string entity_type);
 
 public:
     RoutePlanner();

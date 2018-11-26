@@ -6,29 +6,29 @@ Computes route solely based on topological nodes present in OSM
 std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
 {
     for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
-        int no_of_waypts = 0;
-        for (auto it2 = it1->waypoints.begin(); it2 != it1->waypoints.end(); it2++)
+        int no_of_sub_areas = 0;
+        for (auto it2 = it1->sub_areas.begin(); it2 != it1->sub_areas.end(); it2++)
         {
-            ropod_ros_msgs::Position p  = CallGetWayptPositionAction(std::stoi(it2->area_id));   
+            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it2->area_id), "local_area");   
             
             it2->waypoint_pose.position.x = p.x;
             it2->waypoint_pose.position.y = p.y;
 
-            no_of_waypts++;
+            no_of_sub_areas++;
         }
-        // For doors and other waypoints which doesn't have any local areas
-        if(no_of_waypts == 0)
+        // For doors and other sub_areas which doesn't have any local areas
+        if(no_of_sub_areas == 0)
         {
-            ropod_ros_msgs::Waypoint way_pt;
-            way_pt.semantic_id = it1->name;
-            way_pt.area_id = it1->area_id;
+            ropod_ros_msgs::SubArea sub_area;
+            sub_area.semantic_id = it1->name;
+            sub_area.area_id = it1->area_id;
 
-            ropod_ros_msgs::Position p  = CallGetWayptPositionAction(std::stoi(it1->area_id));  
+            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it1->area_id), "door");  
             
-            way_pt.waypoint_pose.position.x = p.x;
-            way_pt.waypoint_pose.position.y = p.y;
+            sub_area.waypoint_pose.position.x = p.x;
+            sub_area.waypoint_pose.position.y = p.y;
 
-            it1->waypoints.push_back(way_pt);
+            it1->sub_areas.push_back(sub_area);
         }
     }
   return path_areas;
@@ -39,7 +39,7 @@ Computes orientation based on next pose
 */
 std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_orientations(std::vector<ropod_ros_msgs::Area> path_areas)
 {
-    bool isFirstWaypt = true;
+    bool isFirstSubArea = true;
     double last_x = 0;
     double last_y = 0;
     double last_orientation = 0;
@@ -49,9 +49,9 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_orientations(st
 
     for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
 
-        for (auto it2 = it1->waypoints.begin(); it2 != it1->waypoints.end(); it2++)
+        for (auto it2 = it1->sub_areas.begin(); it2 != it1->sub_areas.end(); it2++)
         {
-            if(!isFirstWaypt)
+            if(!isFirstSubArea)
             {
               double angle = -atan2(it2->waypoint_pose.position.y-last_y,it2->waypoint_pose.position.x-last_x)*180/3.1457;        
               // wpt_addr_ref->waypoint_pose.orientation.z = angle;
@@ -60,7 +60,7 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_orientations(st
             }
             else
             {
-              isFirstWaypt = false;
+              isFirstSubArea = false;
             }
             last_x = it2->waypoint_pose.position.x;
             last_y = it2->waypoint_pose.position.y;           
@@ -71,7 +71,7 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_orientations(st
 
     for (auto it1 = path_areas.begin(); it1 != path_areas.end(); it1++) {
 
-        for (auto it2 = it1->waypoints.begin(); it2 != it1->waypoints.end(); it2++)
+        for (auto it2 = it1->sub_areas.begin(); it2 != it1->sub_areas.end(); it2++)
         {
             tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, orientations.front());
             std::cout << "(" << it2->waypoint_pose.position.x << "," << it2->waypoint_pose.position.y << "," << orientations.front() << ")" << std::endl; 
