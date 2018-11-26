@@ -51,17 +51,17 @@ void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGo
         int no_of_waypts = 0;
         robot_nav_area.waypoints.clear();
         
-        for (std::vector<ropod_ros_msgs::Waypoint>::iterator wayp_area_it = area_it->waypoints.begin(); wayp_area_it != area_it->waypoints.end(); wayp_area_it++)
+        for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
         {
-            robot_nav_area.area_id = wayp_area_it->area_id;
-            robot_nav_area.name = wayp_area_it->semantic_id;
+            robot_nav_area.area_id = sub_area_it->area_id;
+            robot_nav_area.name = sub_area_it->semantic_id;
             robot_nav_area.type = area_it->type;
-            robot_nav_area.waypoints.push_back(*wayp_area_it);
+            robot_nav_area.waypoints.push_back(*sub_area_it);
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
-            std::cout << "ID: " << wayp_area_it->area_id << std::endl;
-            std::cout << "pos(" << wayp_area_it->waypoint_pose.position.x << "," << wayp_area_it->waypoint_pose.position.y << ")" << std::endl; 
-            std::cout << "quat(" << wayp_area_it->waypoint_pose.orientation.w << "," << wayp_area_it->waypoint_pose.orientation.x << "," << wayp_area_it->waypoint_pose.orientation.y << "," << wayp_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
+            std::cout << "ID: " << sub_area_it->area_id << std::endl;
+            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
+            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
            
         }
         robot_action_msg_rec.navigation_areas.push_back(robot_nav_area);
