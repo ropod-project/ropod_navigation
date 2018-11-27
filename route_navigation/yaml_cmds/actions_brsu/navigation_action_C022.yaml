@@ -28,7 +28,7 @@ areas:
     floor_number: 0
     sub_areas: 
       - 
-        semantic_id: 'AMK_B_L-1_C5_LA1'
+    semantic_id: 'BRSU_C_L0_C8_LA1'
         area_id: '64'
         floor_number: 0
         waypoint_pose: 
@@ -124,7 +124,7 @@ areas:
   - 
     area_id: '12'
     name: 'BRSU_C_L0_C2'
-    type: 'corridor'
+    type: 'junction'
     floor_number: 0
     sub_areas: 
       - 
@@ -134,7 +134,7 @@ areas:
         waypoint_pose: 
           position: 
             x: -1.0
-            y: -1.0
+        y: -1.0
             z: 0.0
           orientation: 
             x: 0.0
@@ -228,7 +228,7 @@ areas:
     floor_number: 0
     sub_areas: 
       - 
-        semantic_id: 'AMK_B_L-1_C5_LA1'
+        semantic_id: 'BRSU_C_L0_C8_LA1'
         area_id: '64'
         floor_number: 0
         waypoint_pose: 
