@@ -53,18 +53,18 @@ void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGo
         
         for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
         {
-            robot_nav_area.area_id = sub_area_it->area_id;
-            robot_nav_area.name = sub_area_it->semantic_id;
+            robot_nav_area.area_id = sub_area_it->id;
+            robot_nav_area.name = sub_area_it->name;
             robot_nav_area.type = area_it->type;
             ropod_ros_msgs::Waypoint w;
-            w.area_id = sub_area_it->area_id;
-            w.semantic_id = sub_area_it->semantic_id;
+            w.area_id = sub_area_it->id;
+            w.semantic_id = sub_area_it->name;
             w.floor_number = sub_area_it->floor_number;
             w.waypoint_pose = sub_area_it->waypoint_pose;
             robot_nav_area.waypoints.push_back(w);
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
-            std::cout << "ID: " << sub_area_it->area_id << std::endl;
+            std::cout << "ID: " << sub_area_it->id << std::endl;
             std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
             std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
            
@@ -268,7 +268,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             if( action_msg.areas.size() == 1)
             {
                 active_nav = NAVTYPE_ELEVATOR;            
-                areaID = action_msg.areas[0].area_id; // Get ID of elevator area
+                areaID = action_msg.areas[0].id; // Get ID of elevator area
                 elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
             }
             else
@@ -283,7 +283,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             {                
                 active_nav = NAVTYPE_MOBIDIK_COLLECTION;
                 mobidik_collection_navigation.initNavState();
-                areaID = action_msg.areas[0].area_id;
+                areaID = action_msg.areas[0].id;
             }
             else
             {
@@ -297,7 +297,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                 ROS_INFO("Release mobidik-action set");
                 active_nav = NAVTYPE_MOBIDIK_RELEASE;
                 mobidik_collection_navigation.initNavStateRelease();
-                areaID = action_msg.areas[0].area_id;
+                areaID = action_msg.areas[0].id;
             }
             else
             {

@@ -158,7 +158,7 @@ void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs:
 {
     ropod_ros_msgs::Shape sub_area_shape;
     
-    sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->area_id),"local_area");
+    sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"local_area");
     
 
     area_nodes = sub_area_shape.vertices;
@@ -200,10 +200,10 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
           if(no_of_waypts == 0)
           {
               ropod_ros_msgs::SubArea sub_area;
-              sub_area.semantic_id = area_it->name;
-              sub_area.area_id = area_it->area_id;
+              sub_area.name = area_it->name;
+              sub_area.id = area_it->id;
 
-              ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(area_it->area_id),"door");  
+              ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(area_it->id),"door");  
               
               sub_area.waypoint_pose.position.x = p.x;
               sub_area.waypoint_pose.position.y = p.y;
@@ -317,7 +317,7 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
         {
             std::cout << "SubArea" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
-            std::cout << "ID: " << sub_area_it->area_id << std::endl;
+            std::cout << "ID: " << sub_area_it->id << std::endl;
             std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
             std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl;            
         }

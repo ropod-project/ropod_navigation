@@ -9,7 +9,7 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_route(std::vect
         int no_of_sub_areas = 0;
         for (auto it2 = it1->sub_areas.begin(); it2 != it1->sub_areas.end(); it2++)
         {
-            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it2->area_id), "local_area");   
+            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it2->id), "local_area");   
             
             it2->waypoint_pose.position.x = p.x;
             it2->waypoint_pose.position.y = p.y;
@@ -20,10 +20,10 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_route(std::vect
         if(no_of_sub_areas == 0)
         {
             ropod_ros_msgs::SubArea sub_area;
-            sub_area.semantic_id = it1->name;
-            sub_area.area_id = it1->area_id;
+            sub_area.name = it1->name;
+            sub_area.id = it1->id;
 
-            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it1->area_id), "door");  
+            ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(it1->id), "door");  
             
             sub_area.waypoint_pose.position.x = p.x;
             sub_area.waypoint_pose.position.y = p.y;
