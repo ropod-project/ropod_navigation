@@ -7,12 +7,12 @@ and returns list of area with waypoint (poses) in local co-ordinate system
 #include <route_planner/route_planner.hpp>
 
 RoutePlanner::RoutePlanner(): nh("~"),route_planner_server(nh,"/route_planner",
-  boost::bind(&RoutePlanner::RoutePlannerExecute, this, _1),false),get_waypt_position_action_client("/get_waypt_position", true), 
-  get_waypt_shape_action_client("/get_waypt_shape", true), waypt_position_result(), waypt_shape_result()
+  boost::bind(&RoutePlanner::RoutePlannerExecute, this, _1),false),get_topology_node_action_client("/get_topology_node", true), 
+  get_shape_action_client("/get_shape", true), topology_node_result(), shape_result()
 {
     route_planner_server.start();
-    get_waypt_position_action_client.waitForServer();
-    get_waypt_shape_action_client.waitForServer();
+    get_topology_node_action_client.waitForServer();
+    get_shape_action_client.waitForServer();
 }
 
 RoutePlanner::~RoutePlanner()
@@ -33,46 +33,42 @@ void RoutePlanner::RoutePlannerExecute(const ropod_ros_msgs::RoutePlannerGoalCon
 }
 
 
-void RoutePlanner::GetWayptPositionResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetWayptPositionResultConstPtr& result)
+void RoutePlanner::GetTopologyNodeResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetTopologyNodeResultConstPtr& result)
 {
-    waypt_position_result = *result;
+    topology_node_result = *result;
 }
 
-void RoutePlanner::GetWayptShapeResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetWayptShapeResultConstPtr& result)
+void RoutePlanner::GetShapeResultCb(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::GetShapeResultConstPtr& result)
 {
-    waypt_shape_result = *result;
+    shape_result = *result;
 }
 
-ropod_ros_msgs::Position RoutePlanner::CallGetWayptPositionAction(int id)
+ropod_ros_msgs::Position RoutePlanner::CallGetTopologyNodeAction(int id, std::string entity_type)
 {
-    ropod_ros_msgs::GetWayptPositionGoal req;
-    req.ids = {id};
+    ropod_ros_msgs::GetTopologyNodeGoal req;
+    req.id = id;
+    req.type = entity_type;
     ropod_ros_msgs::Position pos;
-    get_waypt_position_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetWayptPositionResultCb, this, _1, _2));
-    bool finished_before_timeout = get_waypt_position_action_client.waitForResult(ros::Duration(5.0));
-    if (get_waypt_position_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    get_topology_node_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetTopologyNodeResultCb, this, _1, _2));
+    bool finished_before_timeout = get_topology_node_action_client.waitForResult(ros::Duration(5.0));
+    if (get_topology_node_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        for (auto it = waypt_position_result.positions.begin(); it != waypt_position_result.positions.end(); it++)
-        {
-            pos = *it;
-        }
+        pos = topology_node_result.position;
     }
     return pos;
 }
 
-ropod_ros_msgs::Shape RoutePlanner::CallGetWayptShapeAction(int id)
+ropod_ros_msgs::Shape RoutePlanner::CallGetShapeAction(int id, std::string entity_type)
 {
-    ropod_ros_msgs::GetWayptShapeGoal req;
-    req.ids = {id};
+    ropod_ros_msgs::GetShapeGoal req;
+    req.id = id;
+    req.type = entity_type;
     ropod_ros_msgs::Shape shape;
-    get_waypt_shape_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetWayptShapeResultCb, this, _1, _2));
-    bool finished_before_timeout = get_waypt_shape_action_client.waitForResult(ros::Duration(5.0));
-    if (get_waypt_shape_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    get_shape_action_client.sendGoal(req, boost::bind(&RoutePlanner::GetShapeResultCb, this, _1, _2));
+    bool finished_before_timeout = get_shape_action_client.waitForResult(ros::Duration(5.0));
+    if (get_shape_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-        for (auto it = waypt_shape_result.shapes.begin(); it != waypt_shape_result.shapes.end(); it++)
-        {
-            shape = *it;
-        }
+        shape = shape_result.shape;
     }
     return shape;
 }

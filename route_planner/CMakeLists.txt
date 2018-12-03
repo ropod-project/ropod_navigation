@@ -37,13 +37,13 @@ add_library(simple_osm_route_planner ${PROJECT_SOURCE_DIR}/src/simple_osm_route_
 add_dependencies(simple_osm_route_planner ropod_ros_msgs_generate_messages_cpp)
 target_link_libraries(simple_osm_route_planner ${LIBS} ${catkin_LIBRARIES} route_planner)
 
-add_library(osm_waypoints_route_planner ${PROJECT_SOURCE_DIR}/src/osm_waypoints_route_planner.cpp)
-add_dependencies(osm_waypoints_route_planner ropod_ros_msgs_generate_messages_cpp)
-target_link_libraries(osm_waypoints_route_planner ${LIBS} ${catkin_LIBRARIES} route_planner)
+add_library(osm_sub_areas_route_planner ${PROJECT_SOURCE_DIR}/src/osm_sub_areas_route_planner.cpp)
+add_dependencies(osm_sub_areas_route_planner ropod_ros_msgs_generate_messages_cpp)
+target_link_libraries(osm_sub_areas_route_planner ${LIBS} ${catkin_LIBRARIES} route_planner)
 
 add_executable(route_planner_node ${PROJECT_SOURCE_DIR}/src/route_planner_node.cpp ${HEADER_FILES})
 add_dependencies(route_planner_node ropod_ros_msgs_generate_messages_cpp)
-target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} simple_osm_route_planner osm_waypoints_route_planner)
+target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} simple_osm_route_planner osm_sub_areas_route_planner)
 
 add_executable(route_planner_test ${PROJECT_SOURCE_DIR}/test/route_planner_test.cpp ${HEADER_FILES})
 add_dependencies(route_planner_test ropod_ros_msgs_generate_messages_cpp)

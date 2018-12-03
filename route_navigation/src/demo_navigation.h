@@ -27,6 +27,7 @@
 #include <ropod_ros_msgs/RobotAction.h>
 #include <ropod_ros_msgs/TaskProgressGOTO.h>
 #include <ropod_ros_msgs/Area.h>
+#include <ropod_ros_msgs/SubArea.h>
 #include <ropod_ros_msgs/Waypoint.h>
 #include <ropod_ros_msgs/Status.h>
 

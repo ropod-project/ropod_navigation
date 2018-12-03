@@ -1,0 +1,267 @@
+rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "action_id: 'a990bb98-762a-441a-802e-db58c757ad18'
+type: 'GOTO'
+areas: 
+  - 
+    area_id: '5'
+    name: 'BRSU_C_L0_C9'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C9_LA1'
+        area_id: '61'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '7'
+    name: 'BRSU_C_L0_C8'
+    type: 'junction'
+    floor_number: 0
+    sub_areas: 
+      - 
+    semantic_id: 'BRSU_C_L0_C8_LA1'
+        area_id: '64'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '92'
+    name: 'BRSU_C_L0_C7'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C7_LA1'
+        area_id: '66'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '8'
+    name: 'BRSU_C_L0_C6'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C6_LA1'
+        area_id: '68'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '9'
+    name: 'BRSU_C_L0_C5'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C5_LA1'
+        area_id: '70'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '10'
+    name: 'BRSU_C_L0_C4'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C4_LA1'
+        area_id: '72'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '12'
+    name: 'BRSU_C_L0_C2'
+    type: 'junction'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C2_LA1'
+        area_id: '75'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+        y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '10'
+    name: 'BRSU_C_L0_C4'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C4_LA2'
+        area_id: '71'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '9'
+    name: 'BRSU_C_L0_C5'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C5_LA2'
+        area_id: '69'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '8'
+    name: 'BRSU_C_L0_C6'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C6_LA2'
+        area_id: '67'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '92'
+    name: 'BRSU_C_L0_C7'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C7_LA2'
+        area_id: '65'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '7'
+    name: 'BRSU_C_L0_C8'
+    type: 'junction'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C8_LA1'
+        area_id: '64'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0
+  - 
+    area_id: '5'
+    name: 'BRSU_C_L0_C9'
+    type: 'corridor'
+    floor_number: 0
+    sub_areas: 
+      - 
+        semantic_id: 'BRSU_C_L0_C9_LA2'
+        area_id: '60'
+        floor_number: 0
+        waypoint_pose: 
+          position: 
+            x: -1.0
+            y: -1.0
+            z: 0.0
+          orientation: 
+            x: 0.0
+            y: 0.0
+            z: 0.0
+            w: 1.0  
+start_floor: 0
+goal_floor: 0
+execution_status: ''
+estimated_duration: -1.0"
