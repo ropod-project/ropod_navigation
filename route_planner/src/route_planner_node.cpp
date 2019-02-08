@@ -8,6 +8,7 @@ int main(int argc, char **argv)
 
   // SimpleOSMRoutePlanner route_planner;
   OSMSubAreasRoutePlanner route_planner;
+  ROS_INFO("Route planner ready!");
 
   ros::spin();
 
