@@ -232,6 +232,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
 
 void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& req )
 {
+
+ROS_WARN("Next iteration");
     cb_queue_.callAvailable();    
 
     int curr_loc;
@@ -243,12 +245,14 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
     // Process the received Action message. Point to first location
     if ( action_msg_received ) // checks need to be done if a current navigation is taking place
     {
+
+ROS_INFO("MSG received");
         action_msg_received = false;
         curr_loc = 0;
         action_msg = action_msg_rec;
         waypoint_ids_.clear();
         path_msg_.poses.clear();
-
+std::cout << "action_msg.type = " << action_msg.type << std::endl;
         if ( action_msg.type == "GOTO" )
         {
                  ROS_INFO("GOTO-action set");
