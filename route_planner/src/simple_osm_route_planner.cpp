@@ -53,7 +53,7 @@ std::vector<ropod_ros_msgs::Area> SimpleOSMRoutePlanner::compute_orientations(st
         {
             if(!isFirstSubArea)
             {
-              double angle = -atan2(it2->waypoint_pose.position.y-last_y,it2->waypoint_pose.position.x-last_x)*180/3.1457;        
+              double angle = -atan2(it2->waypoint_pose.position.y-last_y,it2->waypoint_pose.position.x-last_x);        
               // wpt_addr_ref->waypoint_pose.orientation.z = angle;
               orientations.push(angle);
               last_orientation = angle;
