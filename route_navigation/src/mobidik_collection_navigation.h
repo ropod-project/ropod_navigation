@@ -44,8 +44,8 @@
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
-#define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
-#define MOBIDIK_LENGTH 0.8 // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.8 // [m]
+// #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
 
 #define N_COUNTS_WRENCHES 10 // [-]
@@ -60,6 +60,12 @@
 #define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
 #define DIST_MOVE_FRONT_POSTRELEASING (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) - 0.5*ROPOD_LENGTH + 0.2) //[m]
 #define TIME_WAIT_CHANGE_OF_FOOTPRINT 0.5 //[s]
+
+#define MOBIDIK_WIDTH 0.72                              // [m]
+#define MOBIDIK_LENGTH 0.81                             // [m]
+#define MOBIDIK_MARGIN 0.22                              // [m]
+
+#define INF 10000
 
 class MobidikCollection
 {
@@ -101,12 +107,13 @@ class MobidikCollection
     
     ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
 
-    bool getMobidik(visualization_msgs::MarkerArray markerArray, visualization_msgs::Marker *marker) ;
+    bool getMobidik(const ed::WorldModel& world, ed::UUID* id);
 
     template <class T>
     void wrap(T *angle);
 
-    void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
+    //void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
+    bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, ed::UUID mobidikId, visualization_msgs::Marker* points ) ;
     
     bool getMobidikPosition( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *mobidikPose );
     
@@ -179,6 +186,8 @@ class MobidikCollection
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
     
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
+    
+    ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties_;
    
 
 };

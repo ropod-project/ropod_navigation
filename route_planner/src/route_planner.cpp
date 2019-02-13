@@ -11,6 +11,7 @@ RoutePlanner::RoutePlanner(): nh("~"),route_planner_server(nh,"/route_planner",
   get_shape_action_client("/get_shape", true), topology_node_result(), shape_result()
 {
     route_planner_server.start();
+    ROS_INFO("route_planner waiting for get_topology_node and get_shape action servers to come up");
     get_topology_node_action_client.waitForServer();
     get_shape_action_client.waitForServer();
 }
