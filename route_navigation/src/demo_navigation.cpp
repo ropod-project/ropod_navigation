@@ -75,6 +75,45 @@ void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGo
      robot_action_msg_received = true;
 }
 
+void debugRouterResultCallback(const ropod_ros_msgs::Action::ConstPtr& action_result_msg_)
+{
+         
+  // Extract waypoints into RobotActionMessage
+  ropod_ros_msgs::NavigationArea robot_nav_area;  
+  robot_action_msg_rec.navigation_areas.clear();
+  
+  ropod_ros_msgs::Action action_result = *action_result_msg_;
+  
+    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = action_result.areas.begin(); area_it != action_result.areas.end(); area_it++) 
+    {
+        int no_of_waypts = 0;
+        robot_nav_area.waypoints.clear();
+        
+        for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
+        {
+            robot_nav_area.area_id = sub_area_it->id;
+            robot_nav_area.name = sub_area_it->name;
+            robot_nav_area.type = area_it->type;
+            ropod_ros_msgs::Waypoint w;
+            w.area_id = sub_area_it->id;
+            w.semantic_id = sub_area_it->name;
+            w.floor_number = sub_area_it->floor_number;
+            w.waypoint_pose = sub_area_it->waypoint_pose;
+            robot_nav_area.waypoints.push_back(w);
+            std::cout << "Waypoint" << std::endl;
+            std::cout << "Type: " << area_it->type << std::endl;
+            std::cout << "ID: " << sub_area_it->id << std::endl;
+            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
+            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
+           
+        }
+        robot_action_msg_rec.navigation_areas.push_back(robot_nav_area);
+    }
+     
+     robot_action_msg_received = true;
+}
+
+
 
 void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
@@ -170,6 +209,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sub_ccu_goto_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     sub_ccu_dock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "dock_action", 10, actionCallback );
     sub_ccu_undock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "undock_action", 10, actionCallback );
+    
+    sub_debug_roputer_planner_ = n.subscribe<ropod_ros_msgs::Action> ( "debug_route_planner_result_action", 10, debugRouterResultCallback );        
 
     subdoor_status_ = n.subscribe<ropod_ros_msgs::DoorDetection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
@@ -196,6 +237,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
     poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
+
     
 
     send_goal_ = false;
@@ -341,7 +383,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
             std::cout << "pos(" << curr_wayp->waypoint_pose.position.x << "," << curr_wayp->waypoint_pose.position.y << ")" << std::endl; 
             std::cout << "quat(" << curr_wayp->waypoint_pose.orientation.w << "," << curr_wayp->waypoint_pose.orientation.x << "," << curr_wayp->waypoint_pose.orientation.y << "," << curr_wayp->waypoint_pose.orientation.z << ") \n" << std::endl; 
                 
-                waypoint_ids_.push_back ( curr_wayp->semantic_id );
+//                 waypoint_ids_.push_back ( curr_wayp->semantic_id );
             }
         }
         // waypoint_navigation.startNavigation ( path_msg_ );
