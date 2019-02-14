@@ -160,6 +160,7 @@ std::cout << std::endl;
         {
 std::cout << "Dimension check succesful for ent = " << e->id() << std::endl;
 ed::UUID mobidikId = e->id();
+
             for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
             {
                 const ed::EntityConstPtr& e = *it;
@@ -211,14 +212,21 @@ std::cout << "Mobidik found for entity = " << *id << std::endl;
 };
 
 template <class T>
-void MobidikCollection::wrap ( T *angle )
+void MobidikCollection::wrap2pi ( T *angle )
 {
-    *angle -= M_PI * std::floor ( *angle * ( 1 / ( M_PI )) );
+    *angle -= M_PI * std::floor ( *angle * ( 1 / ( M_PI )) ); // TODO does not always work
+}
+
+template <class T>
+void MobidikCollection::wrap2twopi ( T *angle )
+{
+    *angle -= 2*M_PI * std::floor ( *angle * ( 1 / ( 2*M_PI )) ); // TODO does not always work
 }
 
 bool MobidikCollection::setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, ed::UUID mobidikId, visualization_msgs::Marker* points ) 
 // Store mobidik in ED as it might not be detected anymore when the robot rotates
 {
+       
     // Area where the mobidik will be collected is assumed to be known
         
         
@@ -264,7 +272,9 @@ mobidikFeatures.printProperties();
                 mobidikLength = mobidikModel.get_d();
 
                 MD_yaw = mobidikModel.get_yaw();
-                wrap ( &MD_yaw );
+                wrap2twopi ( &MD_yaw );
+                
+                std::cout << "Mobidik yaw = " << MD_yaw << std::endl;
                 
                 lastUpdateTimestamp = e->lastUpdateTimestamp();
                 
@@ -290,18 +300,23 @@ std::cout << "orientationWPID = " << orientationWPID << std::endl;
             tf::Matrix3x3 matrix ( q );
             double WP_roll, WP_pitch, WP_yaw;
             matrix.getRPY ( WP_roll, WP_pitch, WP_yaw );
-            wrap ( &WP_yaw );
+            std::cout << "WP_yaw before = " << WP_yaw << std::endl;
+            wrap2twopi ( &WP_yaw );
+            
+            std::cout << "WP_yaw = " << WP_yaw << std::endl;
 
-            // find quadrant closest to the orientation of the orienation
+            // find quadrant closest to the orientation of the mobidik
             geo::real diffAngleMin = INFINITY;
             double angle, angleAtMinDiff, deltaAngleCorrected;
             for ( unsigned int ii = 0; ii < 4; ii++ )
             {
                 double deltaAngle = ii*M_PI_2;
                 angle = MD_yaw + deltaAngle;
-                wrap ( &angle );
+                wrap2twopi ( &angle );
 
                 geo::real diffAngle = std::min ( std::fabs ( angle - WP_yaw ), std::fabs ( angle + 2*M_PI - WP_yaw ) );
+                diffAngle = std::min ( diffAngle, std::fabs ( angle - 2*M_PI - WP_yaw ) );
+                
                 if ( diffAngle < diffAngleMin )
                 {
                     diffAngleMin = diffAngle;
@@ -352,8 +367,11 @@ std::cout << "mobidik pose = " << mobidikPose.getOrigin().getX() << mobidikPose.
 //            entityProperties.rectangle_.set_w(mobidikWidth);
 //            entityProperties.rectangle_.set_d(mobidikLength);
             std::cout << "Before setting new properties." << std::endl;
-mobidikFeatures.printProperties();
+
 mobidikFeatures.rectangle_.set_yaw(MD_yaw);
+mobidikFeatures.printProperties();
+
+std::cout << "MD_yaw set at " << MD_yaw << std::endl;
             
             // Mark the entity as a mobidik
 //            std::string mobidikIDNew = mobidikId.str() + "-Mobidik";
@@ -361,6 +379,7 @@ mobidikFeatures.rectangle_.set_yaw(MD_yaw);
 //            req.setConvexHullNew ( mobidikIDNew, chull, mobidikPose, lastUpdateTimestamp, "/map");
             req.setProperty ( mobidikId, featurePropertiesKey, mobidikFeatures );
            mobidikFeatures.printProperties(); 
+           req.setFlag(mobidikId, "locked"); // TODO update while moving backwards with sensor at the back!
 //            req.removeEntity(mobidikId);
             std::cout << "end of setMobidikPosition" << std::endl;
             return true;
@@ -380,9 +399,16 @@ bool MobidikCollection::getMobidikPosition( const ed::WorldModel& world, ed::UUI
 
         if ( mobidikID.str().compare ( e.get()->id().str() )  == 0 )
         {
-            *mobidikPose =  e.get()->pose();
+                ed::tracking::FeatureProperties properties = e->property ( featurePropertiesKey ); // Improve! pose should not be communicated via the featureproperties, but via e.get()->pose();
+                geo::Vec3d origin ( properties.getRectangle().get_x(), properties.getRectangle().get_y(), 0 );
+                
+                geo::Mat3 rotation;
+                rotation.setRPY ( 0.0, 0.0, properties.getRectangle().get_yaw() );
+                
+                mobidikPose->setOrigin( origin );
+                mobidikPose->setBasis ( rotation );
 
-            return true;
+                return true;
         }
     }
 
@@ -392,22 +418,26 @@ bool MobidikCollection::getMobidikPosition( const ed::WorldModel& world, ed::UUI
 void MobidikCollection::getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points )
 {
 std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikID << std::endl;
-    geo::Pose3D mobidikPose;
+ //   geo::Pose3D mobidikPose;
     for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
     {
         const ed::EntityConstPtr& e = *it;
         if ( mobidikID.str().compare ( e.get()->id().str() )  == 0 )
         {
                 float mobidikLength;
+                ed::tracking::FeatureProperties entityProperties;
                 if( e->property ( featurePropertiesKey ))
                 {
-                ed::tracking::FeatureProperties entityProperties = e->property ( featurePropertiesKey );
+                 entityProperties = e->property ( featurePropertiesKey );
+                 std::cout << "getSetpointInFrontOfMobidik" << std::endl;
+                 entityProperties.printProperties();
+                 
                  mobidikLength = entityProperties.rectangle_.get_w();
                 } else
                 {
                         mobidikLength = MOBIDIK_LENGTH; 
                 }
-            mobidikPose =  e.get()->pose();
+          /*  mobidikPose =  e.get()->pose();
 std::cout << mobidikPose.getOrigin().getX() << ", " << mobidikPose.getOrigin().getY() << std::endl;
             float dist = 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_IN_FRONT_OFF_MOBID;
 std::cout << "dist = " << dist << std::endl;
@@ -420,12 +450,39 @@ std::cout << "dist = " << dist << std::endl;
 
 std::cout << "yaw = " << yaw << std::endl;
             matrix.getRPY ( roll, pitch, yaw );
-            geo::Vec3d origin ( mobidikPose.getOrigin().getX() + dist*cos ( yaw ), mobidikPose.getOrigin().getY() + dist*sin ( yaw ), 0 );
+            */
+            
+            
+       /*     
+            geo::Vec3d origin ( , entityProperties.getRectangle().get_y(), 0 );
+                
+                geo::Mat3 rotation;
+                rotation.setRPY ( 0.0, 0.0, entityProperties.getRectangle().get_yaw() );
+                
+                mobidikPose->setOrigin( origin );
+                mobidikPose->setBasis ( rotation );
+                *setpoint = mobidikPose;
+         */   
+            
+            std::cout << "mobidikLength = " << mobidikLength << std::endl;
+      float dist = 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_IN_FRONT_OFF_MOBID;
+            double yaw = entityProperties.getRectangle().get_yaw();
+            
+            std::cout << "yaw = " << yaw << std::endl;
+            std::cout << "dist = " << dist << std::endl; 
+            
+             geo::Mat3 rotation;
+                rotation.setRPY ( 0.0, 0.0, entityProperties.getRectangle().get_yaw() );
+                setpoint->setBasis ( rotation );
+            
+            geo::Vec3d origin ( entityProperties.getRectangle().get_x() + dist*cos ( yaw ), entityProperties.getRectangle().get_y() + dist*sin ( yaw ), 0.0 );
             setpoint->setOrigin ( origin );
             geometry_msgs::Point p;
             p.x = setpoint->getOrigin().getX();
             p.y = setpoint->getOrigin().getY();
             p.z = 0.0;
+            
+            std::cout << "Point = " << p << std::endl;
 
             points->points.push_back ( p );
             return;
@@ -807,6 +864,9 @@ std::cout << "MOBID_COLL_FIND_MOBIDIK bla" << std::endl;
             dist2 = std::pow ( mobidikPose.getOrigin().getX() - base_position_->pose.position.x , 2.0 ) + std::pow ( mobidikPose.getOrigin().getY() - base_position_->pose.position.y , 2.0 );
 std::cout << "dist2 = " << dist2 << std::endl;
 
+std::cout << "base_position_->pose.position.x, y = " << base_position_->pose.position.x << ", " << base_position_->pose.position.y << std::endl;
+std::cout << "mobidikPose.getOrigin().getX(), y = " << mobidikPose.getOrigin().getX() << ", " << mobidikPose.getOrigin().getY() << std::endl;
+std::cout << "mobidikLength = " << mobidikLength << std::endl;
             if ( dist2 < std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) )
             {
                 touched = true;
@@ -859,8 +919,8 @@ std::cout << "dist2 = " << dist2 << std::endl;
         {
 //             if ( ! robotReal )
 //             {
-                tfb_nav.fb_nav = NAV_DOCKED;
-                nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
+//                 tfb_nav.fb_nav = NAV_DOCKED;
+//                 nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
 //                 ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be connected now." );
 //             }  else {
 //                 bumperWrenchesVector_.clear();
@@ -880,7 +940,7 @@ std::cout << "dist2 = " << dist2 << std::endl;
         controlMode->data = ropodNavigation::LLC_VEL;
         // couple mobidik manually and wait for signal;
 	output_vel.linear.x = 0.0;
-cmv_vel_pub.publish ( output_vel );
+        cmv_vel_pub.publish ( output_vel );
         touched = false;
         
 /*        bumperWrenchesVector_.push_back ( bumperWrenches );
@@ -916,6 +976,7 @@ cmv_vel_pub.publish ( output_vel );
         {
             // Docking done!
             tfb_nav.fb_nav = NAV_DOCKED;
+            req.removeFlag(MobidikID_ED_, "locked");
             nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
             bumperWrenchesVector_.clear();
             stamp_start_ = ros::Time::now();
@@ -927,7 +988,7 @@ cmv_vel_pub.publish ( output_vel );
             ROS_INFO("MOBID_COLL_NAV_EXIT_COLLECT_AREA");
         if( ros::Time::now() - stamp_start_< stamp_wait_)    
             break;
-        // For now just move a bit forward. Later the mobidik should exit the rail area.
+        // For now just move a bit forward. Later the mobidik should exit the rail area. TODO
         tf::poseMsgToTF(base_position_->pose,base_position_pose);
         robot_yaw = tf::getYaw(base_position_pose.getRotation());
         goal_.target_pose.pose = base_position_->pose;
@@ -1161,9 +1222,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
                     // Configure slow movement
         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.3 &");
         system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_theta 0.8 &");                       
-                
-        
-        
+
         getFinalMobidikPos ( world, areaID, &finalMobidikPosition_, &disconnectSetpoint_, &setpoint_, &points );
         
         // Find pose parallel to the delvery area
@@ -1223,30 +1282,30 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         }
         else
         {
-            bumperWrenchesVector_.push_back ( bumperWrenches );
-            if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
-            {
-                bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
-
-                if ( !avgWrenchesDetermined_ )
-                {
-                    determineAvgWrenches();
-                }
-                avgForce = 0.0;
-                for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
-                {
-                    avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
-                }
-
-                avgForce /= bumperWrenchesVector_.size();
-                forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
-
-                if ( forceCheck )
-                {
-                    touched = true;
-                }
-
-            }
+//             bumperWrenchesVector_.push_back ( bumperWrenches );
+//             if ( bumperWrenchesVector_.size() > N_COUNTS_WRENCHES ) // TODO update goal and how? How to let the software know there is actually no goal
+//             {
+//                 bumperWrenchesVector_.erase ( bumperWrenchesVector_.begin() );
+// 
+//                 if ( !avgWrenchesDetermined_ )
+//                 {
+//                     determineAvgWrenches();
+//                 }
+//                 avgForce = 0.0;
+//                 for ( unsigned int ii = 0; ii < bumperWrenchesVector_.size(); ii++ )
+//                 {
+//                     avgForce += bumperWrenchesVector_[ii].front.wrench.force.x;
+//                 }
+// 
+//                 avgForce /= bumperWrenchesVector_.size();
+//                 forceCheck = std::fabs ( avgForce - avgWrenches_.front.wrench.force.x ) > MIN_FORCE_TOUCHED;
+// 
+//                 if ( forceCheck )
+//                 {
+//                     touched = true;
+//                 }
+// 
+//             }
         }
         
         if ( touched )

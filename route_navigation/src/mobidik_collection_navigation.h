@@ -44,7 +44,7 @@
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
-#define DIST_IN_FRONT_OFF_MOBID 0.8 // [m]
+#define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
 // #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
 
@@ -110,7 +110,10 @@ class MobidikCollection
     bool getMobidik(const ed::WorldModel& world, ed::UUID* id);
 
     template <class T>
-    void wrap(T *angle);
+    void wrap2pi(T *angle);
+    
+     template <class T>
+    void wrap2twopi(T *angle);
 
     //void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
     bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, ed::UUID mobidikId, visualization_msgs::Marker* points ) ;
