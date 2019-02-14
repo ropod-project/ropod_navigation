@@ -30,6 +30,8 @@
 #include <ropod_ros_msgs/SubArea.h>
 #include <ropod_ros_msgs/Waypoint.h>
 #include <ropod_ros_msgs/Status.h>
+#include <ropod_ros_msgs/DockingCommand.h>
+#include <ropod_ros_msgs/DockingFeedback.h>
 
 #include <actionlib/client/simple_action_client.h>
 #include <ropod_ros_msgs/RoutePlannerAction.h>
@@ -144,6 +146,10 @@ private:
     ros::Publisher mn_sendGoal_pub_;
     
     ros::Subscriber sub_navigation_fb_;
+    
+    ros::Publisher docking_command_pub_;
+    
+    ros::Subscriber docking_status_sub_;
     
     actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction> * route_planner_action_client_ptr_;
 };

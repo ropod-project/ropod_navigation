@@ -1,5 +1,6 @@
 #include "mobidik_collection_navigation.h"
 #include <ed_gui_server/EntityInfos.h>
+#include <ropod_ros_msgs/DockingCommand.h>
 
 /*--------------------------------------------------------*/
 MobidikCollection::MobidikCollection( )
@@ -699,7 +700,10 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
 
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal)
+TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray,
+                                                              std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, 
+                                                              std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal,
+                                                              ros::Publisher &dockingCommand, ropod_ros_msgs::DockingFeedback dockingFeedback)
 {
 std::cout << "mobidikColl state machine start" << std::endl;
 std::cout << "nav_state = " << nav_state_ << std::endl;    
@@ -776,6 +780,8 @@ mn_goal.start.pose = base_position_->pose; // always plan from current pose
     mn_goal.goal.header.stamp = ros::Time::now();
     mn_goal.start.header.frame_id = "map";
     mn_goal.start.header.stamp = ros::Time::now();
+    
+    ropod_ros_msgs::DockingCommand dockingMsg;
     
     std::cout << "Variable initiated, going 2 state machine" << std::endl;
 
@@ -926,6 +932,9 @@ std::cout << "mobidikLength = " << mobidikLength << std::endl;
 //                 bumperWrenchesVector_.clear();
 //                 avgWrenchesDetermined_ = false;
 //                 controlMode->data = ropodNavigation::LLC_VEL; //LLC_NORMAL
+                
+                dockingMsg.docking_command = DOCKING_COMMAND_DOCK;
+                dockingCommand.publish( dockingMsg );
                 nav_next_state_  = MOBID_COLL_NAV_COUPLING;
 //                 
 //             }
@@ -972,6 +981,13 @@ std::cout << "mobidikLength = " << mobidikLength << std::endl;
             }
         }
 */
+
+        if( dockingFeedback.docking_status == DOCKING_FB_DOCKED )
+        {
+                 ROS_INFO("MOBIDIK COUPLED");
+                touched = true;
+        }
+
         if ( touched )
         {
             // Docking done!
@@ -1139,7 +1155,11 @@ void MobidikCollection::point2goal(geo::Pose3D *setpoint)
         goal_.target_pose.pose.orientation.w = setpoint->getQuaternion().getW();
 }
 
-TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,  const bool robotReal )
+TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, 
+                                                               visualization_msgs::MarkerArray markerArray, std::string areaID, const ed::WorldModel& world,
+                                                               ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, std_msgs::UInt16* controlMode, 
+                                                               ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,  const bool robotReal,
+                                                               ros::Publisher &dockingCommand, ropod_ros_msgs::DockingFeedback dockingFeedback)
 {
     //TODO set controlmode in all the states
     TaskFeedbackCcu tfb_nav;
@@ -1208,6 +1228,8 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     mn_goal.start.header.frame_id = "map";
     mn_goal.start.header.stamp = ros::Time::now();
     
+    ropod_ros_msgs::DockingCommand dockingMsg;
+    
     switch ( nav_state_release_ )
     {
 
@@ -1265,9 +1287,15 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         point2goal(&finalMobidikPosition_);
 
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
-        nav_next_state_wp_release_ = MOBID_REL_DECOUPLING;
+        nav_next_state_wp_release_ = MOBID_REL_INIT_DECOUPLING;
         bumperWrenchesVector_.clear();
         break;
+        
+    case MOBID_REL_INIT_DECOUPLING:
+            ROS_INFO ( "MOBID_REL_INIT_DECOUPLING" );
+            dockingMsg.docking_command = DOCKING_COMMAND_RELEASE;
+            dockingCommand.publish( dockingMsg );
+            nav_next_state_release_ = MOBID_REL_DECOUPLING;
 
     case MOBID_REL_DECOUPLING:
         ROS_INFO ( "MOBID_REL_DECOUPLING" );
@@ -1306,7 +1334,15 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
 //                 }
 // 
 //             }
+                
+                if( dockingFeedback.docking_status == DOCKING_FB_REST )
+                {
+                        ROS_INFO("MOBIDIK RELEASED");
+                        touched = true;
+                }
         }
+        
+        
         
         if ( touched )
         {                 

@@ -21,7 +21,7 @@ std_msgs::UInt16 LLCmodeSet, LLCmodeApplied;
 std_msgs::Bool loadAttachedSet, loadAttachedApplied;
 
 ropodNavigation::wrenches bumperWrenches;
-
+ropod_ros_msgs::DockingFeedback dockingFeedback;
 
 
 volatile bool robot_action_msg_received = false;
@@ -168,6 +168,11 @@ void loadAttachedCallback(const std_msgs::Bool::ConstPtr& loadAttachedStmsg)
     loadAttachedApplied = *loadAttachedStmsg;
 }
 
+void dockingStatusCallback(const ropod_ros_msgs::DockingFeedback::ConstPtr& dockingBF)
+{
+    dockingFeedback = *dockingBF;
+}
+
 
 RopodNavigation::RopodNavigation()
 {
@@ -238,8 +243,9 @@ void RopodNavigation::initialize ( ed::InitData& init )
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
     poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
 
+    docking_command_pub_ = n.advertise<ropod_ros_msgs::DockingCommand>("/cmd_dock", 1 );
+    docking_status_sub_ = n.subscribe<ropod_ros_msgs::DockingFeedback>("/dockingFeedback", 10, dockingStatusCallback );
     
-
     send_goal_ = false;
     
     door_status.closed = false;
@@ -490,7 +496,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         
     case NAVTYPE_MOBIDIK_COLLECTION:
 //          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
-        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal);
+        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal, docking_command_pub_, dockingFeedback);
 
         if ( nav_state.fb_nav == NAV_DONE )
         {
@@ -521,7 +527,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         
     case NAVTYPE_MOBIDIK_RELEASE:
 //           ROS_INFO("NAVTYPE_MOBIDIK_RELEASE");
-        nav_state = mobidik_collection_navigation.callReleasingStateMachine (movbase_cancel_pub_,  mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, &mobidikConnected_, robotReal );
+        nav_state = mobidik_collection_navigation.callReleasingStateMachine (movbase_cancel_pub_,  mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, &mobidikConnected_, robotReal,  docking_command_pub_, dockingFeedback);
         
         if ( nav_state.fb_nav == NAV_DONE )
         {
