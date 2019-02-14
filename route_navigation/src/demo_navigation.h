@@ -137,6 +137,8 @@ private:
     
     ros::Subscriber sub_model_med_commands_;
     
+    ros::Subscriber sub_debug_roputer_planner_;
+    
     ros::Publisher sendGoal_pub_;
     
     ros::Publisher mn_sendGoal_pub_;
