@@ -2,14 +2,10 @@
 <launch>
     
     
-
         <arg name="robotName" default="ropod"/>  
-       <!-- <arg name="robotName" default="ropod_tue_1"/-->  
         <arg name="laser1_name" value ="laser"/>
-        <!--<arg name="map_file" default="$(find ed_object_models)/models/hospital_test_amcl/walls/map_amcl.yaml" />-->
-        <!--<arg name="map_file" default="$(find ropod_navigation_test)/config/amk-f064/map.yaml"/>-->
-        <!--<arg name="map_file" default="/home/cesar/ropod-project-software/catkin_workspace/src/applications/occupancy_grids/tue/lab-level/map.yaml"/>-->
-         <arg name="map_file" default="$(find ed_object_models)/models/tue_hallway_RLtoAL/walls/shape/map.yaml" />
+        <arg name="map_file" default="/home/ropod/ropod-project-software/catkin_workspace/src/applications/occupancy_grids/brsu/brsu-c-floor0_osm/map.yaml" />
+
        
         
    <!-- Run the map server -->
@@ -26,8 +22,8 @@
         <param name="odom_alpha3" value="5.0"/>
         <param name="odom_alpha4" value="5.0"/>
         <param name="odom_alpha5" value="7.0"/>
-        <param name="odom_frame_id" value="/$(arg robotName)/odom"/>
-        <param name="base_frame_id" value="/$(arg robotName)/base_link"/>
+        <param name="odom_frame_id" value="$(arg robotName)/odom"/>
+        <param name="base_frame_id" value="$(arg robotName)/base_link"/>
         <param name="global_frame_id" value="/map"/>
 
         <!-- Overall filter parameters -->
@@ -66,25 +62,28 @@
     </node>
     
     <!-- Launch ED -->
-    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml" >
-    <!-- <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml" launch-prefix="xterm -e gdb args" For debugging with gdb-->
+    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-test-ED-hospital-osm-amcl.yaml" output="screen" >
         <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
         <remap from="~undock_action" to="/ropod_task_executor/UNDOCK" />
-        <remap from="~dock_action" to="/ropod_task_executor/DOCK" />        
+        <remap from="~dock_action" to="/ropod_task_executor/DOCK" />
     </node>
-    
-    <!-- Launch navigation -->
-    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" >             
-        <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" />       
-        <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params_EDhallway.yaml"  command="load" ns="local_costmap" />    
-        <param name="default_ropod_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod.yaml"/>
-        <param name="default_ropod_load_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod_load.yaml"/>        
 
+    <!-- Launch navigation -->
+    <!--node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen" launch-prefix="gdb -ex run -_-args-->             
+    <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen">             
+        <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" />       
+        <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params EDhospital_osm.yaml"  command="load" ns="local_costmap" />    
+        <param name="default_ropod_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod.yaml"/>
+        <param name="default_ropod_load_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod_load.yaml"/>
+        
+<!--        <rosparam file="$(find ropod_navigation_test)/config/parameters/base_local_planner_params.yaml" command="load" />
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS" />        -->
         <rosparam file="$(find ropod_navigation_test)/config/parameters/teb_local_planner_params_ropod.yaml" command="load" />
         <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+
         
-        <remap from="/maneuver_navigation/cmd_vel" to="/load/cmd_vel"/>
-        <remap from="odom" to="/load/odom"/>        
+        <remap from="/maneuver_navigation/cmd_vel" to="/ropod/cmd_vel"/>
+        <remap from="odom" to="/ropod/odom"/>        
     </node>       
     
 </launch>
