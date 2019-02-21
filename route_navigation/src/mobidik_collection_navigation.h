@@ -55,7 +55,7 @@
 #define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 0.5 // [m]
 #define DIST_DISCONNECT_MOBID_RELEASE (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) + 0.2) // [m]
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
-#define DIST_CONN_SIM 0.1 //[m]
+#define DIST_CONN_SIM 0.2 //[m]
 
 #define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
 #define DIST_MOVE_FRONT_POSTRELEASING (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) - 0.5*ROPOD_LENGTH + 0.2) //[m]
@@ -131,8 +131,9 @@ class MobidikCollection
     bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, ed::UUID mobidikId, visualization_msgs::Marker* points ) ;
     
     bool getMobidikPosition( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *mobidikPose );
-    
-    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
+   void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points, geo::Pose3D *mobidikPos);
+ 
+//    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
     void pauseNavigation();
     
@@ -207,7 +208,8 @@ class MobidikCollection
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
     
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
-    
+geo::Pose3D mobidikPos_   ;
+ 
     ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties_;
    
 

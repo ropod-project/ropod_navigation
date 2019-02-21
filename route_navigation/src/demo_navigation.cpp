@@ -243,8 +243,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
     poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
 
-    docking_command_pub_ = n.advertise<ropod_ros_msgs::DockingCommand>("/cmd_dock", 1 );
-    docking_status_sub_ = n.subscribe<ropod_ros_msgs::DockingFeedback>("/dockingFeedback", 10, dockingStatusCallback );
+    docking_command_pub_ = n.advertise<ropod_ros_msgs::DockingCommand>("/ropod/ropod_low_level_control/cmd_dock", 1 );
+    docking_status_sub_ = n.subscribe<ropod_ros_msgs::DockingFeedback>("/ropod/ropod_low_level_control/dockingFeedback", 10, dockingStatusCallback );
     
     send_goal_ = false;
     

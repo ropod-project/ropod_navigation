@@ -257,9 +257,11 @@ ed::tracking::FeatureProperties mobidikFeatures;
     for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
     {
       const ed::EntityConstPtr& e = *it; 
-std::cout << "mobidikID = " << mobidikId << std::endl;
+//std::cout << "mobidikID = " << mobidikId << std::endl;
         if( e->id() == mobidikId )
         {
+
+std::cout <<"MobidikID = " << e->id() << std::endl;
 		mobidikFeatures = e->property ( featurePropertiesKey );
                 ed::tracking::Rectangle mobidikModel = mobidikFeatures.getRectangle();
 std::cout << "mobidikFeatures are: " << std::endl;
@@ -416,7 +418,7 @@ bool MobidikCollection::getMobidikPosition( const ed::WorldModel& world, ed::UUI
     return false;
 }
 
-void MobidikCollection::getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points )
+void MobidikCollection::getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points, geo::Pose3D *mobidikPos)
 {
 std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikID << std::endl;
  //   geo::Pose3D mobidikPose;
@@ -483,6 +485,10 @@ std::cout << "yaw = " << yaw << std::endl;
             p.y = setpoint->getOrigin().getY();
             p.z = 0.0;
             
+geo::Vec3d originMD (entityProperties.getRectangle().get_x(), entityProperties.getRectangle().get_y(), 0.0);
+mobidikPos->setOrigin( originMD );
+mobidikPos->setRPY (0.0, 0.0, entityProperties.getRectangle().get_yaw() );
+
             std::cout << "Point = " << p << std::endl;
 
             points->points.push_back ( p );
@@ -826,7 +832,7 @@ std::cout << "MOBID_COLL_FIND_MOBIDIK bla" << std::endl;
          
     case MOBID_COLL_FIND_SETPOINT_FRONT:
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");
-            getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points);
+            getSetpointInFrontOfMobidik ( world, MobidikID_ED_, &setpoint_, &points, &mobidikPos_);
             point2goal(&setpoint_);
             
             markerArraytest->markers.push_back ( points );           
@@ -852,6 +858,8 @@ std::cout << "MOBID_COLL_FIND_MOBIDIK bla" << std::endl;
             for ( ed::WorldModel::const_iterator it = world.begin(); it != world.end(); ++it )
             {
                 const ed::EntityConstPtr& e = *it;
+
+std::cout << "mobidikID ED = " << MobidikID_ED_ << std::endl;
                 if ( MobidikID_ED_.str().compare ( e.get()->id().str() )  == 0 )
                 {
 
@@ -867,12 +875,16 @@ std::cout << "MOBID_COLL_FIND_MOBIDIK bla" << std::endl;
                 }
             }
 
-            dist2 = std::pow ( mobidikPose.getOrigin().getX() - base_position_->pose.position.x , 2.0 ) + std::pow ( mobidikPose.getOrigin().getY() - base_position_->pose.position.y , 2.0 );
+
+            //dist2 = std::pow ( mobidikPose.getOrigin().getX() - base_position_->pose.position.x , 2.0 ) + std::pow ( mobidikPose.getOrigin().getY() - base_position_->pose.position.y , 2.0 );
+            dist2 = std::pow ( mobidikPos_.getOrigin().getX() - base_position_->pose.position.x , 2.0 ) + std::pow ( mobidikPos_.getOrigin().getY() - base_position_->pose.position.y , 2.0 );
 std::cout << "dist2 = " << dist2 << std::endl;
 
 std::cout << "base_position_->pose.position.x, y = " << base_position_->pose.position.x << ", " << base_position_->pose.position.y << std::endl;
 std::cout << "mobidikPose.getOrigin().getX(), y = " << mobidikPose.getOrigin().getX() << ", " << mobidikPose.getOrigin().getY() << std::endl;
 std::cout << "mobidikLength = " << mobidikLength << std::endl;
+
+std::cout << "dist ref = " << std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) << std::endl;
             if ( dist2 < std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) )
             {
                 touched = true;
