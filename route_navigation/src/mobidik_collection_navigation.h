@@ -13,6 +13,8 @@
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
 #include <string>
+#include <typeinfo>
+#include <stddef.h>
 
 #include <ed/world_model.h>
 #include <ed/update_request.h>
@@ -41,6 +43,10 @@
 #define GOAL_MOBID_REL_REACHED_DIST 0.1 // [m]
 #define GOAL_MOBID_REACHED_ANG  5.0*M_PI/180.0 // [rad]
 #define GOAL_MOBID_REACHED_ANG_UNDOCK  10.0*M_PI/180.0 // [rad]
+
+#ifndef NULL
+#define NULL 0
+#endif
 
 #define ROPOD_LENGTH 0.6 // [m]
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
@@ -119,7 +125,8 @@ class MobidikCollection
     
     ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
 
-    bool getMobidik(const ed::WorldModel& world, ed::UUID* id);
+//     bool getMobidik(const ed::WorldModel& world, ed::EntityConstPtr* mobidikID);
+    bool getMobidik(const ed::WorldModel& world, ed::UUID* mobidikID);
 
     template <class T>
     void wrap2pi(T *angle);
@@ -128,11 +135,15 @@ class MobidikCollection
     void wrap2twopi(T *angle);
 
     //void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
-    bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, ed::UUID mobidikId, visualization_msgs::Marker* points ) ;
+//     bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, const ed::EntityConstPtr mobidikID, visualization_msgs::Marker* points ) ;
+    bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID,   ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
+//     bool getMobidikPosition( const ed::WorldModel& world, const ed::EntityConstPtr, geo::Pose3D *mobidikPose );
     
-    bool getMobidikPosition( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *mobidikPose );
-   void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points, geo::Pose3D *mobidikPos);
- 
+    bool getEntityPointer(const ed::WorldModel& world, ed::UUID MobidikID_ED, ed::EntityConstPtr& entityPointer);
+    
+//    bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::EntityConstPtr mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
+ bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
+    
 //    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
     void pauseNavigation();
@@ -200,6 +211,7 @@ class MobidikCollection
     ros::Time stamp_start_;
     ros::Duration stamp_wait_;
     ed::UUID MobidikID_ED_;
+    //ed::EntityConstPtr MobidikID_ED_;
     geo::Pose3D setpoint_;
     
     bool avgWrenchesDetermined_;
@@ -208,7 +220,7 @@ class MobidikCollection
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
     
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
-geo::Pose3D mobidikPos_   ;
+//     geo::Pose3D mobidikPos_   ;
  
     ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties_;
    
