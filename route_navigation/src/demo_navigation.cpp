@@ -265,7 +265,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
             ROS_INFO("Robot running in simulation mode");
             }
     
-    init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featurePropertiesKey, new FeaturPropertiesInfo );
+    init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featureProperties, new FeaturPropertiesInfo );
     controlMode_.data = ropodNavigation::LLC_VEL; //LLC_NORMAL
     
 

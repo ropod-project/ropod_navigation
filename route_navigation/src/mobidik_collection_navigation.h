@@ -58,7 +58,7 @@
 #define MIN_FORCE_TOUCHED 20 // [N]
 #define MAX_TORQUE_TOUCHED 3 // [Nm]
 
-#define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 0.5 // [m]
+#define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 1.0 // [m]
 #define DIST_DISCONNECT_MOBID_RELEASE (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) + 0.2) // [m]
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
 #define DIST_CONN_SIM 0.2 //[m]
@@ -91,8 +91,9 @@ class MobidikCollection
          };
          
     enum { MOBID_REL_NAV_IDLE = 0,
-           MOBID_REL_GET_SETPOINT_FRONT_PARALLEL,
+//            MOBID_REL_GET_SETPOINT_FRONT_PARALLEL,
            MOBID_REL_GET_SETPOINT_FRONT,
+           MOBID_REL_GOTO_SETPOINT_FRONT,
            MOBID_REL_GOTO_FINAL_MOBIDIK_POS,
            MOBID_REL_DECOUPLING,
            MOBID_REL_ROTATE,
@@ -123,7 +124,8 @@ class MobidikCollection
     
     ~MobidikCollection();
     
-    ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
+//     ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
+     ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties;
 
 //     bool getMobidik(const ed::WorldModel& world, ed::EntityConstPtr* mobidikID);
     bool getMobidik(const ed::WorldModel& world, ed::UUID* mobidikID);
@@ -136,13 +138,13 @@ class MobidikCollection
 
     //void setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req,  std::string mobidikAreaID, visualization_msgs::Marker mobidikMarker, ed::UUID* id, visualization_msgs::Marker *points );
 //     bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, const ed::EntityConstPtr mobidikID, visualization_msgs::Marker* points ) ;
-    bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID,   ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
+    bool setMobidikPosition ( const ed::WorldModel& world, ed::UpdateRequest& req, std::string mobidikAreaID,   ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
 //     bool getMobidikPosition( const ed::WorldModel& world, const ed::EntityConstPtr, geo::Pose3D *mobidikPose );
     
     bool getEntityPointer(const ed::WorldModel& world, ed::UUID MobidikID_ED, ed::EntityConstPtr& entityPointer);
     
 //    bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::EntityConstPtr mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
- bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
+ bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UpdateRequest& req, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
 //    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
@@ -213,6 +215,7 @@ class MobidikCollection
     ed::UUID MobidikID_ED_;
     //ed::EntityConstPtr MobidikID_ED_;
     geo::Pose3D setpoint_;
+    ed::tracking::FeatureProperties mobidikFeatures_;  
     
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
@@ -222,7 +225,7 @@ class MobidikCollection
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
 //     geo::Pose3D mobidikPos_   ;
  
-    ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties_;
+   
    
 
 };
