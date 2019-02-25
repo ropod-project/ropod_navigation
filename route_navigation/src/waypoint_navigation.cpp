@@ -86,7 +86,7 @@ void WaypointNavigation::resetNavigation()
     perform_initial_rotation = false;
     // Setd efault goal configuration
     nav_configuration.precise_goal = true;
-    nav_configuration.use_line_planner = true;
+    nav_configuration.use_line_planner = false;
     
 }
 
