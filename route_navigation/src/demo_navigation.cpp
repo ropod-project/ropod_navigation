@@ -281,7 +281,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
 void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& req )
 {
 
-ROS_WARN("Next iteration");
+// ROS_WARN("Next iteration");
     cb_queue_.callAvailable();    
 
     int curr_loc;
