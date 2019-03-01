@@ -86,7 +86,7 @@ void WaypointNavigation::resetNavigation()
     perform_initial_rotation = false;
     // Setd efault goal configuration
     nav_configuration.precise_goal = true;
-    nav_configuration.use_line_planner = true;
+    nav_configuration.use_line_planner = false;
     
 }
 
@@ -270,6 +270,9 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &n
   tfb_nav.wayp_n = waypoint_cnt;
   tfb_nav.fb_nav = NAV_BUSY;
   sendgoal = false;
+  
+  mn_goal.conf.precise_goal = false;
+  mn_goal.conf.use_line_planner = false;
 
     switch (nav_state) {
     case WAYP_NAV_IDLE: // No waypoints received yet.
