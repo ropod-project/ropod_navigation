@@ -61,7 +61,7 @@
 #define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 1.0 // [m]
 #define DIST_DISCONNECT_MOBID_RELEASE (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) + 0.2) // [m]
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
-#define DIST_CONN_SIM 0.2 //[m]
+#define DIST_CONN_SIM 0.1 //[m]
 
 #define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
 #define DIST_MOVE_FRONT_POSTRELEASING (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) - 0.5*ROPOD_LENGTH + 0.2) //[m]
@@ -215,7 +215,7 @@ class MobidikCollection
     ed::UUID MobidikID_ED_;
     //ed::EntityConstPtr MobidikID_ED_;
     geo::Pose3D setpoint_;
-    ed::tracking::FeatureProperties mobidikFeatures_;  
+//    ed::tracking::FeatureProperties mobidikFeatures_;  
     
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
