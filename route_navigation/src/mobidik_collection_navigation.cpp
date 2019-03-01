@@ -397,6 +397,7 @@ std::cout << "MD_yaw set at " << MD_yaw << std::endl;
 //            req.setConvexHullNew ( mobidikIDNew, chull, mobidikPose, lastUpdateTimestamp, "/map");
 
            req.setProperty ( mobidikEntity->id(), featureProperties, mobidikFeatures );
+           mobidikFeatures_ = mobidikFeatures;
            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
            req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
            std::cout<< "Requested to update properties of entity with id = " << mobidikEntity->id() << std::endl;
@@ -467,7 +468,8 @@ std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikID << std::endl;
                 ed::tracking::FeatureProperties entityProperties;
                 if( mobidikEntity->property ( featureProperties ))
                 {
-                        entityProperties = mobidikEntity->property ( featureProperties );
+//                         entityProperties = mobidikEntity->property ( featureProperties );
+                         entityProperties = mobidikFeatures_;
                         std::cout << "getSetpointInFrontOfMobidik" << std::endl;
                         entityProperties.printProperties();
                         
@@ -915,8 +917,8 @@ std::cout << "MOBID_COLL_FIND_MOBIDIK bla" << std::endl;
             }
             else
             {
-                mobidikProperties = mobidikPointer->property ( featureProperties );
-                
+//                 mobidikProperties = mobidikPointer->property ( featureProperties );
+                mobidikProperties = mobidikFeatures_;
                 std::cout << "ID reference " << mobidikPointer->id() << std::endl;
                 std::cout << "MobidikID_ED_ = " << MobidikID_ED_ << std::endl;
                 mobidikLength = mobidikProperties.rectangle_.get_w();

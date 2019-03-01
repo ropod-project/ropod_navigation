@@ -219,6 +219,8 @@ class MobidikCollection
     
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
+    
+    ed::tracking::FeatureProperties mobidikFeatures_;
 
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
     
