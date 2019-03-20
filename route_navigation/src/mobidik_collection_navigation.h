@@ -20,7 +20,7 @@
 #include <ed/update_request.h>
 #include <ed/entity.h>
 #include "ed/featureProperties_info.h"
-#include "demo_navigation.h"
+#include "route_navigation.h"
 
 #include "simplified_world_model.h"
 #include "route_navigation_defines.h"
@@ -87,9 +87,9 @@ class MobidikCollection
            MOBID_COLL_NAV_CONNECTING,
            MOBID_COLL_NAV_COUPLING,
            MOBID_COLL_NAV_EXIT_COLLECT_AREA,
-           MOBID_COLL_NAV_DONE           
+           MOBID_COLL_NAV_DONE
          };
-         
+
     enum { MOBID_REL_NAV_IDLE = 0,
 //            MOBID_REL_GET_SETPOINT_FRONT_PARALLEL,
            MOBID_REL_GET_SETPOINT_FRONT,
@@ -104,9 +104,9 @@ class MobidikCollection
            MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT,
            MOBID_REL_NAV_DONE,
            MOBID_REL_NAV_HOLD,
-           MOBID_REL_NAV_PAUSED         
+           MOBID_REL_NAV_PAUSED
          };
-                     
+
          enum {
     DOCKING_COMMAND_DOCK = 1,
     DOCKING_COMMAND_RELEASE = 2,
@@ -117,13 +117,13 @@ class MobidikCollection
     DOCKING_FB_REST = 0,
     DOCKING_FB_DOCKED = 10,
 };
-         
+
     public:
 
     MobidikCollection();
-    
+
     ~MobidikCollection();
-    
+
 //     ed::PropertyKey<ed::tracking::FeatureProperties> featurePropertiesKey;
      ed::PropertyKey<ed::tracking::FeatureProperties> featureProperties;
 
@@ -132,7 +132,7 @@ class MobidikCollection
 
     template <class T>
     void wrap2pi(T *angle);
-    
+
      template <class T>
     void wrap2twopi(T *angle);
 
@@ -140,54 +140,54 @@ class MobidikCollection
 //     bool setMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, std::string mobidikAreaID, const ed::EntityConstPtr mobidikID, visualization_msgs::Marker* points ) ;
     bool setMobidikPosition ( const ed::WorldModel& world, ed::UpdateRequest& req, std::string mobidikAreaID,   ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
 //     bool getMobidikPosition( const ed::WorldModel& world, const ed::EntityConstPtr, geo::Pose3D *mobidikPose );
-    
+
     bool getEntityPointer(const ed::WorldModel& world, ed::UUID MobidikID_ED, ed::EntityConstPtr& entityPointer);
-    
+
 //    bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::EntityConstPtr mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
  bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UpdateRequest& req, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
-    
+
 //    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
-    
+
     void pauseNavigation();
-    
+
     void resumeNavigation();
-    
+
     void resetNavigation();
-    
+
     void stopNavigation();
-    
+
     bool isPositionValid();
-    
+
     void printWrenches(geometry_msgs::WrenchStamped wrench);
-    
+
     geometry_msgs::WrenchStamped determineAvgWrench(std::vector<geometry_msgs::WrenchStamped> wrenchVector);
-    
+
     void determineAvgWrenches();
-    
+
     void initAvgWrench(geometry_msgs::WrenchStamped *wrench);
-    
+
     void initNavState();
-    
+
     void initNavStateRelease();
-    
+
     bool isWaypointAchieved(double& dist_tolerance, double& angle_tolerance);
-     
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, 
-                                               std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, 
+
+    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray,
+                                               std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest,
                                                std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal,
                                                ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback);
-    
+
     void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik, visualization_msgs::Marker* points );
-    
+
     void point2goal(geo::Pose3D *setpoint);
-    
-    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray, 
-                                              std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, 
-                                              std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected, 
-                                              const bool robotReal, ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback);    
-    
+
+    TaskFeedbackCcu callReleasingStateMachine(ros::Publisher &movbase_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray,
+                                              std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest,
+                                              std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,
+                                              const bool robotReal, ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback);
+
     geometry_msgs::PoseStamped::ConstPtr base_position_;
-    
+
     private:
 
     nav_msgs::Path planned_route_;
@@ -202,10 +202,10 @@ class MobidikCollection
     int nav_state_bpause_;
     int nav_next_state_wp_;
     int nav_next_state_wp_release_;
-    
+
     double xy_goal_tolerance_;
     double yaw_goal_tolerance_;
-    
+
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
     std_msgs::Bool true_bool_msg_;
@@ -215,20 +215,20 @@ class MobidikCollection
     ed::UUID MobidikID_ED_;
     //ed::EntityConstPtr MobidikID_ED_;
     geo::Pose3D setpoint_;
-//    ed::tracking::FeatureProperties mobidikFeatures_;  
-    
+//    ed::tracking::FeatureProperties mobidikFeatures_;
+
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
-    
+
     ed::tracking::FeatureProperties mobidikFeatures_;
 
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
-    
+
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
 //     geo::Pose3D mobidikPos_   ;
- 
-   
-   
+
+
+
 
 };
 

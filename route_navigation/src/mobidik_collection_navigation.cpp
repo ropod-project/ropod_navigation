@@ -272,7 +272,7 @@ std::cout <<"MobidikID = " << mobidikEntity->id() << std::endl;
 		mobidikFeatures = mobidikEntity->property ( featureProperties );
                 ed::tracking::Rectangle mobidikModel = mobidikFeatures.getRectangle();
 std::cout << "mobidikFeatures are: " << std::endl;
-mobidikFeatures.printProperties();
+//mobidikFeatures.printProperties();
 
                 std::cout <<"xPos = " << mobidikModel.get_x()  << std::endl; 
                 geo::Vec3d origin ( mobidikModel.get_x(), mobidikModel.get_y(), mobidikModel.get_z() );
@@ -293,7 +293,7 @@ mobidikFeatures.printProperties();
 //       
 //     }
 //    std::cout << "After mobidik found: " << std::endl;
-mobidikFeatures.printProperties();
+//mobidikFeatures.printProperties();
 
         std::string orientationWPID = "orient_wp_" +  mobidikAreaID;
 std::cout << "orientationWPID = " << orientationWPID << std::endl;
@@ -401,7 +401,7 @@ std::cout << "MD_yaw set at " << MD_yaw << std::endl;
            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
            req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
            std::cout<< "Requested to update properties of entity with id = " << mobidikEntity->id() << std::endl;
-                      mobidikFeatures.printProperties(); 
+//                      mobidikFeatures.printProperties(); 
                       std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikEntity->id() << std::endl;
 //            req.removeEntity(mobidikId);
             std::cout << "end of setMobidikPosition" << std::endl;
@@ -471,7 +471,7 @@ std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikID << std::endl;
 //                         entityProperties = mobidikEntity->property ( featureProperties );
                          entityProperties = mobidikFeatures_;
                         std::cout << "getSetpointInFrontOfMobidik" << std::endl;
-                        entityProperties.printProperties();
+//                        entityProperties.printProperties();
                         
                         mobidikLength = entityProperties.rectangle_.get_w();
                 } else

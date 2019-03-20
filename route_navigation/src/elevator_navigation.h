@@ -21,8 +21,15 @@
 
 #include <angles/angles.h>
 
-#include "simplified_world_model.h"
 #include <ropod_ros_msgs/DoorDetection.h>
+#include <floor_detection/DetectFloor.h>
+#include <ropod_ros_msgs/GetElevatorWaypointsAction.h>
+#include <ropod_ros_msgs/GetTopologyNodeAction.h>
+#include <ropod_ros_msgs/GetDoorStatus.h>
+#include <ropod_ros_msgs/Position.h>
+
+#include "simplified_world_model.h"
+#include "route_navigation_defines.h"
 
 #define ELEV_WAYP_REACHED_DIST 0.5
 #define ELEV_GOAL_REACHED_DIST 0.3
@@ -31,23 +38,17 @@
 
 class ElevatorNavigation
 {
-
-    enum { ELEV_NAV_HOLD = 0,
-           ELEV_NAV_IDLE,
-           ELEV_NAV_PAUSED,
-           ELEV_NAV_BUSY,
-           ELEV_WAIT_AREA,
-           ELEV_NAV_CHECKDOOR_IN,
-           ELEV_NAV_CHECKDOOR_OUT,
-	   ELEV_NAV_TURN_FACING_EXIT,
-           ELEV_NAV_WAIT_FLOOR_CHANGE,
-           ELEV_NAV_GOTOPOINT,
-           ELEV_NAV_WAYPOINT_DONE,
-           ELEV_NAV_DONE
-         };
+    enum
+    {
+        IDLE,
+        GOTO_WAITING_POINT,
+        WAIT_FOR_ELEVATOR,
+        ENTER_ELEVATOR,
+        RIDE_ELEVATOR,
+        EXIT_ELEVATOR
+    };
 
 public:
-
     nav_msgs::Path planned_route;
     int planned_route_size;
     bool route_busy;
@@ -59,29 +60,42 @@ public:
     int nav_next_state_wp;
     geometry_msgs::PoseStamped::ConstPtr base_position;
     tf::Transform base_positiontf_;
-    tf::Transform waypoint_tf_;    
+    tf::Transform waypoint_tf_;
     std_msgs::Bool true_boool_msg;
     move_base_msgs::MoveBaseGoal goal;
     ros::Time stamp_start;
     ros::Duration stamp_wait;
 
+    actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction> *elevator_waypoints_client;
+    actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction> *topology_node_client;
+    ros::ServiceClient get_door_status_client;
+    ros::ServiceClient get_floor_client;
+
     ElevatorNavigation();
     ~ElevatorNavigation();
 
-    void startNavigation(std::string areaID, const ed::WorldModel& world);
+    void initElevatorNavigation(int elevator_id, int elevator_door_id);
+    void getElevatorWaypoints(int elevator_id, int elevator_door_id);
+    void setWaitingPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal);
+    void setInsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal);
+    void setOutsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id);
     void pauseNavigation();
     void resumeNavigation();
     void resetNavigation();
     void stopNavigation();
+
     bool isPositionValid();
     bool isWaypointAchieved();
-    bool checkDoorStatus(ropod_ros_msgs::DoorDetection door_status);
-    TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &navigation_cancel_pub, move_base_msgs::MoveBaseGoal* goal_ptr,
-        bool& sendgoal, ropod_ros_msgs::DoorDetection door_status);
+    bool isDoorOpen();
+    bool destinationFloorReached();
+
+    TaskFeedbackCcu callNavigationStateMachine(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id="");
 private:
     wm::Elevator elevator;
+    ropod_ros_msgs::Position elevator_door_position;
+    geometry_msgs::Pose waiting_pose;
+    geometry_msgs::Pose inside_elevator_pose;
+    bool inside_elevator;
 };
-
-
 
 #endif
