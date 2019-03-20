@@ -512,7 +512,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
     case NAVTYPE_ELEVATOR_WAITING:
     case NAVTYPE_ELEVATOR_ENTERING:
     case NAVTYPE_ELEVATOR_RIDING:
-        nav_state = elevator_navigation.callNavigationStateMachine(&goal_, send_goal_);
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
@@ -524,7 +524,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         }
         break;
     case NAVTYPE_ELEVATOR_EXITING:
-        nav_state = elevator_navigation.callNavigationStateMachine(&goal_, send_goal_, areaID);
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, areaID);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;

@@ -66,23 +66,31 @@ void ElevatorNavigation::getElevatorWaypoints(int elevator_id, int elevator_door
 }
 
 /*--------------------------------------------------------*/
-void ElevatorNavigation::setWaitingPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal)
+void ElevatorNavigation::setWaitingPose(maneuver_navigation::Goal &mn_goal, bool& send_goal)
 {
-    goal.target_pose.pose = this->waiting_pose;
-    *goal_ptr = goal;
+    mn_goal.start.pose = base_position->pose;
+    mn_goal.goal.pose.position = this->waiting_pose.position;
+    mn_goal.goal.pose.orientation.w = this->waiting_pose.orientation.w;
+    mn_goal.goal.pose.orientation.x = this->waiting_pose.orientation.x;
+    mn_goal.goal.pose.orientation.y = this->waiting_pose.orientation.y;
+    mn_goal.goal.pose.orientation.z = this->waiting_pose.orientation.z;
     send_goal = true;
 }
 
 /*--------------------------------------------------------*/
-void ElevatorNavigation::setInsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal)
+void ElevatorNavigation::setInsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal)
 {
-    goal.target_pose.pose = this->inside_elevator_pose;
-    *goal_ptr = goal;
+    mn_goal.start.pose = base_position->pose;
+    mn_goal.goal.pose.position = this->inside_elevator_pose.position;
+    mn_goal.goal.pose.orientation.w = this->inside_elevator_pose.orientation.w;
+    mn_goal.goal.pose.orientation.x = this->inside_elevator_pose.orientation.x;
+    mn_goal.goal.pose.orientation.y = this->inside_elevator_pose.orientation.y;
+    mn_goal.goal.pose.orientation.z = this->inside_elevator_pose.orientation.z;
     send_goal = true;
 }
 
 /*--------------------------------------------------------*/
-void ElevatorNavigation::setOutsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id)
+void ElevatorNavigation::setOutsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id)
 {
     // TODO: get the outside elevator coming with the EXIT_ELEVATOR message
     ropod_ros_msgs::GetTopologyNodeGoal topology_node_goal;
@@ -112,7 +120,12 @@ void ElevatorNavigation::setOutsideElevatorPose(move_base_msgs::MoveBaseGoal* go
         throw "Area topology information could not be retrieved";
     }
 
-    *goal_ptr = goal;
+    mn_goal.start.pose = base_position->pose;
+    mn_goal.goal.pose.position = goal.target_pose.pose.position;
+    mn_goal.goal.pose.orientation.w = goal.target_pose.pose.orientation.w;
+    mn_goal.goal.pose.orientation.x = goal.target_pose.pose.orientation.x;
+    mn_goal.goal.pose.orientation.y = goal.target_pose.pose.orientation.y;
+    mn_goal.goal.pose.orientation.z = goal.target_pose.pose.orientation.z;
     send_goal = true;
 }
 
@@ -230,7 +243,7 @@ bool ElevatorNavigation::destinationFloorReached()
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id)
+TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id)
 {
     TaskFeedbackCcu feedback_msg;
     feedback_msg.fb_nav = NAV_BUSY;
@@ -241,7 +254,7 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(move_base_msgs::M
     }
     else if (nav_state == GOTO_WAITING_POINT)
     {
-        this->setWaitingPose(goal_ptr, send_goal);
+        this->setWaitingPose(mn_goal, send_goal);
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;
@@ -258,7 +271,7 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(move_base_msgs::M
     }
     else if (nav_state == ENTER_ELEVATOR)
     {
-        this->setInsideElevatorPose(goal_ptr, send_goal);
+        this->setInsideElevatorPose(mn_goal, send_goal);
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;
@@ -276,7 +289,7 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(move_base_msgs::M
     }
     else if (nav_state == EXIT_ELEVATOR)
     {
-        this->setOutsideElevatorPose(goal_ptr, send_goal, outside_area_id);
+        this->setOutsideElevatorPose(mn_goal, send_goal, outside_area_id);
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;

@@ -20,6 +20,7 @@
 #include <geolib/Shape.h>
 
 #include <angles/angles.h>
+#include <maneuver_navigation/Goal.h>
 
 #include <ropod_ros_msgs/DoorDetection.h>
 #include <floor_detection/DetectFloor.h>
@@ -76,9 +77,9 @@ public:
 
     void initElevatorNavigation(int elevator_id, int elevator_door_id);
     void getElevatorWaypoints(int elevator_id, int elevator_door_id);
-    void setWaitingPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal);
-    void setInsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal);
-    void setOutsideElevatorPose(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id);
+    void setWaitingPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
+    void setInsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
+    void setOutsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id);
     void pauseNavigation();
     void resumeNavigation();
     void resetNavigation();
@@ -89,7 +90,7 @@ public:
     bool isDoorOpen();
     bool destinationFloorReached();
 
-    TaskFeedbackCcu callNavigationStateMachine(move_base_msgs::MoveBaseGoal* goal_ptr, bool& send_goal, std::string outside_area_id="");
+    TaskFeedbackCcu callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id="");
 private:
     wm::Elevator elevator;
     ropod_ros_msgs::Position elevator_door_position;
