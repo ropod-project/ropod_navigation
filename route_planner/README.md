@@ -13,6 +13,24 @@ Depends on two action servers: `/get_topology_node` and `/get_shape` provided by
 
 ##### Available route planners
 * SimpleOSMRoutePlanner - plans route solely based on local topological nodes in OSM world model 
+* OSMSubAreasRoutePlanner - plans route compatible with maneuver navigation 
+
+#### Tests
+AMK
+```
+rosrun route_planner route_planner_test_amk
+```
+
+BRSU
+```
+rosrun route_planner route_planner_test_brsu
+```
+
+Route Visulization
+AMK
+```
+rosrun route_planner route_planner_visualizer
+```
 
 #### Running `route_planner_Service`
 ```
