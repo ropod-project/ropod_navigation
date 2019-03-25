@@ -97,6 +97,7 @@ private:
     geometry_msgs::Pose waiting_pose;
     geometry_msgs::Pose inside_elevator_pose;
     bool inside_elevator;
+    bool goal_sent;
 };
 
 #endif

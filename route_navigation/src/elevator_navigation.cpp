@@ -4,6 +4,7 @@
 ElevatorNavigation::ElevatorNavigation()
 {
     this->inside_elevator = false;
+    this->goal_sent = false;
 };
 
 /*--------------------------------------------------------*/
@@ -68,7 +69,12 @@ void ElevatorNavigation::getElevatorWaypoints(int elevator_id, int elevator_door
 /*--------------------------------------------------------*/
 void ElevatorNavigation::setWaitingPose(maneuver_navigation::Goal &mn_goal, bool& send_goal)
 {
+    mn_goal.start.header.frame_id = "map";
+    mn_goal.start.header.stamp = ros::Time::now();
     mn_goal.start.pose = base_position->pose;
+
+    mn_goal.goal.header.frame_id = "map";
+    mn_goal.goal.header.stamp = ros::Time::now();
     mn_goal.goal.pose.position = this->waiting_pose.position;
     mn_goal.goal.pose.orientation.w = this->waiting_pose.orientation.w;
     mn_goal.goal.pose.orientation.x = this->waiting_pose.orientation.x;
@@ -80,7 +86,12 @@ void ElevatorNavigation::setWaitingPose(maneuver_navigation::Goal &mn_goal, bool
 /*--------------------------------------------------------*/
 void ElevatorNavigation::setInsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal)
 {
+    mn_goal.start.header.frame_id = "map";
+    mn_goal.start.header.stamp = ros::Time::now();
     mn_goal.start.pose = base_position->pose;
+
+    mn_goal.goal.header.frame_id = "map";
+    mn_goal.goal.header.stamp = ros::Time::now();
     mn_goal.goal.pose.position = this->inside_elevator_pose.position;
     mn_goal.goal.pose.orientation.w = this->inside_elevator_pose.orientation.w;
     mn_goal.goal.pose.orientation.x = this->inside_elevator_pose.orientation.x;
@@ -120,7 +131,12 @@ void ElevatorNavigation::setOutsideElevatorPose(maneuver_navigation::Goal &mn_go
         throw "Area topology information could not be retrieved";
     }
 
+    mn_goal.start.header.frame_id = "map";
+    mn_goal.start.header.stamp = ros::Time::now();
     mn_goal.start.pose = base_position->pose;
+
+    mn_goal.goal.header.frame_id = "map";
+    mn_goal.goal.header.stamp = ros::Time::now();
     mn_goal.goal.pose.position = goal.target_pose.pose.position;
     mn_goal.goal.pose.orientation.w = goal.target_pose.pose.orientation.w;
     mn_goal.goal.pose.orientation.x = goal.target_pose.pose.orientation.x;
@@ -152,6 +168,7 @@ void ElevatorNavigation::resetNavigation()
     this->nav_paused_req = false;
     this->nav_state = IDLE;
     this->inside_elevator = false;
+    this->goal_sent = false;
 }
 
 /*--------------------------------------------------------*/
@@ -254,11 +271,17 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
     }
     else if (nav_state == GOTO_WAITING_POINT)
     {
-        this->setWaitingPose(mn_goal, send_goal);
+        if (!this->goal_sent)
+        {
+            this->setWaitingPose(mn_goal, send_goal);
+            this->goal_sent = true;
+        }
+
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = WAIT_FOR_ELEVATOR;
+            this->goal_sent = false;
         }
     }
     else if (nav_state == WAIT_FOR_ELEVATOR)
@@ -271,12 +294,18 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
     }
     else if (nav_state == ENTER_ELEVATOR)
     {
-        this->setInsideElevatorPose(mn_goal, send_goal);
+        if (!this->goal_sent)
+        {
+            this->setInsideElevatorPose(mn_goal, send_goal);
+            this->goal_sent = true;
+        }
+
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = RIDE_ELEVATOR;
             this->inside_elevator = true;
+            this->goal_sent = false;
         }
     }
     else if (nav_state == RIDE_ELEVATOR)
@@ -289,12 +318,18 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
     }
     else if (nav_state == EXIT_ELEVATOR)
     {
-        this->setOutsideElevatorPose(mn_goal, send_goal, outside_area_id);
+        if (!this->goal_sent)
+        {
+            this->setOutsideElevatorPose(mn_goal, send_goal, outside_area_id);
+            this->goal_sent = true;
+        }
+
         if (this->isWaypointAchieved())
         {
             feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = IDLE;
             this->inside_elevator = false;
+            this->goal_sent = false;
         }
     }
 
