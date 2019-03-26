@@ -164,7 +164,7 @@ geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vect
     sub_area_overlap.orientation.y = temp_quat.getY();
     sub_area_overlap.orientation.z = temp_quat.getZ();
 
-     std::cout << "Node process results" << std::endl;
+     std::cout << "\nNode process results" << std::endl;
      std::cout << closest_node.x << " , " << closest_node.y << std::endl;
      std::cout << second_closest_node.x << " , " << second_closest_node.y << std::endl;
      std::cout << sub_area_overlap.position.x << " , " << sub_area_overlap.position.y << std::endl;
@@ -177,9 +177,9 @@ void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs:
 {
     ropod_ros_msgs::Shape sub_area_shape;
 
-    if ((*sub_areas_areait)->type == "door")
-        sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"door");
-    else
+//     if ((*sub_areas_areait)->type == "door")
+//         sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"door");
+//     else
         sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"local_area");
 
     area_nodes = sub_area_shape.vertices;
