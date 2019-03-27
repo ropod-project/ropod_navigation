@@ -66,8 +66,8 @@
     </node>
     
     <!-- Launch ED -->
-    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml" >
-    <!-- <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml" launch-prefix="xterm -e gdb args" For debugging with gdb-->
+    <!--<node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml" -->
+    <node pkg="ed" type="ed" name="ed" args="$(find ropod_navigation_test)/config/model-example-ropod-navigation-ED.yaml"> <!-- launch-prefix="xterm -e gdb -_-args">-->
         <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
         <remap from="~undock_action" to="/ropod_task_executor/UNDOCK" />
         <remap from="~dock_action" to="/ropod_task_executor/DOCK" />        

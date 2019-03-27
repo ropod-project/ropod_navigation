@@ -61,7 +61,8 @@
 #define DIST_INTERMEDIATE_WAYPOINT_MOBID_RELEASE 1.0 // [m]
 #define DIST_DISCONNECT_MOBID_RELEASE (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) + 0.2) // [m]
 // #define DIST_DISCONNECT_MOBID_RELEASE 0.2 // [m]
-#define DIST_CONN_SIM 0.2 //[m]
+#define DIST_CONN_X 0.1 //[m]
+#define DIST_CONN_Y 0.05 // [m]
 
 #define DIST_MOVE_FRONT_POSTDOCKING 0.4 //[m]
 #define DIST_MOVE_FRONT_POSTRELEASING (std::sqrt(std::pow(0.5*ROPOD_WIDTH, 2.0) + std::pow(0.5*ROPOD_LENGTH, 2.0) ) - 0.5*ROPOD_LENGTH + 0.2) //[m]
@@ -141,10 +142,12 @@ class MobidikCollection
     bool setMobidikPosition ( const ed::WorldModel& world, ed::UpdateRequest& req, std::string mobidikAreaID,   ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
 //     bool getMobidikPosition( const ed::WorldModel& world, const ed::EntityConstPtr, geo::Pose3D *mobidikPose );
     
+    bool updateMobidikPosition ( const ed::WorldModel& world,ed::UpdateRequest& req, ed::UUID mobidikID, visualization_msgs::Marker* points ) ;
+    
     bool getEntityPointer(const ed::WorldModel& world, ed::UUID MobidikID_ED, ed::EntityConstPtr& entityPointer);
     
 //    bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, const ed::EntityConstPtr mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
- bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UpdateRequest& req, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
+ bool getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UpdateRequest& req, const ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points, float distance);
     
 //    void getSetpointInFrontOfMobidik ( const ed::WorldModel& world, ed::UUID mobidikID, geo::Pose3D *setpoint, visualization_msgs::Marker* points);
     
@@ -213,8 +216,8 @@ class MobidikCollection
     ros::Time stamp_start_;
     ros::Duration stamp_wait_;
     ed::UUID MobidikID_ED_;
-    //ed::EntityConstPtr MobidikID_ED_;
     geo::Pose3D setpoint_;
+    std::string orientationWPID_;
 //    ed::tracking::FeatureProperties mobidikFeatures_;  
     
     bool avgWrenchesDetermined_;
