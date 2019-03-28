@@ -991,15 +991,13 @@ TaskFeedbackCcu tfb_nav;
 std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::reset << std::endl;
             ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
             
-            
-            
             // Configure holonomic robot to move more accurately towards target
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.5 &");
-            std::cout << "syscommand 1 = " << sysCommand << "\t";
+//             std::cout << "syscommand 1 = " << sysCommand << "\t";
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_nh 0 &");
-            std::cout << " syscommand 2 = " << sysCommand << "\t";
+//             std::cout << " syscommand 2 = " << sysCommand << "\t";
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_forward_drive 0 &");
-            std::cout << "syscommand 3 = " << sysCommand << std::endl;
+//             std::cout << "syscommand 3 = " << sysCommand << std::endl;
             
             if(  getMobidik( world, &MobidikID_ED_ ) ) // Assumption: there is only 1 mobidik available at the moment in the area
             {           
