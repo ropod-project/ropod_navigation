@@ -822,7 +822,9 @@ TaskFeedbackCcu tfb_nav;
     mn_goal.conf.use_line_planner = true;
 //std::cout << "debug7.2"<< std::endl;
     
-mn_goal.start.pose = base_position_->pose; // always plan from current pose
+    mn_goal.conf.append_new_maneuver =  false;
+    
+    mn_goal.start.pose = base_position_->pose; // always plan from current pose
 //std::cout << "debug8"<< std::endl;
     
     mn_goal.goal.header.frame_id = "map";
@@ -1315,6 +1317,8 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     
     mn_goal.conf.precise_goal = true;
     mn_goal.conf.use_line_planner = false;
+    mn_goal.conf.append_new_maneuver =  false;
+    
     mn_goal.start.pose = base_position_->pose; // always plan from current pose
     
     mn_goal.goal.header.frame_id = "map";
