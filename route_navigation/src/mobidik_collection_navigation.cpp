@@ -2,7 +2,7 @@
 #include <ed_gui_server/EntityInfos.h>
 #include <ropod_ros_msgs/DockingCommand.h>
 
-#include </home/wouter/ropod-project-software/catkin_workspace/src/functionalities/ED/ed/include/ed/termcolor.hpp>
+#include "../../../../ED/ed/include/ed/termcolor.hpp"
 
 /*--------------------------------------------------------*/
 MobidikCollection::MobidikCollection( )
