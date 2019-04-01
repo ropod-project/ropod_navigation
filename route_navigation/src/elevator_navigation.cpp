@@ -80,6 +80,8 @@ void ElevatorNavigation::setWaitingPose(maneuver_navigation::Goal &mn_goal, bool
     mn_goal.goal.pose.orientation.x = this->waiting_pose.orientation.x;
     mn_goal.goal.pose.orientation.y = this->waiting_pose.orientation.y;
     mn_goal.goal.pose.orientation.z = this->waiting_pose.orientation.z;
+
+    goal.target_pose.pose = this->waiting_pose;
     send_goal = true;
 }
 
@@ -97,6 +99,8 @@ void ElevatorNavigation::setInsideElevatorPose(maneuver_navigation::Goal &mn_goa
     mn_goal.goal.pose.orientation.x = this->inside_elevator_pose.orientation.x;
     mn_goal.goal.pose.orientation.y = this->inside_elevator_pose.orientation.y;
     mn_goal.goal.pose.orientation.z = this->inside_elevator_pose.orientation.z;
+
+    goal.target_pose.pose = this->inside_elevator_pose;
     send_goal = true;
 }
 
@@ -288,7 +292,6 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
     {
         if (!inside_elevator && this->isDoorOpen())
         {
-            feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = ENTER_ELEVATOR;
         }
     }
