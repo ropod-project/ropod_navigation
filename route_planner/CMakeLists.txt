@@ -28,7 +28,6 @@ catkin_package(
   actionlib_msgs
 )
 
-
 add_library(route_planner ${PROJECT_SOURCE_DIR}/src/route_planner.cpp ${HEADER_FILES})
 add_dependencies(route_planner ropod_ros_msgs_generate_messages_cpp)
 target_link_libraries(route_planner ${LIBS} ${catkin_LIBRARIES})
@@ -45,6 +44,14 @@ add_executable(route_planner_node ${PROJECT_SOURCE_DIR}/src/route_planner_node.c
 add_dependencies(route_planner_node ropod_ros_msgs_generate_messages_cpp)
 target_link_libraries(route_planner_node ${LIBS} ${catkin_LIBRARIES} simple_osm_route_planner osm_sub_areas_route_planner)
 
-add_executable(route_planner_test ${PROJECT_SOURCE_DIR}/test/route_planner_test.cpp ${HEADER_FILES})
-add_dependencies(route_planner_test ropod_ros_msgs_generate_messages_cpp)
-target_link_libraries(route_planner_test ${LIBS} ${catkin_LIBRARIES})
+add_executable(route_planner_test_amk ${PROJECT_SOURCE_DIR}/test/route_planner_test_amk.cpp ${HEADER_FILES})
+add_dependencies(route_planner_test_amk ropod_ros_msgs_generate_messages_cpp)
+target_link_libraries(route_planner_test_amk ${LIBS} ${catkin_LIBRARIES})
+
+add_executable(route_planner_test_brsu ${PROJECT_SOURCE_DIR}/test/route_planner_test_brsu.cpp ${HEADER_FILES})
+add_dependencies(route_planner_test_brsu ropod_ros_msgs_generate_messages_cpp)
+target_link_libraries(route_planner_test_brsu ${LIBS} ${catkin_LIBRARIES})
+
+add_executable(route_planner_visualizer ${PROJECT_SOURCE_DIR}/test/route_planner_visualizer.cpp ${HEADER_FILES})
+add_dependencies(route_planner_visualizer ropod_ros_msgs_generate_messages_cpp)
+target_link_libraries(route_planner_visualizer ${LIBS} ${catkin_LIBRARIES})

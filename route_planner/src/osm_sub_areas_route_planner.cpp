@@ -7,7 +7,7 @@ Computes route based on the intersection between corridors and intersections
 
 bool OSMSubAreasRoutePlanner::is_junction(std::string area_type)
 {
-    return (area_type == "junction");
+    return (area_type == "junction" | area_type == "door");
 }
 
 double OSMSubAreasRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::Position corridor_node, ropod_ros_msgs::Position line_node_1, ropod_ros_msgs::Position line_node_2)
@@ -54,6 +54,7 @@ double OSMSubAreasRoutePlanner::compute_distance_node_to_line(ropod_ros_msgs::Po
 geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vector<ropod_ros_msgs::Position>* corridor_nodes_ptr, std::vector<ropod_ros_msgs::Position>*  corridor_junction_nodes_ptr, bool curr_area_is_corridor)
 {
     geometry_msgs::Pose sub_area_overlap;
+    ropod_ros_msgs::Position mid_fursthest_point;
 
     // For each node of the corridor_nodes, check the closest distance to the lines that two adjacent nodes form of the corridor_or_intersection_nodes.
     // This is done because the waypoints always should be in a corridor entrance or exit.
@@ -107,19 +108,32 @@ geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vect
     double dist_closest_node = ordered_shortest_node_line_distances[0];
     double dist_second_closest_node = ordered_shortest_node_line_distances[1];
     double dist_farthest_node = ordered_shortest_node_line_distances[ordered_shortest_node_line_distances.size()-1];
+    
+    for (int it = 0; it<ordered_shortest_node_line_distances.size(); it++)
+    {
+        printf("\ndist node %d: %f",it, ordered_shortest_node_line_distances[it]);
+    }
 
     // we take the two closest nodes as well as the farthest one
     ropod_ros_msgs::Position closest_node = (*corridor_nodes_ptr)[distance_ordered_node_indexes[0]];
     ropod_ros_msgs::Position second_closest_node = (*corridor_nodes_ptr)[distance_ordered_node_indexes[1]];
+    ropod_ros_msgs::Position second_farthest_node = (*corridor_nodes_ptr)[distance_ordered_node_indexes[distance_ordered_node_indexes.size()-2]];
     ropod_ros_msgs::Position farthest_node = (*corridor_nodes_ptr)[distance_ordered_node_indexes.size()-1];
 
     /* Next compute the waypoint: position based on the middle line between the two closest nodes and orientation based on that and the farthest node */
     sub_area_overlap.position.x = 0.5*(closest_node.x + second_closest_node.x);
     sub_area_overlap.position.y = 0.5*(closest_node.y + second_closest_node.y);
     sub_area_overlap.position.z = 0.0;
-
+    
+    mid_fursthest_point.x = 0.5*(farthest_node.x + second_farthest_node.x);
+    mid_fursthest_point.y = 0.5*(farthest_node.y + second_farthest_node.y);
+    
+    /*double yaw_waypoint_inwards = std::atan2(mid_fursthest_point.y-sub_area_overlap.position.y, mid_fursthest_point.x-sub_area_overlap.position.x);
+    double yaw_waypoint_outwards = yaw_waypoint_inwards+ M_PI;
+  */  
+    
     // For the orientation we assume that the corridor is longer in the direction of movement
-    double yaw_furthest_point_to_wayp = std::atan2(farthest_node.y-sub_area_overlap.position.y, farthest_node.x-sub_area_overlap.position.x);
+    double yaw_furthest_point_to_wayp = std::atan2(mid_fursthest_point.y-sub_area_overlap.position.y, mid_fursthest_point.x-sub_area_overlap.position.x);
     double yaw_edge_line =  std::atan2( closest_node.y - second_closest_node.y, closest_node.x - second_closest_node.x);
     double yaw_waypoint_inwards;
     double yaw_waypoint_outwards;
@@ -136,6 +150,8 @@ geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vect
     }
 
     double yaw_waypoint;
+    printf("\nyaw_waypoint_outwards %f",yaw_waypoint_outwards);
+    printf("\nyaw_waypoint_inwards %f",yaw_waypoint_inwards);
     if( curr_area_is_corridor )
         yaw_waypoint =  yaw_waypoint_outwards;
     else
@@ -148,7 +164,7 @@ geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vect
     sub_area_overlap.orientation.y = temp_quat.getY();
     sub_area_overlap.orientation.z = temp_quat.getZ();
 
-     std::cout << "Node process results" << std::endl;
+     std::cout << "\nNode process results" << std::endl;
      std::cout << closest_node.x << " , " << closest_node.y << std::endl;
      std::cout << second_closest_node.x << " , " << second_closest_node.y << std::endl;
      std::cout << sub_area_overlap.position.x << " , " << sub_area_overlap.position.y << std::endl;
@@ -161,8 +177,10 @@ void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs:
 {
     ropod_ros_msgs::Shape sub_area_shape;
 
-    sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"local_area");
-
+//     if ((*sub_areas_areait)->type == "door")
+//         sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"door");
+//     else
+        sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"local_area");
 
     area_nodes = sub_area_shape.vertices;
     std::cout << "Shape request" << std::endl;
@@ -192,30 +210,23 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
 
       for (std::vector<ropod_ros_msgs::Area>::iterator area_it = path_areas.begin(); area_it != path_areas.end(); area_it++) {
           int no_of_waypts = 0;
-          for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
-          {
 
-              path_osm_wayp.push_back(*sub_area_it);
-              sub_area_iterators.push_back(area_it);
-              no_of_waypts++;
-          }
-          // For doors and other waypoints which doesn't have any local areas.  later onIgnore them! For now we just use the position of the waypoint node
-          if(no_of_waypts == 0)
+          // For doors, which doesn't have any local areas, create a virtual one
+          if(area_it->type =="door")
           {
               ropod_ros_msgs::SubArea sub_area;
               sub_area.name = area_it->name;
               sub_area.id = area_it->id;
-
-              ropod_ros_msgs::Position p  = CallGetTopologyNodeAction(std::stoi(area_it->id),"door");
-
-              sub_area.waypoint_pose.position.x = p.x;
-              sub_area.waypoint_pose.position.y = p.y;
-
               area_it->sub_areas.push_back(sub_area);
-          }else
-          {
-              area_it->sub_areas.clear(); // Clear because later we can insert more waypoints than originally we had
           }
+          
+          for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
+          {
+
+              path_osm_wayp.push_back(*sub_area_it);
+              sub_area_iterators.push_back(area_it);              
+          }          
+          area_it->sub_areas.clear(); // Clear because later we can insert more waypoints than originally we had
       }
 
     if (path_osm_wayp.size() < 2 )
@@ -238,6 +249,8 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
     bool is_next_area_junction = is_junction(next_area_type);
     if(is_curr_area_junction && is_next_area_junction)
         ROS_ERROR("Two adjacent junctions are not allowed");
+    
+    printf("\ncurr and next areas types> %s, %s", curr_area_type.c_str(),  next_area_type.c_str());
 
     bool curr_area_is_corridor;
     if( !is_curr_area_junction )
@@ -280,6 +293,8 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
         is_next_area_junction = is_junction(next_area_type);
         if(is_curr_area_junction && is_next_area_junction)
             ROS_ERROR("Two adjacent junctions are not allowed");
+        
+        printf("\ncurr and next areas types> %s, %s", curr_area_type.c_str(),  next_area_type.c_str());
 
         if( !is_curr_area_junction )
         {
