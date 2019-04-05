@@ -197,7 +197,8 @@ bool WaypointNavigation::getNextWaypoint(maneuver_navigation::Goal &mn_goal)
                 perform_initial_rotation = false;
                 mn_goal.goal.pose = curr_nav_waypoint->waypoint_pose;
                 mn_goal.start.pose = base_position->pose;             
-            }                        
+            }      
+            mn_goal.conf.append_new_maneuver =  false; // do not append in the first two waypoints
             
         }
         else
@@ -273,6 +274,7 @@ TaskFeedbackCcu WaypointNavigation::callNavigationStateMachine(ros::Publisher &n
   
   mn_goal.conf.precise_goal = false;
   mn_goal.conf.use_line_planner = false;
+  mn_goal.conf.append_new_maneuver =  true;
 
     switch (nav_state) {
     case WAYP_NAV_IDLE: // No waypoints received yet.
