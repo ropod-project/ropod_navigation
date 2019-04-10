@@ -41,6 +41,11 @@ void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& ro
 void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::RoutePlannerResultConstPtr& result)
 {
 
+  if (state == actionlib::SimpleClientGoalState::LOST)
+  {
+      ROS_ERROR("Route planner action server is in LOST state. Did not get a route, hence we cannot continue!");
+      return;
+  }
   // Extract waypoints into RobotActionMessage
   ropod_ros_msgs::NavigationArea robot_nav_area;
   robot_action_msg_rec.navigation_areas.clear();
