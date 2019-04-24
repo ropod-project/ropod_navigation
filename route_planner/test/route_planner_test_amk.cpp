@@ -13,10 +13,10 @@ Provides simple example path for independent testing of this package
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "route_planner_test");
+    ros::init(argc, argv, "route_planner_test_amk");
     ros::NodeHandle nh("~");
 
-    ROS_INFO("Route planner test");
+    ROS_INFO("Route planner test amk");
 
     std::vector<ropod_ros_msgs::Area>path_areas;
     
