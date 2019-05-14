@@ -38,6 +38,12 @@ void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& ro
     robot_action_msg_received = true;
 }
 
+void RopodNavigation::maneuverNavCallback(const maneuver_navigation::Feedback::ConstPtr &msg)
+{
+    mn_feedback_ = *msg;
+    mn_feedback_received_ = true;
+}
+
 void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::RoutePlannerResultConstPtr& result)
 {
 
@@ -244,6 +250,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
     sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/simple_goal", 1);
     mn_sendGoal_pub_ = n.advertise<maneuver_navigation::Goal> ("/route_navigation/goal", 1);
+    mn_feedback_sub_ = n.subscribe<maneuver_navigation::Feedback> ("/route_navigation/feedback", 1, (boost::bind(&RopodNavigation::maneuverNavCallback, this, _1)));
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
 
     movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
@@ -423,7 +430,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             std::cout << "pos(" << curr_wayp->waypoint_pose.position.x << "," << curr_wayp->waypoint_pose.position.y << ")" << std::endl;
             std::cout << "quat(" << curr_wayp->waypoint_pose.orientation.w << "," << curr_wayp->waypoint_pose.orientation.x << "," << curr_wayp->waypoint_pose.orientation.y << "," << curr_wayp->waypoint_pose.orientation.z << ") \n" << std::endl;
 
-//                 waypoint_ids_.push_back ( curr_wayp->semantic_id );
+                 waypoint_ids_.push_back ( curr_wayp->semantic_id );
             }
         }
         // waypoint_navigation.startNavigation ( path_msg_ );
@@ -434,8 +441,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
 
     }
 
-
     TaskFeedbackCcu nav_state;
+
+
 
     bool send_mn_goal_ = false;
     // Select the corresponding navigation
@@ -452,7 +460,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         {
             ROS_INFO ( "NAV DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
             if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
 
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
@@ -473,7 +481,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             bool check2 = (active_nav_copy =! state2 );
 
             if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
             ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
@@ -500,11 +508,31 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             {
                 if ( nav_state.wayp_n<=waypoint_ids_.size() )
                 if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                    ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                    ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
                 ropod_progress_msg.action_id = action_msg.action_id;
                 ropod_progress_msg.action_type = action_msg.type;
                 ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
                 ropod_progress_msg.status.status_code = ropod_ros_msgs::TaskProgressGOTO::ONGOING;
+                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+                ropod_progress_msg.totalNumber = waypoint_ids_.size();
+                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            }
+        }
+
+        if (mn_feedback_received_)
+        {
+            mn_feedback_received_ = false;
+            if (mn_feedback_.status != maneuver_navigation::Feedback::SUCCESS &&
+                mn_feedback_.status != maneuver_navigation::Feedback::BUSY &&
+                mn_feedback_.status != maneuver_navigation::Feedback::IDLE)
+            {
+                if ( nav_state.wayp_n<=waypoint_ids_.size() )
+                if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                    ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.action_id = action_msg.action_id;
+                ropod_progress_msg.action_type = action_msg.type;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+                ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::FAILED;
                 ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
                 ropod_progress_msg.totalNumber = waypoint_ids_.size();
                 ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
@@ -605,8 +633,6 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         nav_state.fb_nav = NAV_IDLE;
         break;
     }
-
-
 
     // Send navigation command
     if ( send_goal_ )

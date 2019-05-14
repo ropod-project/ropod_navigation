@@ -159,13 +159,19 @@ private:
 
     ros::Publisher mn_sendGoal_pub_;
 
+    ros::Subscriber mn_feedback_sub_;
+
     ros::Subscriber sub_navigation_fb_;
 
     ros::Publisher docking_command_pub_;
 
     ros::Subscriber docking_status_sub_;
 
+
     actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction> * route_planner_action_client_ptr_;
+
+    void maneuverNavCallback(const maneuver_navigation::Feedback::ConstPtr &msg);
+    bool mn_feedback_received_;
 };
 
 #endif
