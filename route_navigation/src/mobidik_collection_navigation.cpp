@@ -404,7 +404,7 @@ std::cout << "MD_yaw set at " << MD_yaw << std::endl;
 //            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
 //            req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
            std::cout<< "Requested to update properties of entity with id = " << mobidikEntity->id() << std::endl;
-                      mobidikFeatures.printProperties(); 
+//                      mobidikFeatures.printProperties(); 
                       std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikEntity->id() << std::endl;
 //            req.removeEntity(mobidikId);
             std::cout << "end of setMobidikPosition" << std::endl;

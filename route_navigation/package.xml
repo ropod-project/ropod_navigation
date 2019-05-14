@@ -50,7 +50,8 @@
   <build_depend>ed</build_depend>
   <build_depend>maneuver_navigation</build_depend>
   <build_depend>ed_gui_server</build_depend>
-
+  <build_depend>floor_detection</build_depend>
+  <build_depend>door_status_detection</build_depend>
 
   <run_depend>geometry_msgs</run_depend>
   <run_depend>move_base_msgs</run_depend>
@@ -61,6 +62,8 @@
   <run_depend>actionlib</run_depend>
   <run_depend>ed</run_depend>
   <run_depend>maneuver_navigation</run_depend>
+  <run_depend>floor_detection</run_depend>
+  <run_depend>door_status_detection</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

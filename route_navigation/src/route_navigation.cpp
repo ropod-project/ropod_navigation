@@ -1,4 +1,4 @@
-#include "demo_navigation.h"
+#include "route_navigation.h"
 
 typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
@@ -9,6 +9,7 @@ MobidikCollection mobidik_collection_navigation;
 ropod_ros_msgs::DoorDetection door_status;
 ropod_ros_msgs::TaskProgressGOTO ropod_progress_msg;
 ropod_ros_msgs::TaskProgressDOCK ropod_progress_dock_msg;
+ropod_ros_msgs::TaskProgressELEVATOR ropod_progress_elevator_msg;
 visualization_msgs::MarkerArray objectMarkerArray;
 std::string areaID;
 
@@ -37,20 +38,31 @@ void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& ro
     robot_action_msg_received = true;
 }
 
+void RopodNavigation::maneuverNavCallback(const maneuver_navigation::Feedback::ConstPtr &msg)
+{
+    mn_feedback_ = *msg;
+    mn_feedback_received_ = true;
+}
+
 void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGoalState& state, const ropod_ros_msgs::RoutePlannerResultConstPtr& result)
 {
-         
+
+  if (state == actionlib::SimpleClientGoalState::LOST)
+  {
+      ROS_ERROR("Route planner action server is in LOST state. Did not get a route, hence we cannot continue!");
+      return;
+  }
   // Extract waypoints into RobotActionMessage
-  ropod_ros_msgs::NavigationArea robot_nav_area;  
+  ropod_ros_msgs::NavigationArea robot_nav_area;
   robot_action_msg_rec.navigation_areas.clear();
-  
+
   ropod_ros_msgs::RoutePlannerResult result_internal = *result;
-  
-    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = result_internal.areas.begin(); area_it != result_internal.areas.end(); area_it++) 
+
+    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = result_internal.areas.begin(); area_it != result_internal.areas.end(); area_it++)
     {
         int no_of_waypts = 0;
         robot_nav_area.waypoints.clear();
-        
+
         for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
         {
             robot_nav_area.area_id = sub_area_it->id;
@@ -65,30 +77,30 @@ void RopodNavigation::actionRoutePlannerCallback(const actionlib::SimpleClientGo
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
             std::cout << "ID: " << sub_area_it->id << std::endl;
-            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
-            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
-           
+            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl;
+            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl;
+
         }
         robot_action_msg_rec.navigation_areas.push_back(robot_nav_area);
     }
-     
+
      robot_action_msg_received = true;
 }
 
 void debugRouterResultCallback(const ropod_ros_msgs::Action::ConstPtr& action_result_msg_)
 {
-         
+
   // Extract waypoints into RobotActionMessage
-  ropod_ros_msgs::NavigationArea robot_nav_area;  
+  ropod_ros_msgs::NavigationArea robot_nav_area;
   robot_action_msg_rec.navigation_areas.clear();
-  
+
   ropod_ros_msgs::Action action_result = *action_result_msg_;
-  
-    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = action_result.areas.begin(); area_it != action_result.areas.end(); area_it++) 
+
+    for (std::vector<ropod_ros_msgs::Area>::iterator area_it = action_result.areas.begin(); area_it != action_result.areas.end(); area_it++)
     {
         int no_of_waypts = 0;
         robot_nav_area.waypoints.clear();
-        
+
         for (std::vector<ropod_ros_msgs::SubArea>::iterator sub_area_it = area_it->sub_areas.begin(); sub_area_it != area_it->sub_areas.end(); sub_area_it++)
         {
             robot_nav_area.area_id = sub_area_it->id;
@@ -103,13 +115,13 @@ void debugRouterResultCallback(const ropod_ros_msgs::Action::ConstPtr& action_re
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << area_it->type << std::endl;
             std::cout << "ID: " << sub_area_it->id << std::endl;
-            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl; 
-            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl; 
-           
+            std::cout << "pos(" << sub_area_it->waypoint_pose.position.x << "," << sub_area_it->waypoint_pose.position.y << ")" << std::endl;
+            std::cout << "quat(" << sub_area_it->waypoint_pose.orientation.w << "," << sub_area_it->waypoint_pose.orientation.x << "," << sub_area_it->waypoint_pose.orientation.y << "," << sub_area_it->waypoint_pose.orientation.z << ") \n" << std::endl;
+
         }
         robot_action_msg_rec.navigation_areas.push_back(robot_nav_area);
     }
-     
+
      robot_action_msg_received = true;
 }
 
@@ -183,15 +195,15 @@ RopodNavigation::~RopodNavigation()
     delete route_planner_action_client_ptr_;
 }
 
-std::string RopodNavigation::GetEnv( const std::string & var ) 
+std::string RopodNavigation::GetEnv( const std::string & var )
 {
      const char * val = std::getenv( var.c_str() );
-     if ( val == 0 ) 
+     if ( val == 0 )
      {
          return "";
          ROS_ERROR("ROBOT_REAL variable not set. ");
      }
-     else 
+     else
      {
          return val;
      }
@@ -201,9 +213,9 @@ void RopodNavigation::initialize ( ed::InitData& init )
 {
     ros::NodeHandle n ( "~" );
     n.setCallbackQueue(&cb_queue_);
-    
+
     tue::Configuration& config = init.config;
-    
+
     std::string moveBaseServerName;
     std::string navigationFeedbackTopic;
     std::string navigationCancelTopic;
@@ -214,49 +226,61 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sub_ccu_goto_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "goto_action", 10, actionCallback );
     sub_ccu_dock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "dock_action", 10, actionCallback );
     sub_ccu_undock_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "undock_action", 10, actionCallback );
-    
-    sub_debug_roputer_planner_ = n.subscribe<ropod_ros_msgs::Action> ( "debug_route_planner_result_action", 10, debugRouterResultCallback );        
+    sub_ccu_wait_for_elevator_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "wait_for_elevator_action", 10, actionCallback );
+    sub_ccu_enter_elevator_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "enter_elevator_action", 10, actionCallback );
+    sub_ccu_ride_elevator_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "ride_elevator_action", 10, actionCallback );
+    sub_ccu_exit_elevator_commands_ = n.subscribe<ropod_ros_msgs::Action> ( "exit_elevator_action", 10, actionCallback );
+
+    sub_debug_roputer_planner_ = n.subscribe<ropod_ros_msgs::Action> ( "debug_route_planner_result_action", 10, debugRouterResultCallback );
 
     subdoor_status_ = n.subscribe<ropod_ros_msgs::DoorDetection> ( "/door", 10, doorDetectCallback );
     objectMarkers_ = n.subscribe<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers", 10, MarkerArrayCallback ); // TODO query these properties via ED instead of ROS
     LLCmodeApplied_ = n.subscribe<std_msgs::UInt16> ( "/ropod/LLCmode_Applied", 10, LLCmodeAppliedCallback );
-    loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_Applied", 10, loadAttachedCallback ); 
-    
-    // Communication to the bumpers 
+    loadAttachedApplied_ = n.subscribe<std_msgs::Bool> ( "/ropod/load_attached_Applied", 10, loadAttachedCallback );
+
+    // Communication to the bumpers
     wrenchFront_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_front", 10, wrenchFrontCallback );
     wrenchLeft_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_left", 10, wrenchLeftCallback );
     wrenchBack_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_back", 10, wrenchBackCallback );
     wrenchRight_ = n.subscribe<geometry_msgs::WrenchStamped> ( "/ropod/wrench_right", 10, wrenchRightCallback );
-    
+
     LLCmodeSet_pub_ = n.advertise<std_msgs::UInt16> ( "/ropod/Set_LLCmode", 1 );
     loadAttachedSet_pub_ = n.advertise<std_msgs::Bool> ( "/route_navigation/set_load_attached", 1 );
-    
+
     sub_model_med_commands_ = n.subscribe<ropod_ros_msgs::RobotAction> ( "/model_mediator_action", 10, actionModelMediatorCallback );
     sendGoal_pub_ = n.advertise<geometry_msgs::PoseStamped> ("/route_navigation/simple_goal", 1);
     mn_sendGoal_pub_ = n.advertise<maneuver_navigation::Goal> ("/route_navigation/goal", 1);
+    mn_feedback_sub_ = n.subscribe<maneuver_navigation::Feedback> ("/route_navigation/feedback", 1, (boost::bind(&RopodNavigation::maneuverNavCallback, this, _1)));
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
 
     movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
     ropod_task_goto_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/task_progress/goto", 1 );
     ropod_task_dock_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressDOCK> ( "/task_progress/dock", 1 );
+    ropod_task_elevator_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressELEVATOR> ( "/task_progress/elevator", 1 );
     ObjectMarkers_pub_ = n.advertise<visualization_msgs::MarkerArray> ( "/ed/gui/objectMarkers2", 3 ); // TODO remove
     cmd_vel_pub_ = n.advertise<geometry_msgs::Twist> ( "/ropod/cmd_vel", 1 );
     poses_waypoints_pub_ = n.advertise<geometry_msgs::PoseArray> ( "/route_navigation/nav_waypoints", 1 );
 
     docking_command_pub_ = n.advertise<ropod_ros_msgs::DockingCommand>("/ropod/ropod_low_level_control/cmd_dock", 1 );
     docking_status_sub_ = n.subscribe<ropod_ros_msgs::DockingFeedback>("/ropod/ropod_low_level_control/dockingFeedback", 10, dockingStatusCallback );
-    
+
+    // initialising the elevator navigation
+    elevator_navigation.elevator_waypoints_client = new actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction>("/get_elevator_waypoints");
+    elevator_navigation.topology_node_client = new actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction>("/get_topology_node");
+    elevator_navigation.get_door_status_client = n.serviceClient<ropod_ros_msgs::GetDoorStatus>("/get_door_status");
+    elevator_navigation.get_floor_client = n.serviceClient<floor_detection::DetectFloor>("/floor_detection_server");
+
     send_goal_ = false;
-    
+
     door_status.closed = false;
     door_status.open = false;
     door_status.undetectable = true;
-    
+
     bool mobikConnected = false;
     config.value("mobidik_initially_connected", mobikConnected, tue::OPTIONAL);
     mobidikConnected_ = (mobikConnected != false);
-    
-    std::string robotReal_str = GetEnv("ROBOT_REAL");  
+
+    std::string robotReal_str = GetEnv("ROBOT_REAL");
     robotReal = (robotReal_str.compare( "true" ) == 0);
     if(robotReal)
     {
@@ -264,13 +288,13 @@ void RopodNavigation::initialize ( ed::InitData& init )
     } else {
             ROS_INFO("Robot running in simulation mode");
             }
-    
+
     init.properties.registerProperty ( "Feature", mobidik_collection_navigation.featureProperties, new FeaturPropertiesInfo );
     controlMode_.data = ropodNavigation::LLC_VEL; //LLC_NORMAL
-    
 
-    route_planner_action_client_ptr_ = new actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction>("/route_planner",true);    
-    // route_planner_action_client_ptr_->waitForServer();    
+
+    route_planner_action_client_ptr_ = new actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction>("/route_planner",true);
+    // route_planner_action_client_ptr_->waitForServer();
 
 
     // Wait for route to be published
@@ -282,14 +306,14 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
 {
 
 // ROS_WARN("Next iteration");
-    cb_queue_.callAvailable();    
+    cb_queue_.callAvailable();
 
     int curr_loc;
     std::vector<ropod_ros_msgs::Area>::const_iterator curr_area;
     std::vector<ropod_ros_msgs::Waypoint>::const_iterator curr_wp;
     int it_idwp;
     visualization_msgs::MarkerArray markerArray; // TODO remove
-    
+
     // Process the received Action message. Point to first location
     if ( action_msg_received ) // checks need to be done if a current navigation is taking place
     {
@@ -305,34 +329,47 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         {
                  ROS_INFO("GOTO-action set");
             // Here query world model mediator with OSM to obtain waypoints from the area id path plan
-                 
+
             ropod_ros_msgs::RoutePlannerGoal req;
             req.areas = action_msg.areas;
             route_planner_action_client_ptr_->sendGoal(req, boost::bind(&RopodNavigation::actionRoutePlannerCallback, this, _1, _2));
             // Make request and wait for result in a callback
-
-                 
         }
-        else if ( action_msg.type == "GOTO_ELEVATOR" )
+        else if ( action_msg.type == "WAIT_FOR_ELEVATOR" )
         {
-                 ROS_INFO("Enter elevator action set");
-           
+            ROS_INFO("Waiting for elevator action");
+            active_nav = NAVTYPE_ELEVATOR_WAITING;
+            int elevator_id = action_msg.elevator.elevator_id;
+            int door_id = action_msg.elevator.door_id;
+            elevator_navigation.initElevatorNavigation(elevator_id, door_id);
+        }
+        else if ( action_msg.type == "ENTER_ELEVATOR" )
+        {
+            ROS_INFO("Enter elevator action set");
+            active_nav = NAVTYPE_ELEVATOR_ENTERING;
+        }
+        else if (action_msg.type == "RIDE_ELEVATOR")
+        {
+            ROS_INFO("Ride elevator action set");
+            active_nav = NAVTYPE_ELEVATOR_RIDING;
+        }
+        else if (action_msg.type == "EXIT_ELEVATOR")
+        {
             if( action_msg.areas.size() == 1)
             {
-                active_nav = NAVTYPE_ELEVATOR;            
-                areaID = action_msg.areas[0].id; // Get ID of elevator area
-                elevator_navigation.startNavigation(areaID,  world); // Set waypoint from worldmodel
+                active_nav = NAVTYPE_ELEVATOR_EXITING;
+                areaID = action_msg.areas[0].id;
             }
             else
             {
-                ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
+                ROS_WARN("AN EXIT ELEVATOR COMMAND SHOULD CONTAIN ONE AREA!");
             }
         }
          else if ( action_msg.type == "DOCK" ) // TODO: integrated in the CCU!?
         {
                 ROS_INFO("Collect mobidik-action set");
             if( action_msg.areas.size() == 1)
-            {                
+            {
                 active_nav = NAVTYPE_MOBIDIK_COLLECTION;
                 mobidik_collection_navigation.initNavState();
                 areaID = action_msg.areas[0].id;
@@ -340,12 +377,12 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             else
             {
                 ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
-            }            
+            }
         }
         else if ( action_msg.type == "UNDOCK" ) // TODO: integrated in the CCU!?
         {
             if( action_msg.areas.size() == 1)
-            { 
+            {
                 ROS_INFO("Release mobidik-action set");
                 active_nav = NAVTYPE_MOBIDIK_RELEASE;
                 mobidik_collection_navigation.initNavStateRelease();
@@ -354,13 +391,13 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             else
             {
                 ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
-            }            
+            }
         }
 
     }
 
-    
-    
+
+
     // Process the received RobotAction message.
     if ( robot_action_msg_received ) // checks need to be done if a current navigation is taking place
     {
@@ -368,9 +405,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         robot_action_msg = robot_action_msg_rec;
         waypoint_ids_.clear();
         path_msg_.poses.clear();
-        
+
         geometry_msgs::PoseArray vispos_array;
-        vispos_array.header.frame_id = "map";       
+        vispos_array.header.frame_id = "map";
 
         ROS_INFO("GOTO-action set");
         // Extract all areas and waypoints to go the corresponding location
@@ -387,27 +424,28 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 std::string area_type = curr_area->type;
                 path_msg_.poses.push_back ( p );
                 vispos_array.poses.push_back(p.pose);
-                
+
             std::cout << "Waypoint" << std::endl;
             std::cout << "Type: " << curr_area->type << std::endl;
-            std::cout << "pos(" << curr_wayp->waypoint_pose.position.x << "," << curr_wayp->waypoint_pose.position.y << ")" << std::endl; 
-            std::cout << "quat(" << curr_wayp->waypoint_pose.orientation.w << "," << curr_wayp->waypoint_pose.orientation.x << "," << curr_wayp->waypoint_pose.orientation.y << "," << curr_wayp->waypoint_pose.orientation.z << ") \n" << std::endl; 
-                
-//                 waypoint_ids_.push_back ( curr_wayp->semantic_id );
+            std::cout << "pos(" << curr_wayp->waypoint_pose.position.x << "," << curr_wayp->waypoint_pose.position.y << ")" << std::endl;
+            std::cout << "quat(" << curr_wayp->waypoint_pose.orientation.w << "," << curr_wayp->waypoint_pose.orientation.x << "," << curr_wayp->waypoint_pose.orientation.y << "," << curr_wayp->waypoint_pose.orientation.z << ") \n" << std::endl;
+
+                 waypoint_ids_.push_back ( curr_wayp->semantic_id );
             }
         }
         // waypoint_navigation.startNavigation ( path_msg_ );
         waypoint_navigation.startNavigation(robot_action_msg.navigation_areas);
         active_nav = NAVTYPE_WAYPOINT;
         poses_waypoints_pub_.publish(vispos_array);
-        
 
-    }    
-   
-    
+
+    }
+
     TaskFeedbackCcu nav_state;
-    
-    bool send_mn_goal_ = false;    
+
+
+
+    bool send_mn_goal_ = false;
     // Select the corresponding navigation
     switch ( active_nav )
     {
@@ -415,14 +453,14 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
     case NAVTYPE_WAYPOINT:
 //          ROS_INFO("NAV_WAYPOINT");
         nav_state = waypoint_navigation.callNavigationStateMachine (movbase_cancel_pub_, mn_goal_, mn_feedback_, send_mn_goal_);
-        
+
         // Send feedback
         // TODO: how to properly give feedback when taking elevator since waypoints are not fixed? e.g. multiple possible waiting areas outside elevator
         if ( nav_state.fb_nav == NAV_DONE )
         {
             ROS_INFO ( "NAV DONE!" ); // TODO Separate nav_state for MOBIDIK COLLECTION?
             if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
 
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
@@ -435,22 +473,22 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         }
         else if ( nav_state.fb_nav == NAV_WAYPOINT_DONE )
         {
-                int state = NAVTYPE_MOBIDIK_COLLECTION;
-                int active_nav_copy = active_nav ;
-                bool check = (active_nav_copy =! state );
-                
-                int state2 = NAVTYPE_MOBIDIK_RELEASE;
-                bool check2 = (active_nav_copy =! state2 );
-                
-                if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                    ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
-                ropod_progress_msg.action_id = action_msg.action_id;
-                ropod_progress_msg.action_type = action_msg.type;
-                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-                ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
-                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
-                ropod_progress_msg.totalNumber = waypoint_ids_.size();
-                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            int state = NAVTYPE_MOBIDIK_COLLECTION;
+            int active_nav_copy = active_nav ;
+            bool check = (active_nav_copy =! state );
+
+            int state2 = NAVTYPE_MOBIDIK_RELEASE;
+            bool check2 = (active_nav_copy =! state2 );
+
+            if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
+            ropod_progress_msg.action_id = action_msg.action_id;
+            ropod_progress_msg.action_type = action_msg.type;
+            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+            ropod_progress_msg.totalNumber = waypoint_ids_.size();
+            ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
             if ( check  && check2) // TODO what kind of feedback during mobidik collection?
             {
                 ROS_INFO ( "Waypoint done notification received" );
@@ -462,15 +500,15 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 int state = NAVTYPE_MOBIDIK_COLLECTION;
                 int active_nav_copy = active_nav ;
                 bool check = (active_nav_copy =! state );
-                
+
                 int state2 = NAVTYPE_MOBIDIK_RELEASE;
                 bool check2 = (active_nav_copy =! state2 );
-                
+
             if ( check  && check2) // TODO what kind of feedback during mobidik collection?
             {
                 if ( nav_state.wayp_n<=waypoint_ids_.size() )
                 if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                    ropod_progress_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+                    ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
                 ropod_progress_msg.action_id = action_msg.action_id;
                 ropod_progress_msg.action_type = action_msg.type;
                 ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
@@ -479,34 +517,70 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ropod_progress_msg.totalNumber = waypoint_ids_.size();
                 ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
             }
-        }        
-        
-        
-        
-        break;
+        }
 
-    case NAVTYPE_ELEVATOR:
-//          ROS_INFO("NAV_ELEVATOR");
-        nav_state = elevator_navigation.callNavigationStateMachine ( movbase_cancel_pub_, &goal_, send_goal_, door_status );
-        if ( nav_state.fb_nav == NAV_DONE )
+        if (mn_feedback_received_)
         {
+            mn_feedback_received_ = false;
+            if (mn_feedback_.status != maneuver_navigation::Feedback::SUCCESS &&
+                mn_feedback_.status != maneuver_navigation::Feedback::BUSY &&
+                mn_feedback_.status != maneuver_navigation::Feedback::IDLE)
+            {
+                if ( nav_state.wayp_n<=waypoint_ids_.size() )
+                if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
+                    ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
+                ropod_progress_msg.action_id = action_msg.action_id;
+                ropod_progress_msg.action_type = action_msg.type;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+                ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::FAILED;
+                ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
+                ropod_progress_msg.totalNumber = waypoint_ids_.size();
+                ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
+            }
+        }
+
+
+
+        break;
+    case NAVTYPE_ELEVATOR_WAITING:
+    case NAVTYPE_ELEVATOR_ENTERING:
+    case NAVTYPE_ELEVATOR_RIDING:
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_);
+        if (nav_state.fb_nav == NAV_DONE)
+        {
+            ropod_progress_elevator_msg.action_id = action_msg.action_id;
+            ropod_progress_elevator_msg.action_type = action_msg.type;
+            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_task_elevator_fb_pub_.publish(ropod_progress_elevator_msg);
             active_nav = NAVTYPE_NONE;
         }
         break;
-        
+    case NAVTYPE_ELEVATOR_EXITING:
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, areaID);
+        if (nav_state.fb_nav == NAV_DONE)
+        {
+            ropod_progress_elevator_msg.action_id = action_msg.action_id;
+            ropod_progress_elevator_msg.action_type = action_msg.type;
+            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_task_elevator_fb_pub_.publish(ropod_progress_elevator_msg);
+            active_nav = NAVTYPE_NONE;
+        }
+        break;
     case NAVTYPE_MOBIDIK_COLLECTION:
 //          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
         nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal, docking_command_pub_, dockingFeedback);
 
         if ( nav_state.fb_nav == NAV_DONE )
         {
-                ROS_INFO("nav_state.fb_nav == NAV_DONE");
+            ROS_INFO("nav_state.fb_nav == NAV_DONE");
             active_nav = NAVTYPE_NONE;
 
             // Sending feedback to ropod_task_executor
             ROS_INFO_STREAM(nav_state.wayp_n);
             if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() )
-                ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+            ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_dock_msg.action_id = action_msg.action_id;
             ropod_progress_dock_msg.action_type = action_msg.type;
             ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
@@ -520,15 +594,15 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ROS_INFO("nav_state.fb_nav == NAV_DOCKED");
             mobidikConnected_ = true;
             mobidikConnected.data = mobidikConnected_;
-            loadAttachedSet_pub_.publish(mobidikConnected);            
-        }        
+            loadAttachedSet_pub_.publish(mobidikConnected);
+        }
         break;
 
-        
+
     case NAVTYPE_MOBIDIK_RELEASE:
 //           ROS_INFO("NAVTYPE_MOBIDIK_RELEASE");
         nav_state = mobidik_collection_navigation.callReleasingStateMachine (movbase_cancel_pub_,  mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, &mobidikConnected_, robotReal,  docking_command_pub_, dockingFeedback);
-        
+
         if ( nav_state.fb_nav == NAV_DONE )
         {
                 ROS_INFO("nav_state.fb_nav == NAV_DONE");
@@ -549,8 +623,8 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ROS_INFO("nav_state.fb_nav == NAV_UNDOCKED");
             mobidikConnected_ = false;
             mobidikConnected.data = mobidikConnected_;
-            loadAttachedSet_pub_.publish(mobidikConnected);            
-        }          
+            loadAttachedSet_pub_.publish(mobidikConnected);
+        }
         break;
 
 
@@ -560,17 +634,15 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         break;
     }
 
-
-
     // Send navigation command
     if ( send_goal_ )
          sendGoal_pub_.publish(goal_.target_pose); //ac_->sendGoal ( goal_ );
     if (send_mn_goal_)
         mn_sendGoal_pub_.publish(mn_goal_);
-    
+
     ObjectMarkers_pub_.publish( markerArray );
     LLCmodeSet_pub_.publish(controlMode_);
-        
+
 
 }
 

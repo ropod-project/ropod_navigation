@@ -173,7 +173,7 @@ geometry_msgs::Pose OSMSubAreasRoutePlanner::compute_sub_areas_overlap(std::vect
     return sub_area_overlap;
 }
 
-void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it, std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait,std::vector<ropod_ros_msgs::Position>& area_nodes, std::string&  area_type)
+bool OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it, std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait,std::vector<ropod_ros_msgs::Position>& area_nodes, std::string&  area_type)
 {
     ropod_ros_msgs::Shape sub_area_shape;
 
@@ -181,6 +181,11 @@ void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs:
 //         sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"door");
 //     else
         sub_area_shape = RoutePlanner::CallGetShapeAction(std::stoi(sub_areas_it->id),"local_area");
+    if (sub_area_shape.vertices.empty())
+    {
+        ROS_ERROR_STREAM("GetShape for area " << sub_areas_it->id << " failed. Aborting.");
+        return false;
+    }
 
     area_nodes = sub_area_shape.vertices;
     std::cout << "Shape request" << std::endl;
@@ -190,6 +195,7 @@ void OSMSubAreasRoutePlanner::request_nodes_and_tags(std::vector<ropod_ros_msgs:
         std::cout << it_vert->x << " , " <<it_vert->y << std::endl;
     }
     area_type = (*sub_areas_areait)->type;
+    return true;
 }
 
 std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
@@ -242,8 +248,18 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
     // Initially request the nodes for first and second area.
     std::vector<ropod_ros_msgs::SubArea>::iterator sub_areas_it = path_osm_wayp.begin();
     std::vector<std::vector<ropod_ros_msgs::Area>::iterator>::iterator sub_areas_areait = sub_area_iterators.begin();
-    request_nodes_and_tags(sub_areas_it,sub_areas_areait, curr_area_nodes,curr_area_type);
-    request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1,next_area_nodes,next_area_type);
+    bool success = request_nodes_and_tags(sub_areas_it,sub_areas_areait, curr_area_nodes,curr_area_type);
+    if (!success)
+    {
+        ROS_ERROR_STREAM("Error requesting nodes of first area");
+        return path_areas;
+    }
+    success = request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1,next_area_nodes,next_area_type);
+    if (!success)
+    {
+        ROS_ERROR_STREAM("Error requesting nodes of second area");
+        return path_areas;
+    }
 
     bool is_curr_area_junction = is_junction(curr_area_type);
     bool is_next_area_junction = is_junction(next_area_type);
@@ -288,7 +304,13 @@ std::vector<ropod_ros_msgs::Area> OSMSubAreasRoutePlanner::compute_route(std::ve
 
 
         // request the nodes of the next area
-        request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1, next_area_nodes, next_area_type);
+        success = request_nodes_and_tags(sub_areas_it+1, sub_areas_areait+1, next_area_nodes, next_area_type);
+        if (!success)
+        {
+            ROS_ERROR_STREAM("Error requesting nodes of next area");
+            return path_areas;
+        }
+        
         is_curr_area_junction = is_junction(curr_area_type);
         is_next_area_junction = is_junction(next_area_type);
         if(is_curr_area_junction && is_next_area_junction)
