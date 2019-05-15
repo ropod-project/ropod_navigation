@@ -603,6 +603,41 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             mobidikConnected.data = mobidikConnected_;
             loadAttachedSet_pub_.publish(mobidikConnected);
         }
+
+        /* More detailed feed back */
+        if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() ) {
+			ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+        } else {
+        	ropod_progress_dock_msg.area_name = "unknown-area"; // TODO check for side effects
+        }
+		ropod_progress_dock_msg.action_id = action_msg.action_id;
+		ropod_progress_dock_msg.action_type = action_msg.type;
+		ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+		ropod_progress_dock_msg.status.module_code = ropod_ros_msgs::Status::MOBIDIK_COLLECTION;
+		switch (nav_state.fb_nav) {
+			case MOBIDIK_DETECTED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::MOBIDIK_DETECTED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case NO_MOBIDIK_DETECTED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::NO_MOBIDIK_DETECTED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case COUPLING_SUCCEEDED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::COUPLING_SUCCEEDED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case COUPLING_FAILED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::COUPLING_FAILED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			default:
+				break;
+		}
+
+
+
+
         break;
 
 

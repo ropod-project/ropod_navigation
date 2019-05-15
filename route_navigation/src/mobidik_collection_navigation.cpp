@@ -1010,7 +1010,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                         markerArraytest->markers.push_back( points );
                         nav_next_state_ = MOBID_COLL_FIND_SETPOINT_FRONT;
                         ROS_INFO ( "Mobidik Collection: Mobidik found" );
-                       
+                        tfb_nav.fb_nav = MOBIDIK_DETECTED;
             
                     }
                     else
@@ -1020,12 +1020,14 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                             
                         nav_next_state_ = MOBID_COLL_FIND_MOBIDIK;
                         ROS_WARN("Mobidik Collection: No mobidik found"); // TODO Recovery behaviour
+                        tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
                     }
              }
             else 
             {
                     nav_next_state_ = MOBID_COLL_NAV_IDLE;
                     ROS_WARN("Mobidik Collection: No mobidik found in get mobidik"); // TODO Recovery behaviour
+                    tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
             }              
          break;
          
@@ -1036,6 +1038,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
             {
                     nav_next_state_ = MOBID_COLL_NAV_IDLE; 
                     ROS_WARN("Mobidik Collection: No mobidik-entity found"); // TODO Recovery behaviour
+                    tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
                     break;
             }
                         
@@ -1082,9 +1085,10 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                         {
                                 nav_next_state_ = MOBID_COLL_NAV_IDLE; 
                                 ROS_WARN("Mobidik Connection: No mobidik-entity found"); // TODO Recovery behaviour
+                                tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
                                 break;
                         }
-                        
+                        tfb_nav.fb_nav = MOBIDIK_DETECTED;
                         
         //                 mobidikProperties = mobidikPointer->property ( featureProperties );
                         mobidikProperties = mobidikFeatures_;
@@ -1118,6 +1122,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
 //                         std::cout << "dist ref = " << std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) << std::endl;
                         
                         std::cout << "errorRobot = " << errorRobot.x << ", " << errorRobot.y << std::endl;
+
                         
                         float errorNorm = std::sqrt( dist2 );
                 
@@ -1259,6 +1264,9 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                 {
                         ROS_INFO("MOBIDIK COUPLED");
                         touched = true;
+                        tfb_nav.fb_nav = COUPLING_SUCCEEDED;
+                } else if (dockingFeedback.docking_status == DOCKING_FB_REST) { //TODO check if it is in init state
+                	tfb_nav.fb_nav = COUPLING_FAILED;
                 }
         }
 
