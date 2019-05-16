@@ -19,7 +19,7 @@
 #include <ed/world_model.h>
 #include <ed/update_request.h>
 #include <ed/entity.h>
-#include "ed/featureProperties_info.h"
+#include "ed_sensor_integration/properties/featureProperties_info.h"
 #include "route_navigation.h"
 
 #include "simplified_world_model.h"

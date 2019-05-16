@@ -45,7 +45,6 @@
 #include "mobidik_collection_navigation.h"
 
 #include <ed/plugin.h>
-#include "ed/featureProperties_info.h"
 #include <maneuver_navigation/Goal.h>
 #include <maneuver_navigation/Configuration.h>
 #include <maneuver_navigation/Feedback.h>

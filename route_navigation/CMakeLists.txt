@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed_gui_server
   floor_detection
   door_status_detection
+  ed_sensor_integration
 )
 
 ## System dependencies are found with CMake's conventions
@@ -116,7 +117,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ropod_demo_dec_2017
-  CATKIN_DEPENDS geometry_msgs   actionlib  move_base_msgs  nav_msgs  ropod_ros_msgs  roscpp  tf
+  CATKIN_DEPENDS geometry_msgs   actionlib  move_base_msgs  nav_msgs  ropod_ros_msgs  roscpp  tf ed_sensor_integration
 #  DEPENDS system_lib
 )
 
