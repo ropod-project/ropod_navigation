@@ -119,6 +119,8 @@ class MobidikCollection
     DOCKING_FB_DOCKED = 10,
 };
 
+
+
     public:
 
     MobidikCollection();

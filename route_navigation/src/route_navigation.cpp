@@ -464,8 +464,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
 
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_msg.status.module_code = ropod_ros_msgs::Status::ROUTE_NAVIGATION;
+            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::GOAL_REACHED;
             ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
             ropod_progress_msg.totalNumber = waypoint_ids_.size();
             ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
@@ -484,8 +485,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_msg.action_id = action_msg.action_id;
             ropod_progress_msg.action_type = action_msg.type;
-            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_msg.status.module_code = ropod_ros_msgs::Status::ROUTE_NAVIGATION;
+            ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::GOAL_REACHED;
             ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
             ropod_progress_msg.totalNumber = waypoint_ids_.size();
             ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
@@ -511,8 +513,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                     ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
                 ropod_progress_msg.action_id = action_msg.action_id;
                 ropod_progress_msg.action_type = action_msg.type;
-                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-                ropod_progress_msg.status.status_code = ropod_ros_msgs::TaskProgressGOTO::ONGOING;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+                ropod_progress_msg.status.module_code = ropod_ros_msgs::Status::ROUTE_NAVIGATION;
+                ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::RUNNING;
                 ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
                 ropod_progress_msg.totalNumber = waypoint_ids_.size();
                 ropod_task_goto_fb_pub_.publish ( ropod_progress_msg );
@@ -531,7 +534,8 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                     ropod_progress_msg.subarea_name = waypoint_ids_[nav_state.wayp_n-1];
                 ropod_progress_msg.action_id = action_msg.action_id;
                 ropod_progress_msg.action_type = action_msg.type;
-                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
+                ropod_progress_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+                ropod_progress_msg.status.module_code = ropod_ros_msgs::Status::ROUTE_NAVIGATION;
                 ropod_progress_msg.status.status_code = ropod_ros_msgs::Status::FAILED;
                 ropod_progress_msg.sequenceNumber = nav_state.wayp_n;
                 ropod_progress_msg.totalNumber = waypoint_ids_.size();
@@ -550,8 +554,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
             ropod_progress_elevator_msg.action_type = action_msg.type;
-            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_elevator_msg.status.module_code = ropod_ros_msgs::Status::ELEVATOR_ACTION;
+            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::GOAL_REACHED;
             ropod_task_elevator_fb_pub_.publish(ropod_progress_elevator_msg);
             active_nav = NAVTYPE_NONE;
         }
@@ -562,8 +567,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
             ropod_progress_elevator_msg.action_type = action_msg.type;
-            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::REACHED;
+            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_elevator_msg.status.module_code = ropod_ros_msgs::Status::ELEVATOR_ACTION;
+            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::GOAL_REACHED;
             ropod_task_elevator_fb_pub_.publish(ropod_progress_elevator_msg);
             active_nav = NAVTYPE_NONE;
         }
@@ -583,8 +589,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_dock_msg.action_id = action_msg.action_id;
             ropod_progress_dock_msg.action_type = action_msg.type;
-            ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::DOCKED;
+            ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_dock_msg.status.module_code = ropod_ros_msgs::Status::MOBIDIK_COLLECTION;
+            ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::DOCKING_SEQUENCE_SUCCEEDED;
             ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
 
         }
@@ -596,6 +603,41 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
             mobidikConnected.data = mobidikConnected_;
             loadAttachedSet_pub_.publish(mobidikConnected);
         }
+
+        /* More detailed feed back */
+        if ( nav_state.wayp_n != 0 && nav_state.wayp_n<=waypoint_ids_.size() ) {
+			ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
+        } else {
+        	ropod_progress_dock_msg.area_name = "unknown-area"; // TODO check for side effects
+        }
+		ropod_progress_dock_msg.action_id = action_msg.action_id;
+		ropod_progress_dock_msg.action_type = action_msg.type;
+		ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+		ropod_progress_dock_msg.status.module_code = ropod_ros_msgs::Status::MOBIDIK_COLLECTION;
+		switch (nav_state.fb_nav) {
+			case MOBIDIK_DETECTED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::MOBIDIK_DETECTED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case NO_MOBIDIK_DETECTED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::NO_MOBIDIK_DETECTED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case COUPLING_SUCCEEDED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::COUPLING_SUCCEEDED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			case COUPLING_FAILED:
+		        ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::COUPLING_FAILED;
+		        ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
+				break;
+			default:
+				break;
+		}
+
+
+
+
         break;
 
 
@@ -613,8 +655,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ropod_progress_dock_msg.area_name = waypoint_ids_[nav_state.wayp_n-1];
             ropod_progress_dock_msg.action_id = action_msg.action_id;
             ropod_progress_dock_msg.action_type = action_msg.type;
-            ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::ACTION_FEEDBACK;
-            ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::UNDOCKED;
+            ropod_progress_dock_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_dock_msg.status.module_code = ropod_ros_msgs::Status::MOBIDIK_COLLECTION;
+            ropod_progress_dock_msg.status.status_code = ropod_ros_msgs::Status::UNDOCKING_SEQUENCE_SUCCEEDED;
             ropod_task_dock_fb_pub_.publish ( ropod_progress_dock_msg );
 
         }
