@@ -913,6 +913,12 @@ TaskFeedbackCcu tfb_nav;
     
     tf::Quaternion q;
     geometry_msgs::Twist output_vel;
+    output_vel.angular.x = 0.0;
+    output_vel.angular.y = 0.0;
+    output_vel.angular.z = 0.0;
+    output_vel.linear.x = 0.0;
+    output_vel.linear.y = 0.0;
+    output_vel.linear.z = 0.0;
     
     float avgForce, avgTorque;
     bool touched, forceCheck, torqueCheck;
@@ -1115,8 +1121,8 @@ TaskFeedbackCcu tfb_nav;
                         errorWorld.x = setPointOnMobidik.getOrigin().getX() - base_position->pose.position.x;
                         errorWorld.y = setPointOnMobidik.getOrigin().getY() - base_position->pose.position.y;
                         
-                        errorRobot.x = errorWorld.x*cos(robotYaw) - errorWorld.y*sin(robotYaw);
-                        errorRobot.y = errorWorld.x*sin(robotYaw) + errorWorld.y*cos(robotYaw);
+                        errorRobot.x = errorWorld.x*cos(-robotYaw) - errorWorld.y*sin(-robotYaw);
+                        errorRobot.y = errorWorld.x*sin(-robotYaw) + errorWorld.y*cos(-robotYaw);
                         float rotError = mobidikProperties.rectangle_.get_yaw() - robotYaw;
                 
                         std::cout << "Setpoint on mobidik: x, y = " << setPointOnMobidik.getOrigin().getX()  << ", " << setPointOnMobidik.getOrigin().getY() << std::endl;
@@ -1133,11 +1139,14 @@ TaskFeedbackCcu tfb_nav;
                         
                         std::cout << "errorRobot = " << errorRobot.x << ", " << errorRobot.y << std::endl;
 
-                        
                         float errorNorm = std::sqrt( dist2 );
-                
-                        output_vel.linear.x = -errorRobot.x/errorNorm*BACKWARD_VEL_DOCKING; // For both situations (with/without mobidik updates) similar?
-                        output_vel.linear.y = -errorRobot.y/errorNorm*BACKWARD_VEL_DOCKING; // TODO prevent constantly going backwards if there are problems. Check if mobidik is still there!
+                        
+                        geo::Vec2f errorNormalized;
+                        errorNormalized.x = errorRobot.x/errorNorm*BACKWARD_VEL_DOCKING;
+                        errorNormalized.y = errorRobot.y/errorNorm*BACKWARD_VEL_DOCKING;
+                        
+                        output_vel.linear.x = std::min(  errorRobot.x, errorNormalized.x ); // For both situations (with/without mobidik updates) similar?
+                        output_vel.linear.y = std::min( errorRobot.y, errorNormalized.y ); // TODO prevent constantly going backwards if there are problems. Check if mobidik is still there!
                         output_vel.angular.z = std::min(rotError, (float) MAX_ROT_VEL_DOCKING);
                         cmv_vel_pub.publish ( output_vel );
                         
