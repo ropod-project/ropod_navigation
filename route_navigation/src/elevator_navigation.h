@@ -24,6 +24,7 @@
 
 #include <ropod_ros_msgs/DoorDetection.h>
 #include <floor_detection/DetectFloor.h>
+#include <map_switcher/SwitchMap.h>
 #include <ropod_ros_msgs/GetElevatorWaypointsAction.h>
 #include <ropod_ros_msgs/GetTopologyNodeAction.h>
 #include <ropod_ros_msgs/GetDoorStatus.h>
@@ -71,6 +72,7 @@ public:
     actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction> *topology_node_client;
     ros::ServiceClient get_door_status_client;
     ros::ServiceClient get_floor_client;
+    ros::ServiceClient switch_map_client;
 
     ElevatorNavigation();
     ~ElevatorNavigation();
@@ -80,6 +82,7 @@ public:
     void setWaitingPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
     void setInsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
     void setOutsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id);
+    void setDestinationFloor(int destination_floor);
     void pauseNavigation();
     void resumeNavigation();
     void resetNavigation();
@@ -90,12 +93,14 @@ public:
     bool isDoorOpen();
     bool destinationFloorReached();
 
-    TaskFeedbackCcu callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id="");
+    TaskFeedbackCcu callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id="", int destination_floor=-1);
 private:
     wm::Elevator elevator;
     ropod_ros_msgs::Position elevator_door_position;
     geometry_msgs::Pose waiting_pose;
     geometry_msgs::Pose inside_elevator_pose;
+    int elevator_id;
+    int destination_floor;
     bool inside_elevator;
     bool goal_sent;
 };

@@ -15,6 +15,7 @@ ElevatorNavigation::~ElevatorNavigation()
 
 void ElevatorNavigation::initElevatorNavigation(int elevator_id, int elevator_door_id)
 {
+    this->elevator_id = elevator_id;
     if (!this->inside_elevator)
     {
         this->resetNavigation();
@@ -150,6 +151,12 @@ void ElevatorNavigation::setOutsideElevatorPose(maneuver_navigation::Goal &mn_go
 }
 
 /*--------------------------------------------------------*/
+void ElevatorNavigation::setDestinationFloor(int destination_floor)
+{
+    this->destination_floor = destination_floor;
+}
+
+/*--------------------------------------------------------*/
 void ElevatorNavigation::pauseNavigation()
 {
     nav_paused_req = true;
@@ -171,6 +178,8 @@ void ElevatorNavigation::resetNavigation()
     this->route_busy = false;
     this->nav_paused_req = false;
     this->nav_state = IDLE;
+    this->elevator_id = -1;
+    this->destination_floor = -1;
     this->inside_elevator = false;
     this->goal_sent = false;
 }
@@ -245,11 +254,23 @@ bool ElevatorNavigation::destinationFloorReached()
     floor_detection::DetectFloor detect_floor;
     if (this->get_floor_client.call(detect_floor))
     {
-        // TODO: get the destination floor from the action;
-        // currently, it's not passed there
-        if (detect_floor.response.floor == 0)
+        if (detect_floor.response.floor == this->destination_floor)
         {
-            return true;
+            map_switcher::SwitchMap switch_map;
+            switch_map.request.entry_wormhole = "elevator_" + std::to_string(this->elevator_id);
+            switch_map.request.new_map = "map_floor" + std::to_string(this->destination_floor);
+
+            ROS_INFO("[elevator_navigation] Reached floor %d; switching map to %s", this->destination_floor, switch_map.request.new_map.c_str());
+            if (this->switch_map_client.call(switch_map) && switch_map.response.success)
+            {
+                ROS_INFO("[elevator_navigation] Map switched");
+                return true;
+            }
+            else
+            {
+                ROS_ERROR("[elevator_navigation] Map could not be switched");
+                return false;
+            }
         }
         else
         {
@@ -258,13 +279,13 @@ bool ElevatorNavigation::destinationFloorReached()
     }
     else
     {
-        ROS_ERROR("Could not get the current floor");
+        ROS_ERROR("[elevator_navigation] Could not get the current floor");
         return false;
     }
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id)
+TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id, int destination_floor)
 {
     TaskFeedbackCcu feedback_msg;
     feedback_msg.fb_nav = NAV_BUSY;
@@ -313,10 +334,17 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
     }
     else if (nav_state == RIDE_ELEVATOR)
     {
+        if (!this->goal_sent)
+        {
+            this->setDestinationFloor(destination_floor);
+            this->goal_sent = true;
+        }
+
         if (this->destinationFloorReached())
         {
             feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = EXIT_ELEVATOR;
+            this->goal_sent = false;
         }
     }
     else if (nav_state == EXIT_ELEVATOR)

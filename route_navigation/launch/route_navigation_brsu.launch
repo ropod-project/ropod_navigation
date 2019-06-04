@@ -1,15 +1,10 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="robotName" default="ropod"/>
+    <arg name="laser1_name" value ="laser"/>
 
-
-        <arg name="robotName" default="ropod"/>
-        <arg name="laser1_name" value ="laser"/>
-<!--        <arg name="map_file" default="/home/alex/ropod-project-software/catkin_workspace/src/applications/occupancy_grids/brsu/brsu-c-floor0_osm/map.yaml" />-->
-
-<arg name="map_file" default="$(find ed_object_models)/models/brsu/walls/shape/map.yaml" />
-
-   <!-- Run the map server -->
-     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+    <!-- Run the multi map server -->
+    <include file="$(find map_switcher)/launch/map_switcher.launch" />
 
     <!--- Run AMCL -->
     <node pkg="amcl" type="amcl" name="amcl">
@@ -86,8 +81,8 @@
         <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
 
 
-        <remap from="/maneuver_navigation/cmd_vel" to="/ropod/cmd_vel"/>
-        <remap from="odom" to="/ropod/odom"/>
+        <remap from="/maneuver_navigation/cmd_vel" to="/load/cmd_vel"/>
+        <remap from="odom" to="/load/odom"/>
     </node>
 
 </launch>

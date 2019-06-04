@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   ed_gui_server
   floor_detection
   door_status_detection
+  map_switcher
   ed_sensor_integration
 )
 

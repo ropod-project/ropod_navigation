@@ -12,6 +12,7 @@ ropod_ros_msgs::TaskProgressDOCK ropod_progress_dock_msg;
 ropod_ros_msgs::TaskProgressELEVATOR ropod_progress_elevator_msg;
 visualization_msgs::MarkerArray objectMarkerArray;
 std::string areaID;
+int floor_number;
 
 int active_nav = RopodNavigation::NAVTYPE_NONE;
 volatile bool action_msg_received = false;
@@ -277,6 +278,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     elevator_navigation.topology_node_client = new actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction>("/get_topology_node");
     elevator_navigation.get_door_status_client = n.serviceClient<ropod_ros_msgs::GetDoorStatus>("/get_door_status");
     elevator_navigation.get_floor_client = n.serviceClient<floor_detection::DetectFloor>("/floor_detection_server");
+    elevator_navigation.switch_map_client = n.serviceClient<map_switcher::SwitchMap>("/map_switcher/change_map");
 
     send_goal_ = false;
 
@@ -409,11 +411,13 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         {
             ROS_INFO("Ride elevator action set");
             active_nav = NAVTYPE_ELEVATOR_RIDING;
+            floor_number = action_msg.goal_floor;
         }
         else if (action_msg.type == "EXIT_ELEVATOR")
         {
             if( action_msg.areas.size() == 1)
             {
+                ROS_INFO("Exit elevator action set");
                 active_nav = NAVTYPE_ELEVATOR_EXITING;
                 areaID = action_msg.areas[0].id;
             }
@@ -422,7 +426,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ROS_WARN("AN EXIT ELEVATOR COMMAND SHOULD CONTAIN ONE AREA!");
             }
         }
-         else if ( action_msg.type == "DOCK" ) // TODO: integrated in the CCU!?
+        else if ( action_msg.type == "DOCK" )
         {
                 ROS_INFO("Collect mobidik-action set");
             if( action_msg.areas.size() == 1)
@@ -436,7 +440,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
                 ROS_WARN("ELEVATOR AND MOBIDIK COMMANDS SHOULD CONTAIN 1 AREA!");
             }
         }
-        else if ( action_msg.type == "UNDOCK" ) // TODO: integrated in the CCU!?
+        else if ( action_msg.type == "UNDOCK" )
         {
             if( action_msg.areas.size() == 1)
             {
@@ -605,8 +609,20 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         break;
     case NAVTYPE_ELEVATOR_WAITING:
     case NAVTYPE_ELEVATOR_ENTERING:
-    case NAVTYPE_ELEVATOR_RIDING:
         nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_);
+        if (nav_state.fb_nav == NAV_DONE)
+        {
+            ropod_progress_elevator_msg.action_id = action_msg.action_id;
+            ropod_progress_elevator_msg.action_type = action_msg.type;
+            ropod_progress_elevator_msg.status.domain = ropod_ros_msgs::Status::COMPONENT;
+            ropod_progress_elevator_msg.status.module_code = ropod_ros_msgs::Status::ELEVATOR_ACTION;
+            ropod_progress_elevator_msg.status.status_code = ropod_ros_msgs::Status::GOAL_REACHED;
+            ropod_task_elevator_fb_pub_.publish(ropod_progress_elevator_msg);
+            active_nav = NAVTYPE_NONE;
+        }
+        break;
+    case NAVTYPE_ELEVATOR_RIDING:
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, "", floor_number);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
