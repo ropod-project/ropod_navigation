@@ -147,6 +147,8 @@ private:
     bool send_goal_;
 
     bool mobidikConnected_;
+    
+    bool sensorBack_;
 
     std_msgs::UInt16 controlMode_;
 

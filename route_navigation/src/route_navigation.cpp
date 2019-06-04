@@ -29,6 +29,10 @@ volatile bool robot_action_msg_received = false;
 ropod_ros_msgs::RobotAction robot_action_msg;
 ropod_ros_msgs::RobotAction robot_action_msg_rec;
 
+geometry_msgs::PoseStamped::ConstPtr base_position;
+
+bool base_pos_received = false;
+
 
 void actionModelMediatorCallback(const ropod_ros_msgs::RobotAction::ConstPtr& robot_action_msg_)
 {
@@ -129,9 +133,13 @@ void debugRouterResultCallback(const ropod_ros_msgs::Action::ConstPtr& action_re
 
 void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
+    //std::cout << "Process base pos" << std::endl;
     waypoint_navigation.base_position = msg;
     elevator_navigation.base_position = msg;
-    mobidik_collection_navigation.base_position_ = msg;
+    mobidik_collection_navigation.base_position = msg;
+    base_position = msg;
+    
+    base_pos_received = true;
 }
 
 void actionCallback(const ropod_ros_msgs::Action::ConstPtr& action_msg_)
@@ -276,10 +284,21 @@ void RopodNavigation::initialize ( ed::InitData& init )
     door_status.open = false;
     door_status.undetectable = true;
 
-    bool mobikConnected = false;
-    config.value("mobidik_initially_connected", mobikConnected, tue::OPTIONAL);
-    mobidikConnected_ = (mobikConnected != false);
-
+    bool mobidikConnected = false;
+    sensorBack_ = false;
+    config.value("mobidik_initially_connected", mobidikConnected, tue::OPTIONAL);
+    mobidikConnected_ = (mobidikConnected != false);
+    
+    //std::cout << "mobidikConnected = " << mobidikConnected << " mobidikConnected_ = " << mobidikConnected_ << std::endl;
+    
+    config.value("sensor_back", sensorBack_, tue::OPTIONAL);
+    if(sensorBack_)
+    {
+            ROS_INFO("Robot can do LRF measurements at the back");
+    } else {
+            ROS_WARN("Robot can NOT do LRF measurements at the back");
+    }
+    
     std::string robotReal_str = GetEnv("ROBOT_REAL");
     robotReal = (robotReal_str.compare( "true" ) == 0);
     if(robotReal)
@@ -305,6 +324,44 @@ void RopodNavigation::initialize ( ed::InitData& init )
 void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& req )
 {
 
+        if(!sensorBack_ && mobidikConnected_ && base_pos_received)
+        {
+                // Update mobidik position relative to robot
+                tf::Pose goal_tfpose;
+                
+                std::cout << "base_position->pose = " << base_position->pose << std::endl;
+                
+                tf::poseMsgToTF(base_position->pose,goal_tfpose);
+                float robot_yaw = tf::getYaw(goal_tfpose.getRotation());
+                
+                ed::EntityConstPtr mobidikEntity;
+                if(!mobidik_collection_navigation.getEntityPointer(world, mobidik_collection_navigation.MobidikID_ED, mobidikEntity) )
+                {
+                        ROS_WARN("Route navigation: mobidik entity not found");
+                }
+                else
+                {
+                 
+                        std::cout << "mobidikEntity =  " << mobidikEntity << std::endl; 
+                        mobidikEntity->printFlags();
+                        ed::tracking::FeatureProperties mobidikFeatures = mobidikEntity->property ( mobidik_collection_navigation.featureProperties );
+                        ed::tracking::Rectangle rectangle =  mobidikFeatures.getRectangle();
+                        std::cout << "MOBIDIK_LENGTH = " << MOBIDIK_LENGTH << std::endl;
+                         rectangle.set_x( base_position->pose.position.x + 0.5*MOBIDIK_LENGTH*cos ( robot_yaw ) );
+                         rectangle.set_y( base_position->pose.position.y + 0.5*MOBIDIK_LENGTH*sin ( robot_yaw ));
+                         rectangle.set_yaw( robot_yaw );
+                         
+                         rectangle.printProperties();
+                        
+                        mobidikFeatures.setRectangle( rectangle );
+                        
+                        geo::Pose3D new_pose = rectangle.getPose();
+                        req.setProperty ( mobidikEntity->id(), mobidik_collection_navigation.featureProperties, mobidikFeatures );
+                        req.setPose ( mobidik_collection_navigation.MobidikID_ED, new_pose );                
+                }
+        }
+        
+        
 // ROS_WARN("Next iteration");
     cb_queue_.callAvailable();
 
@@ -576,7 +633,9 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         break;
     case NAVTYPE_MOBIDIK_COLLECTION:
 //          ROS_INFO("NAVTYPE_MOBIDIK_COLLECTION");
-        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req, &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal, docking_command_pub_, dockingFeedback);
+        nav_state = mobidik_collection_navigation.callNavigationStateMachine ( movbase_cancel_pub_, mn_goal_, send_mn_goal_, objectMarkerArray, areaID, world, req,
+                                                                               &markerArray, &controlMode_, cmd_vel_pub_, bumperWrenches, robotReal, docking_command_pub_,
+                                                                               dockingFeedback, sensorBack_);
 
         if ( nav_state.fb_nav == NAV_DONE )
         {

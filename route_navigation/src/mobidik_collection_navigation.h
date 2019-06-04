@@ -53,6 +53,7 @@
 #define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
 // #define MOBIDIK_LENGTH 0.8 // [m]
 #define BACKWARD_VEL_DOCKING 0.2 // [m/s]
+#define MAX_ROT_VEL_DOCKING 0.1 // [rad/s]
 
 #define N_COUNTS_WRENCHES 10 // [-]
 #define MIN_FORCE_TOUCHED 20 // [N]
@@ -180,7 +181,7 @@ class MobidikCollection
     TaskFeedbackCcu callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray,
                                                std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest,
                                                std_msgs::UInt16 * controlMode, ros::Publisher &cmv_vel_pub,  ropodNavigation::wrenches bumperWrenches, const bool robotReal,
-                                               ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback);
+                                               ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback, bool sensorBack);
 
     void getFinalMobidikPos ( const ed::WorldModel& world, std::string mobidikAreaID, geo::Pose3D *mobidikPosition, geo::Pose3D *disconnectSetpoint , geo::Pose3D *setpointInFrontOfMobidik, visualization_msgs::Marker* points );
 
@@ -191,7 +192,9 @@ class MobidikCollection
                                               std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, bool *mobidikConnected,
                                               const bool robotReal, ros::Publisher &docking_pub, ropod_ros_msgs::DockingFeedback dockingFeedback);
 
-    geometry_msgs::PoseStamped::ConstPtr base_position_;
+    geometry_msgs::PoseStamped::ConstPtr base_position;
+    
+    ed::UUID MobidikID_ED;
 
     private:
 
@@ -217,10 +220,9 @@ class MobidikCollection
     move_base_msgs::MoveBaseGoal goal_;
     ros::Time stamp_start_;
     ros::Duration stamp_wait_;
-    ed::UUID MobidikID_ED_;
+
     geo::Pose3D setpoint_;
     std::string orientationWPID_;
-//    ed::tracking::FeatureProperties mobidikFeatures_;  
     
     bool avgWrenchesDetermined_;
     ropodNavigation::wrenches avgWrenches_;
@@ -230,11 +232,6 @@ class MobidikCollection
     std::vector<ropodNavigation::wrenches> bumperWrenchesVector_;
 
     geo::Pose3D finalMobidikPosition_, disconnectSetpoint_;
-//     geo::Pose3D mobidikPos_   ;
-
-
-
-
 };
 
 

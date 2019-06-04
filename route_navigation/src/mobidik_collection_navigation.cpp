@@ -13,7 +13,7 @@ MobidikCollection::MobidikCollection( )
 /*--------------------------------------------------------*/
 MobidikCollection::~MobidikCollection()
 {
-    base_position_.reset();
+    base_position.reset();
 };
 
 // Strongly inspired by https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
@@ -401,8 +401,8 @@ std::cout << "MD_yaw set at " << MD_yaw << std::endl;
 
            req.setProperty ( mobidikEntity->id(), featureProperties, mobidikFeatures );
            mobidikFeatures_ = mobidikFeatures;
-//            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
-//            req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
+            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
+            //req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
            std::cout<< "Requested to update properties of entity with id = " << mobidikEntity->id() << std::endl;
 //                      mobidikFeatures.printProperties(); 
                       std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikEntity->id() << std::endl;
@@ -547,7 +547,7 @@ std::cout << "orientationWPID = " << orientationWPID << std::endl;
            req.setProperty ( mobidikEntity->id(), featureProperties, mobidikFeatures );
            mobidikFeatures_ = mobidikFeatures;
            req.setFlag(mobidikEntity->id(), "Mobidik"); // TODO update while moving backwards with sensor at the back!
-           req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
+          // req.setFlag(mobidikEntity->id(), "locked"); // TODO update while moving backwards with sensor at the back! this prevents updates from the tracking part!! TODO THis gives problems!!
 //            std::cout<< "Requested to update properties of entity with id = " << mobidikEntity->id() << std::endl;
 //                       mobidikFeatures.printProperties(); 
 //                       std::cout << "getSetpointInFrontOfMobidik: id = " << mobidikEntity->id() << std::endl;
@@ -723,7 +723,7 @@ void MobidikCollection::resumeNavigation()
 /*--------------------------------------------------------*/
 void MobidikCollection::resetNavigation()
 {
-    base_position_.reset();
+    base_position.reset();
     route_busy_ = false;
     nav_paused_req_ = false;
     waypoint_cnt_ = 0;
@@ -741,7 +741,7 @@ void MobidikCollection::resetNavigation()
 /*--------------------------------------------------------*/
 void MobidikCollection::stopNavigation()
 {
-    base_position_.reset();
+    base_position.reset();
     route_busy_ = false;
     waypoint_cnt_ = 0;
     ROS_INFO("Navigation stopped");
@@ -750,7 +750,7 @@ void MobidikCollection::stopNavigation()
 /*--------------------------------------------------------*/
 bool MobidikCollection::isPositionValid()
 {
-    if(base_position_)
+    if(base_position)
         return true;
     else
         return false;
@@ -866,9 +866,9 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
 {
 
     // In elevator we checked whether teh specific position is reached.
-    tf::Quaternion qtemp = tf::Quaternion(base_position_->pose.orientation.x, base_position_->pose.orientation.y, 
-                                          base_position_->pose.orientation.z, base_position_->pose.orientation.w);
-    tf::Vector3 v3temp = tf::Vector3(base_position_->pose.position.x, base_position_->pose.position.y, 0.0);
+    tf::Quaternion qtemp = tf::Quaternion(base_position->pose.orientation.x, base_position->pose.orientation.y, 
+                                          base_position->pose.orientation.z, base_position->pose.orientation.w);
+    tf::Vector3 v3temp = tf::Vector3(base_position->pose.position.x, base_position->pose.position.y, 0.0);
     base_positiontf_ = tf::Transform( qtemp, v3temp);
     qtemp = tf::Quaternion(goal_.target_pose.pose.orientation.x, goal_.target_pose.pose.orientation.y,
                            goal_.target_pose.pose.orientation.z,goal_.target_pose.pose.orientation.w);
@@ -891,10 +891,17 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
 TaskFeedbackCcu MobidikCollection::callNavigationStateMachine(ros::Publisher &nav_cancel_pub, maneuver_navigation::Goal &mn_goal, bool& sendgoal, visualization_msgs::MarkerArray markerArray,
                                                               std::string areaID, const ed::WorldModel& world, ed::UpdateRequest& req, visualization_msgs::MarkerArray *markerArraytest, 
                                                               std_msgs::UInt16* controlMode, ros::Publisher &cmv_vel_pub, ropodNavigation::wrenches bumperWrenches, const bool robotReal,
-                                                              ros::Publisher &dockingCommand, ropod_ros_msgs::DockingFeedback dockingFeedback)
+                                                              ros::Publisher &dockingCommand, ropod_ros_msgs::DockingFeedback dockingFeedback, bool sensorBack)
 {
 std::cout << "mobidikColl state machine start" << std::endl;
-std::cout << "nav_state = " << nav_state_ << std::endl;    
+std::cout << "nav_state = " << nav_state_ << std::endl;   
+
+//printFlags
+        ed::EntityConstPtr mobidikEntity;
+       if( getEntityPointer(world, MobidikID_ED, mobidikEntity) )
+       {
+               mobidikEntity->printFlags();
+       }
 
 TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
@@ -969,7 +976,7 @@ TaskFeedbackCcu tfb_nav;
     
     mn_goal.conf.append_new_maneuver =  false;
     
-    mn_goal.start.pose = base_position_->pose; // always plan from current pose
+    mn_goal.start.pose = base_position->pose; // always plan from current pose
 //std::cout << "debug8"<< std::endl;
     
     mn_goal.goal.header.frame_id = "map";
@@ -990,22 +997,18 @@ TaskFeedbackCcu tfb_nav;
         break;
         
     case MOBID_COLL_FIND_MOBIDIK:
-std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::reset << std::endl;
             ROS_INFO("MOBID_COLL_FIND_MOBIDIK");
             
             // Configure holonomic robot to move more accurately towards target
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.5 &");
-//             std::cout << "syscommand 1 = " << sysCommand << "\t";
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_nh 0 &");
-//             std::cout << " syscommand 2 = " << sysCommand << "\t";
             sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS weight_kinematics_forward_drive 0 &");
-//             std::cout << "syscommand 3 = " << sysCommand << std::endl;
             
-            if(  getMobidik( world, &MobidikID_ED_ ) ) // Assumption: there is only 1 mobidik available at the moment in the area
+            if(  getMobidik( world, &MobidikID_ED ) ) // Assumption: there is only 1 mobidik available at the moment in the area
             {           
-                    std::cout << "MobidikID_ED_ = " << MobidikID_ED_ << std::endl;
+                    std::cout << "MobidikID_ED_ = " << MobidikID_ED << std::endl;
                     //setMobidikPosition ( world, req, areaID, marker, &MobidikID_ED_, &points ); 
-                    if( setMobidikPosition ( world, req, areaID, MobidikID_ED_, &points ) )
+                    if( setMobidikPosition ( world, req, areaID, MobidikID_ED, &points ) )
                     {  
                         markerArraytest->markers.push_back( points );
                         nav_next_state_ = MOBID_COLL_FIND_SETPOINT_FRONT;
@@ -1015,7 +1018,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                     }
                     else
                     {
-                            std::cout << "MobidikID_ED_ = " << MobidikID_ED_ << std::endl;
+                            std::cout << "MobidikID_ED_ = " << MobidikID_ED << std::endl;
                             std::cout << "areaID = " << areaID << std::endl;
                             
                         nav_next_state_ = MOBID_COLL_FIND_MOBIDIK;
@@ -1034,14 +1037,15 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
     case MOBID_COLL_FIND_SETPOINT_FRONT:
             ROS_INFO("MOBID_COLL_FIND_SETPOINT_FRONT");         
              
-            if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED_, &setpoint_, &points, DIST_IN_FRONT_OFF_MOBID) ) // WM updated?
+            if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED, &setpoint_, &points, DIST_IN_FRONT_OFF_MOBID) ) // WM updated?
             {
                     nav_next_state_ = MOBID_COLL_NAV_IDLE; 
                     ROS_WARN("Mobidik Collection: No mobidik-entity found"); // TODO Recovery behaviour
                     tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
                     break;
             }
-                        
+            
+            req.setFlag(MobidikID_ED, "locked"); // In order to prevent potential problems with partial updates. Release when the mobidik is entirely seen at the back.            
             point2goal(&setpoint_);
             markerArraytest->markers.push_back ( points );           
             nav_next_state_wp_ = MOBID_COLL_NAV_CONNECTING;
@@ -1053,13 +1057,15 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
     case MOBID_COLL_NAV_CONNECTING:
         ROS_INFO ( "MOBID_COLL_NAV_CONNECTING" );
 
+        
+        req.removeFlag(MobidikID_ED, "locked");
 
         touched = false;
 
 //         if ( ! robotReal )
 //         {
         
-//             getMobidikPosition ( world, MobidikID_ED_, &mobidikPose );
+//             getMobidikPosition ( world, MobidikID_ED, &mobidikPose );
         
         
         // TODO: get current mobidikPosition
@@ -1070,18 +1076,21 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
         
             controlMode->data = ropodNavigation::LLC_DOCKING;
             
-            if( !getEntityPointer(world, MobidikID_ED_, mobidikPointer) )
+            if( !getEntityPointer(world, MobidikID_ED, mobidikPointer) )
             {
                     ROS_WARN("Mobidik Collection: No mobidik-entity found in MOBID_COLL_NAV_CONNECTING");
             }
             else
             {
-                    updateMobidikPosition( world, req, MobidikID_ED_, &points );
+                    if( sensorBack)
+                    {
+                            updateMobidikPosition( world, req, MobidikID_ED, &points );
+                    }
                     
                     
                     
                         geo::Pose3D setPointOnMobidik;
-                        if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED_, &setPointOnMobidik, &points, 0.0) ) // WM updated?
+                        if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED, &setPointOnMobidik, &points, 0.0) ) // WM updated?
                         {
                                 nav_next_state_ = MOBID_COLL_NAV_IDLE; 
                                 ROS_WARN("Mobidik Connection: No mobidik-entity found"); // TODO Recovery behaviour
@@ -1092,29 +1101,30 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                         
         //                 mobidikProperties = mobidikPointer->property ( featureProperties );
                         mobidikProperties = mobidikFeatures_;
-        //                 std::cout << "ID reference " << mobidikPointer->id() << std::endl;
-        //                 std::cout << "MobidikID_ED_ = " << MobidikID_ED_ << std::endl;
+        //                 std::cout << "ID reference " << mobidikPointer->id() << std::endl;R
+        //                 std::cout << "MobidikID_ED = " << MobidikID_ED << std::endl;
                         mobidikLength = mobidikProperties.rectangle_.get_w();
                         
-                        geo::Vec2f errorWorld, errorRobot; // world or robot coordinates
-                        errorWorld.x = setPointOnMobidik.getOrigin().getX() - base_position_->pose.position.x;
-                        errorWorld.y = setPointOnMobidik.getOrigin().getY() - base_position_->pose.position.y;
-                        
                         // Transform error from world frame to robot frame                        
-                        tf::Quaternion q(base_position_->pose.orientation.x, base_position_->pose.orientation.y, base_position_->pose.orientation.z, base_position_->pose.orientation.w);
+                        tf::Quaternion q(base_position->pose.orientation.x, base_position->pose.orientation.y, base_position->pose.orientation.z, base_position->pose.orientation.w);
                         tf::Matrix3x3 robotM(q);
                         double robotRoll, robotPitch, robotYaw;
                         robotM.getRPY(robotRoll, robotPitch, robotYaw);
                         
+                        geo::Vec2f errorWorld, errorRobot; // world or robot coordinates
+                        errorWorld.x = setPointOnMobidik.getOrigin().getX() - base_position->pose.position.x;
+                        errorWorld.y = setPointOnMobidik.getOrigin().getY() - base_position->pose.position.y;
+                        
                         errorRobot.x = errorWorld.x*cos(robotYaw) - errorWorld.y*sin(robotYaw);
-                        errorRobot.y = errorWorld.x*sin(robotYaw) + errorWorld.y*cos(robotYaw);;
+                        errorRobot.y = errorWorld.x*sin(robotYaw) + errorWorld.y*cos(robotYaw);
+                        float rotError = mobidikProperties.rectangle_.get_yaw() - robotYaw;
                 
                         std::cout << "Setpoint on mobidik: x, y = " << setPointOnMobidik.getOrigin().getX()  << ", " << setPointOnMobidik.getOrigin().getY() << std::endl;
                 
                         dist2 = std::pow ( errorWorld.x , 2.0 ) + std::pow ( errorWorld.y , 2.0 );
                         std::cout << "dist2 = " << dist2 << std::endl;
 
-                        std::cout << "base_position_->pose.position.x, y = " << base_position_->pose.position.x << ", " << base_position_->pose.position.y << std::endl;
+                        std::cout << "base_position_->pose.position.x, y = " << base_position->pose.position.x << ", " << base_position->pose.position.y << std::endl;
                         // std::cout << "mobidikPose.getOrigin().getX(), y = " << mobidikPose.getOrigin().getX() << ", " << mobidikPose.getOrigin().getY() << std::endl;
                         std::cout << "mobidikProperties.rectangle_.get_x(), y = " << mobidikProperties.rectangle_.get_x() << ", " << mobidikProperties.rectangle_.get_y() << std::endl;
 //                         std::cout << "mobidikLength = " << mobidikLength << std::endl;
@@ -1126,16 +1136,18 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                         
                         float errorNorm = std::sqrt( dist2 );
                 
-                        output_vel.linear.x = -errorRobot.x/errorNorm*BACKWARD_VEL_DOCKING;
-                        output_vel.linear.y = -errorRobot.y/errorNorm*BACKWARD_VEL_DOCKING;
+                        output_vel.linear.x = -errorRobot.x/errorNorm*BACKWARD_VEL_DOCKING; // For both situations (with/without mobidik updates) similar?
+                        output_vel.linear.y = -errorRobot.y/errorNorm*BACKWARD_VEL_DOCKING; // TODO prevent constantly going backwards if there are problems. Check if mobidik is still there!
+                        output_vel.angular.z = std::min(rotError, (float) MAX_ROT_VEL_DOCKING);
                         cmv_vel_pub.publish ( output_vel );
                         
                         std::cout << "Output vel x, y = " <<  output_vel.linear.x << ", " << output_vel.linear.y << std::endl;
 
 //                         if ( dist2 < std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) )
                         
-                        if( fabs(errorWorld.x) < ( 0.5* ( ROPOD_LENGTH ) + DIST_CONN_X ) && fabs(errorWorld.y) < DIST_CONN_Y )
+                        if( fabs(errorWorld.x) < ( 0.5* ( ROPOD_LENGTH ) + DIST_CONN_X ) && fabs(errorWorld.y) < DIST_CONN_Y ) // TODO tuning of DIST_CONN_X & DIST_CONN_Y?
                         {
+                                  ROS_INFO ( "Touched = true" );
                                 touched = true;
                         }
                         
@@ -1189,6 +1201,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
 
                         if ( touched )
                         {
+                                ROS_INFO ( "End of connecting state. Going to dock now." );
                 //             if ( ! robotReal )
                 //             {
                 //                 tfb_nav.fb_nav = NAV_DOCKED;
@@ -1254,7 +1267,7 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
                 if ( diff.toSec() > 5.0 )
                 {
                          touched = true;
-                          ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be disconnected now." );
+                          ROS_WARN ( " You are in simulation mode. The mobidik is assumed to be connected now." );
                 }
 
         }
@@ -1274,8 +1287,8 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
         {
             // Docking done!
             tfb_nav.fb_nav = NAV_DOCKED;
-            req.removeFlag(MobidikID_ED_, "Mobidik");
-            req.removeFlag(MobidikID_ED_, "locked"); // TODO update while moving backwards with sensor at the back!
+            req.removeFlag(MobidikID_ED, "Mobidik");
+            req.removeFlag(MobidikID_ED, "locked"); // TODO update while moving backwards with sensor at the back!
             nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
             bumperWrenchesVector_.clear();
             stamp_start_ = ros::Time::now();
@@ -1288,9 +1301,9 @@ std::cout << termcolor::magenta << "MOBID_COLL_FIND_MOBIDIK bla" << termcolor::r
         if( ros::Time::now() - stamp_start_< stamp_wait_)    
             break;
         // For now just move a bit forward. Later the mobidik should exit the rail area. TODO
-        tf::poseMsgToTF(base_position_->pose,base_position_pose);
+        tf::poseMsgToTF(base_position->pose,base_position_pose);
         robot_yaw = tf::getYaw(base_position_pose.getRotation());
-        goal_.target_pose.pose = base_position_->pose;
+        goal_.target_pose.pose = base_position->pose;
         goal_.target_pose.pose.position.x += DIST_MOVE_FRONT_POSTDOCKING*std::cos(robot_yaw);
         goal_.target_pose.pose.position.y += DIST_MOVE_FRONT_POSTDOCKING*std::sin(robot_yaw);
         nav_next_state_wp_ = MOBID_COLL_NAV_DONE;
@@ -1506,7 +1519,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
     mn_goal.conf.use_line_planner = false;
     mn_goal.conf.append_new_maneuver =  false;
     
-    mn_goal.start.pose = base_position_->pose; // always plan from current pose
+    mn_goal.start.pose = base_position->pose; // always plan from current pose
     
     mn_goal.goal.header.frame_id = "map";
     mn_goal.goal.header.stamp = ros::Time::now();
@@ -1533,7 +1546,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         getFinalMobidikPos ( world, areaID, &finalMobidikPosition_, &disconnectSetpoint_, &setpoint_, &points );
         
         // Find pose parallel to the delvery area
-        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        tf::poseMsgToTF(base_position->pose,goal_tfpose);
         robot_yaw = tf::getYaw(goal_tfpose.getRotation());
         quat_temp.setW(setpoint_.getQuaternion().getW());
         quat_temp.setX(setpoint_.getQuaternion().getX());
@@ -1650,9 +1663,9 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         ROS_INFO ( "MOBID_REL_NAV_WAIT_CHANGE_FOOTPRINT" );
         if( ros::Time::now() - stamp_start_< stamp_wait_)
             break;
-        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        tf::poseMsgToTF(base_position->pose,goal_tfpose);
         robot_yaw = tf::getYaw(goal_tfpose.getRotation());
-        goal_.target_pose.pose = base_position_->pose;
+        goal_.target_pose.pose = base_position->pose;
         goal_.target_pose.pose.position.x += DIST_MOVE_FRONT_POSTRELEASING*std::cos(robot_yaw);
         goal_.target_pose.pose.position.y += DIST_MOVE_FRONT_POSTRELEASING*std::sin(robot_yaw);  
         nav_next_state_release_ = MOBID_REL_NAV_GOTOPOINT;
@@ -1661,7 +1674,7 @@ TaskFeedbackCcu MobidikCollection::callReleasingStateMachine ( ros::Publisher &m
         
     case MOBID_REL_ROTATE: // TODO should be removed: rotating now done to measure the environment again, while we actually know that we just disconnected the mobidik
         ROS_INFO ( "MOBID_REL_ROTATE" );
-        tf::poseMsgToTF(base_position_->pose,goal_tfpose);
+        tf::poseMsgToTF(base_position->pose,goal_tfpose);
         robot_yaw = tf::getYaw(goal_tfpose.getRotation());        
         quat_temp.setRPY(0.0,0.0,angles::normalize_angle(robot_yaw+M_PI));
         goal_tfpose.setRotation(quat_temp);
