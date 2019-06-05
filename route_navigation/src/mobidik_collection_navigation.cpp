@@ -16,6 +16,9 @@ MobidikCollection::~MobidikCollection()
     base_position.reset();
 };
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 // Strongly inspired by https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
 template<typename T>
 // Given three colinear points p, q, r, the function checks if
@@ -199,8 +202,7 @@ ed::UUID mobidikId = e->id();
                             // assumption: there is only 1 mobidik in the specifik area
 //                            mobidikEntity = *e_it;
                            std::cout << "*e_it = " << *e_it << std::endl;
-//                            std::cout << "*mobidikEntity = " << mobidikEntity << std::endl;
-std::cout << "Mobidik found for entity = " << e->id() << std::endl;
+                           std::cout << "Mobidik found for entity = " << e->id() << std::endl;
                               //  *mobidikID = *e_it;
                                 *mobidikID = (*e_it)->id();
                            return true;
@@ -591,7 +593,7 @@ bool MobidikCollection::getEntityPointer(const ed::WorldModel& world, ed::UUID M
                 const ed::EntityConstPtr& e = *it;
                 if ( MobidikID_ED.str().compare ( e.get()->id().str() )  == 0 )
                 {
-                        std::cout << "MobidikID new = " << e->id()  << " pointer = " << e << std::endl; // TODO THIS ONE CHANGED!!!!
+//                         std::cout << "MobidikID new = " << e->id()  << " pointer = " << e << std::endl; // TODO THIS ONE CHANGED!!!!
                         entityPointer = e;
                         return true;
                 }
@@ -879,6 +881,8 @@ bool MobidikCollection::isWaypointAchieved(double& dist_tolerance, double& angle
     v3temp = diff_tf.getOrigin();
     qtemp = diff_tf.getRotation();
     
+    std::cout << "Is waypoint achieved: diff_tf origin = " << v3temp << " & rot = " << qtemp << std::endl;
+    
     if (pow( v3temp.x(),2) + pow(v3temp.y(),2) < pow(dist_tolerance,2)
             && fabs(qtemp.getAngle()) < angle_tolerance)
         return true;
@@ -897,12 +901,13 @@ std::cout << "mobidikColl state machine start" << std::endl;
 std::cout << "nav_state = " << nav_state_ << std::endl;   
 
 //printFlags
+/*
         ed::EntityConstPtr mobidikEntity;
        if( getEntityPointer(world, MobidikID_ED, mobidikEntity) )
        {
                mobidikEntity->printFlags();
        }
-
+*/
 TaskFeedbackCcu tfb_nav;
     tfb_nav.wayp_n = waypoint_cnt_;
     tfb_nav.fb_nav = NAV_BUSY;
@@ -1092,10 +1097,8 @@ TaskFeedbackCcu tfb_nav;
                     {
                             updateMobidikPosition( world, req, MobidikID_ED, &points );
                     }
-                    
-                    
-                    
-                        geo::Pose3D setPointOnMobidik;
+
+                        geo::Pose3D setPointOnMobidik; 
                         if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED, &setPointOnMobidik, &points, 0.0) ) // WM updated?
                         {
                                 nav_next_state_ = MOBID_COLL_NAV_IDLE; 
@@ -1104,7 +1107,7 @@ TaskFeedbackCcu tfb_nav;
                                 break;
                         }
                         tfb_nav.fb_nav = MOBIDIK_DETECTED;
-                        
+               /*         
         //                 mobidikProperties = mobidikPointer->property ( featureProperties );
                         mobidikProperties = mobidikFeatures_;
         //                 std::cout << "ID reference " << mobidikPointer->id() << std::endl;R
@@ -1122,13 +1125,14 @@ TaskFeedbackCcu tfb_nav;
                         errorWorld.y = setPointOnMobidik.getOrigin().getY() - base_position->pose.position.y;
                         
                         errorRobot.x = errorWorld.x*cos(-robotYaw) - errorWorld.y*sin(-robotYaw);
+                       // errorRobot.x = errorRobot.x - sgn( errorRobot.x ) * 0.5*( ROPOD_LENGTH );
                         errorRobot.y = errorWorld.x*sin(-robotYaw) + errorWorld.y*cos(-robotYaw);
                         float rotError = mobidikProperties.rectangle_.get_yaw() - robotYaw;
                 
                         std::cout << "Setpoint on mobidik: x, y = " << setPointOnMobidik.getOrigin().getX()  << ", " << setPointOnMobidik.getOrigin().getY() << std::endl;
                 
                         dist2 = std::pow ( errorWorld.x , 2.0 ) + std::pow ( errorWorld.y , 2.0 );
-                        std::cout << "dist2 = " << dist2 << std::endl;
+
 
                         std::cout << "base_position_->pose.position.x, y = " << base_position->pose.position.x << ", " << base_position->pose.position.y << std::endl;
                         // std::cout << "mobidikPose.getOrigin().getX(), y = " << mobidikPose.getOrigin().getX() << ", " << mobidikPose.getOrigin().getY() << std::endl;
@@ -1141,20 +1145,46 @@ TaskFeedbackCcu tfb_nav;
 
                         float errorNorm = std::sqrt( dist2 );
                         
+                       std::cout << "error = " << errorNorm << std::endl;
+                        
                         geo::Vec2f errorNormalized;
                         errorNormalized.x = errorRobot.x/errorNorm*BACKWARD_VEL_DOCKING;
                         errorNormalized.y = errorRobot.y/errorNorm*BACKWARD_VEL_DOCKING;
                         
-                        output_vel.linear.x = std::min(  errorRobot.x, errorNormalized.x ); // For both situations (with/without mobidik updates) similar?
-                        output_vel.linear.y = std::min( errorRobot.y, errorNormalized.y ); // TODO prevent constantly going backwards if there are problems. Check if mobidik is still there!
-                        output_vel.angular.z = std::min(rotError, (float) MAX_ROT_VEL_DOCKING);
+//                         if(std::fabs(errorRobot.x) < std::fabs(errorNormalized.x) )
+//                         {
+//                                 output_vel.linear.x = errorRobot.x;
+//                         }
+//                         else{
+                                output_vel.linear.x = errorNormalized.x;
+//                         }
+                        
+//                         if(std::fabs(errorRobot.y) < std::fabs( errorNormalized.y ) )
+//                         {
+//                                 output_vel.linear.y = errorRobot.y;
+//                         }
+//                         else{
+                                output_vel.linear.y = errorNormalized.y;
+//                         }
+                        
+//                         if(std::fabs(rotError) < std::fabs( MAX_ROT_VEL_DOCKING ) )
+//                         {
+//                                 output_vel.angular.z = 0.1*rotError;
+//                         }
+//                         else{
+//                                 output_vel.angular.z = sgn(rotError)*MAX_ROT_VEL_DOCKING;
+//                         }
+                        
+                        //output_vel.linear.x = std::min(  errorRobot.x, errorNormalized.x ); // For both situations (with/without mobidik updates) similar?
+                        //output_vel.linear.y = std::min( errorRobot.y, errorNormalized.y ); // TODO prevent constantly going backwards if there are problems. Check if mobidik is still there!
+                        //output_vel.angular.z = std::min(rotError, (float) MAX_ROT_VEL_DOCKING);
                         cmv_vel_pub.publish ( output_vel );
                         
                         std::cout << "Output vel x, y = " <<  output_vel.linear.x << ", " << output_vel.linear.y << std::endl;
 
 //                         if ( dist2 < std::pow ( 0.5* ( ROPOD_LENGTH + mobidikLength ) + DIST_CONN_SIM, 2.0 ) )
                         
-                        if( fabs(errorWorld.x) < ( 0.5* ( ROPOD_LENGTH ) + DIST_CONN_X ) && fabs(errorWorld.y) < DIST_CONN_Y ) // TODO tuning of DIST_CONN_X & DIST_CONN_Y?
+                        if( fabs(errorRobot.x) < DIST_CONN_X && fabs(errorRobot.y) < DIST_CONN_Y ) // TODO tuning of DIST_CONN_X & DIST_CONN_Y?
                         {
                                   ROS_INFO ( "Touched = true" );
                                 touched = true;
@@ -1164,6 +1194,20 @@ TaskFeedbackCcu tfb_nav;
 //                         {
 //                                 touched = true;
 //                         }
+*/
+              
+               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.2 &");
+               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.2 &");
+                           
+               xy_goal_tolerance_  = GOAL_MOBID_COLL_REACHED_DIST; // for the last part we decrease tolerance
+               yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG; 
+               
+               setpoint_ = setPointOnMobidik;
+               point2goal(&setpoint_);          
+               
+               nav_next_state_wp_ = MOBID_COLL_INIT_COUPLING;
+               nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;            
+               
         //         }
         //         else
         //         {
@@ -1208,9 +1252,9 @@ TaskFeedbackCcu tfb_nav;
         //             }
         //         }
 
-                        if ( touched )
-                        {
-                                ROS_INFO ( "End of connecting state. Going to dock now." );
+//                         if ( touched )
+//                         {
+//                                 ROS_INFO ( "End of connecting state. Going to dock now." );
                 //             if ( ! robotReal )
                 //             {
                 //                 tfb_nav.fb_nav = NAV_DOCKED;
@@ -1221,15 +1265,26 @@ TaskFeedbackCcu tfb_nav;
                 //                 avgWrenchesDetermined_ = false;
                 //                 controlMode->data = ropodNavigation::LLC_VEL; //LLC_NORMAL
                                 
-                                dockingMsg.docking_command = DOCKING_COMMAND_DOCK;
-                                dockingCommand.publish( dockingMsg );
-                                nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+//                                 dockingMsg.docking_command = DOCKING_COMMAND_DOCK;
+//                                 dockingCommand.publish( dockingMsg );
+//                                 nav_next_state_  = MOBID_COLL_NAV_COUPLING;
                 //                 
                 //             }
-                                stamp_start_ = ros::Time::now();
-                                stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);         
-                        }
+//                                 stamp_start_ = ros::Time::now();
+//                                 stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);         
+//                         }
                 }
+        break;
+        
+        
+    case MOBID_COLL_INIT_COUPLING:
+            ROS_INFO ( "MOBID_COLL_INIT_COUPLING" );
+                 dockingMsg.docking_command = DOCKING_COMMAND_DOCK;
+                 dockingCommand.publish( dockingMsg );
+                 nav_next_state_  = MOBID_COLL_NAV_COUPLING;
+                 
+                 stamp_start_ = ros::Time::now();
+                 stamp_wait_ = ros::Duration(TIME_WAIT_CHANGE_OF_FOOTPRINT);      
         break;
          
     case MOBID_COLL_NAV_COUPLING: // TODO
@@ -1272,7 +1327,7 @@ TaskFeedbackCcu tfb_nav;
 
         if ( !robotReal )
         {
-                ros::Duration diff =ros::Time::now() -stamp_start_;
+                ros::Duration diff = ros::Time::now() -stamp_start_;
                 if ( diff.toSec() > 5.0 )
                 {
                          touched = true;
@@ -1284,7 +1339,6 @@ TaskFeedbackCcu tfb_nav;
         {
                 if( dockingFeedback.docking_status == DOCKING_FB_DOCKED )
                 {
-                        ROS_INFO("MOBIDIK COUPLED");
                         touched = true;
                         tfb_nav.fb_nav = COUPLING_SUCCEEDED;
                 } else if (dockingFeedback.docking_status == DOCKING_FB_REST) { //TODO check if it is in init state
@@ -1295,8 +1349,10 @@ TaskFeedbackCcu tfb_nav;
         if ( touched )
         {
             // Docking done!
+           ROS_INFO("MOBIDIK COUPLED");
+                                        
             tfb_nav.fb_nav = NAV_DOCKED;
-            req.removeFlag(MobidikID_ED, "Mobidik");
+           // req.removeFlag(MobidikID_ED, "Mobidik");
             req.removeFlag(MobidikID_ED, "locked"); // TODO update while moving backwards with sensor at the back!
             nav_next_state_ = MOBID_COLL_NAV_EXIT_COLLECT_AREA;
             bumperWrenchesVector_.clear();
@@ -1315,6 +1371,9 @@ TaskFeedbackCcu tfb_nav;
         goal_.target_pose.pose = base_position->pose;
         goal_.target_pose.pose.position.x += DIST_MOVE_FRONT_POSTDOCKING*std::cos(robot_yaw);
         goal_.target_pose.pose.position.y += DIST_MOVE_FRONT_POSTDOCKING*std::sin(robot_yaw);
+        
+        std::cout << "goal_ = " << goal_ << std::endl;
+        
         nav_next_state_wp_ = MOBID_COLL_NAV_DONE;
         nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;      
         break;

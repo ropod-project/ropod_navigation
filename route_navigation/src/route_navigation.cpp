@@ -331,7 +331,7 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                 // Update mobidik position relative to robot
                 tf::Pose goal_tfpose;
                 
-                std::cout << "base_position->pose = " << base_position->pose << std::endl;
+               // std::cout << "base_position->pose = " << base_position->pose << std::endl;
                 
                 tf::poseMsgToTF(base_position->pose,goal_tfpose);
                 float robot_yaw = tf::getYaw(goal_tfpose.getRotation());
@@ -343,17 +343,11 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                 }
                 else
                 {
-                 
-                        std::cout << "mobidikEntity =  " << mobidikEntity << std::endl; 
-                        mobidikEntity->printFlags();
                         ed::tracking::FeatureProperties mobidikFeatures = mobidikEntity->property ( mobidik_collection_navigation.featureProperties );
                         ed::tracking::Rectangle rectangle =  mobidikFeatures.getRectangle();
-                        std::cout << "MOBIDIK_LENGTH = " << MOBIDIK_LENGTH << std::endl;
-                         rectangle.set_x( base_position->pose.position.x + 0.5*MOBIDIK_LENGTH*cos ( robot_yaw ) );
-                         rectangle.set_y( base_position->pose.position.y + 0.5*MOBIDIK_LENGTH*sin ( robot_yaw ));
-                         rectangle.set_yaw( robot_yaw );
-                         
-                         rectangle.printProperties();
+                        rectangle.set_x( base_position->pose.position.x + 0.5*MOBIDIK_LENGTH*cos ( robot_yaw ) );
+                        rectangle.set_y( base_position->pose.position.y + 0.5*MOBIDIK_LENGTH*sin ( robot_yaw ));
+                        rectangle.set_yaw( robot_yaw );
                         
                         mobidikFeatures.setRectangle( rectangle );
                         

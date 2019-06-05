@@ -52,7 +52,7 @@
 #define ROPOD_WIDTH ROPOD_LENGTH // [m]
 #define DIST_IN_FRONT_OFF_MOBID 0.4 // [m]
 // #define MOBIDIK_LENGTH 0.8 // [m]
-#define BACKWARD_VEL_DOCKING 0.2 // [m/s]
+#define BACKWARD_VEL_DOCKING 0.1 // [m/s]
 #define MAX_ROT_VEL_DOCKING 0.1 // [rad/s]
 
 #define N_COUNTS_WRENCHES 10 // [-]
@@ -87,6 +87,7 @@ class MobidikCollection
            MOBID_COLL_NAV_GOTOPOINT,
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
+           MOBID_COLL_INIT_COUPLING,
            MOBID_COLL_NAV_COUPLING,
            MOBID_COLL_NAV_EXIT_COLLECT_AREA,
            MOBID_COLL_NAV_DONE
