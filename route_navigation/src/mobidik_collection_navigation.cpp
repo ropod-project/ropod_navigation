@@ -1069,7 +1069,7 @@ TaskFeedbackCcu tfb_nav;
         ROS_INFO ( "MOBID_COLL_NAV_CONNECTING" );
 
         
-        req.removeFlag(MobidikID_ED, "locked");
+       
 
         touched = false;
 
@@ -1093,11 +1093,6 @@ TaskFeedbackCcu tfb_nav;
             }
             else
             {
-                    if( sensorBack)
-                    {
-                            updateMobidikPosition( world, req, MobidikID_ED, &points );
-                    }
-
                         geo::Pose3D setPointOnMobidik; 
                         if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED, &setPointOnMobidik, &points, 0.0) ) // WM updated?
                         {
@@ -1196,17 +1191,27 @@ TaskFeedbackCcu tfb_nav;
 //                         }
 */
               
-               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.2 &");
-               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.2 &");
+               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_y 0.5 &");
+               sysCommand = system("rosrun dynamic_reconfigure dynparam set /maneuver_navigation/TebLocalPlannerROS max_vel_x 0.5 &");
                            
                xy_goal_tolerance_  = GOAL_MOBID_COLL_REACHED_DIST; // for the last part we decrease tolerance
                yaw_goal_tolerance_ = GOAL_MOBID_REACHED_ANG; 
                
                setpoint_ = setPointOnMobidik;
-               point2goal(&setpoint_);          
+               point2goal(&setpoint_);
+               stamp_start_updated_mobidik_position_ = ros::Time::now();
                
                nav_next_state_wp_ = MOBID_COLL_INIT_COUPLING;
-               nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;            
+               
+                    if( sensorBack)
+                    {
+                            req.removeFlag(MobidikID_ED, "locked");
+                            nav_next_state_ = MOBID_COLL_NAV_GOTO_UPDATED_MOBIDIK_POINT;            
+                    }
+                    else
+                    {
+                            nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;            
+                    }
                
         //         }
         //         else
@@ -1377,6 +1382,58 @@ TaskFeedbackCcu tfb_nav;
         nav_next_state_wp_ = MOBID_COLL_NAV_DONE;
         nav_next_state_ = MOBID_COLL_NAV_GOTOPOINT;      
         break;
+        
+    case MOBID_COLL_NAV_GOTO_UPDATED_MOBIDIK_POINT: // TODO
+              ROS_INFO("MOBID_COLL_NAV_GOTO_UPDATED_MOBIDIK_POINT");
+
+               
+        if( !getEntityPointer(world, MobidikID_ED, mobidikPointer) )
+        {
+                ROS_WARN("Mobidik Collection: No mobidik-entity found in MOBID_COLL_NAV_GOTO_UPDATED_MOBIDIK_POINT");
+        }
+        else
+        {
+                if(ros::Time::now() - stamp_start_updated_mobidik_position_ > ros::Duration(0.5))
+                {
+                        updateMobidikPosition( world, req, MobidikID_ED, &points );
+                        stamp_start_updated_mobidik_position_ = ros::Time::now();
+                        geo::Pose3D setPointOnMobidik; 
+                        if( !getSetpointInFrontOfMobidik ( world, req, MobidikID_ED, &setPointOnMobidik, &points, 0.0) ) // WM updated?                
+                        {
+                                nav_next_state_ = MOBID_COLL_NAV_IDLE; 
+                                ROS_WARN("Mobidik Connection: No mobidik-entity found"); // TODO Recovery behaviour
+                                tfb_nav.fb_nav = NO_MOBIDIK_DETECTED;
+                                break;                
+                        }
+                        
+                        setpoint_ = setPointOnMobidik;
+                        point2goal(&setpoint_);  
+                
+                        // idem as MOBID_COLL_NAV_GOTOPOINT, now with updated mobidik pos
+                        goal_.target_pose.header.frame_id = "map";
+                        goal_.target_pose.header.stamp = ros::Time::now();
+                        ROS_INFO("Sending goal");
+                        sendgoal = true;
+                        tfb_nav.fb_nav = NAV_GOTOPOINT;
+                }
+                
+                if (!isPositionValid())
+                {
+                nav_next_state_ = MOBID_COLL_NAV_HOLD;
+                break;
+                }
+                if (isWaypointAchieved(xy_goal_tolerance_,yaw_goal_tolerance_)) // TODO set the tolerance parameters of the base_local_planner_params equal to the tolerances used in this function -> at the ros param server
+                {
+                        ROS_INFO("Waypoint achieved");
+                nav_next_state_ = MOBID_COLL_NAV_WAYPOINT_DONE;
+                }
+                else 
+                {
+                        ROS_INFO("Waypoint not achieved");
+                }
+         }
+         
+         break;
 
     case MOBID_COLL_NAV_GOTOPOINT:
             ROS_INFO("MOBID_COLL_NAV_GOTOPOINT");

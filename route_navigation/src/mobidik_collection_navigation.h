@@ -84,6 +84,7 @@ class MobidikCollection
            MOBID_COLL_NAV_BUSY,
            MOBID_COLL_FIND_MOBIDIK,
            MOBID_COLL_FIND_SETPOINT_FRONT,
+           MOBID_COLL_NAV_GOTO_UPDATED_MOBIDIK_POINT,
            MOBID_COLL_NAV_GOTOPOINT,
            MOBID_COLL_NAV_WAYPOINT_DONE,
            MOBID_COLL_NAV_CONNECTING,
@@ -220,6 +221,7 @@ class MobidikCollection
     std_msgs::Bool true_bool_msg_;
     move_base_msgs::MoveBaseGoal goal_;
     ros::Time stamp_start_;
+    ros::Time stamp_start_updated_mobidik_position_;
     ros::Duration stamp_wait_;
 
     geo::Pose3D setpoint_;
