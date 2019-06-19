@@ -139,7 +139,7 @@ void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
     elevator_navigation.base_position = msg;
     mobidik_collection_navigation.base_position = msg;
     base_position = msg;
-    
+
     base_pos_received = true;
 }
 
@@ -279,6 +279,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     elevator_navigation.get_door_status_client = n.serviceClient<ropod_ros_msgs::GetDoorStatus>("/get_door_status");
     elevator_navigation.get_floor_client = n.serviceClient<floor_detection::DetectFloor>("/floor_detection_server");
     elevator_navigation.switch_map_client = n.serviceClient<map_switcher::SwitchMap>("/map_switcher/change_map");
+    elevator_navigation.init_pose_publisher = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1);
 
     send_goal_ = false;
 
@@ -290,9 +291,9 @@ void RopodNavigation::initialize ( ed::InitData& init )
     sensorBack_ = false;
     config.value("mobidik_initially_connected", mobidikConnected, tue::OPTIONAL);
     mobidikConnected_ = (mobidikConnected != false);
-    
+
     //std::cout << "mobidikConnected = " << mobidikConnected << " mobidikConnected_ = " << mobidikConnected_ << std::endl;
-    
+
     config.value("sensor_back", sensorBack_, tue::OPTIONAL);
     if(sensorBack_)
     {
@@ -300,7 +301,7 @@ void RopodNavigation::initialize ( ed::InitData& init )
     } else {
             ROS_WARN("Robot can NOT do LRF measurements at the back");
     }
-    
+
     std::string robotReal_str = GetEnv("ROBOT_REAL");
     robotReal = (robotReal_str.compare( "true" ) == 0);
     if(robotReal)
@@ -330,12 +331,12 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
         {
                 // Update mobidik position relative to robot
                 tf::Pose goal_tfpose;
-                
+
                // std::cout << "base_position->pose = " << base_position->pose << std::endl;
-                
+
                 tf::poseMsgToTF(base_position->pose,goal_tfpose);
                 float robot_yaw = tf::getYaw(goal_tfpose.getRotation());
-                
+
                 ed::EntityConstPtr mobidikEntity;
                 if(!mobidik_collection_navigation.getEntityPointer(world, mobidik_collection_navigation.MobidikID_ED, mobidikEntity) )
                 {
@@ -348,16 +349,16 @@ void RopodNavigation::process ( const ed::WorldModel& world, ed::UpdateRequest& 
                         rectangle.set_x( base_position->pose.position.x + 0.5*MOBIDIK_LENGTH*cos ( robot_yaw ) );
                         rectangle.set_y( base_position->pose.position.y + 0.5*MOBIDIK_LENGTH*sin ( robot_yaw ));
                         rectangle.set_yaw( robot_yaw );
-                        
+
                         mobidikFeatures.setRectangle( rectangle );
-                        
+
                         geo::Pose3D new_pose = rectangle.getPose();
                         req.setProperty ( mobidikEntity->id(), mobidik_collection_navigation.featureProperties, mobidikFeatures );
-                        req.setPose ( mobidik_collection_navigation.MobidikID_ED, new_pose );                
+                        req.setPose ( mobidik_collection_navigation.MobidikID_ED, new_pose );
                 }
         }
-        
-        
+
+
 // ROS_WARN("Next iteration");
     cb_queue_.callAvailable();
 

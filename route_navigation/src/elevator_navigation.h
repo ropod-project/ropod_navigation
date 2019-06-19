@@ -5,6 +5,7 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <move_base_msgs/MoveBaseActionFeedback.h>
 #include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <std_msgs/Bool.h>
@@ -73,6 +74,7 @@ public:
     ros::ServiceClient get_door_status_client;
     ros::ServiceClient get_floor_client;
     ros::ServiceClient switch_map_client;
+    ros::Publisher init_pose_publisher;
 
     ElevatorNavigation();
     ~ElevatorNavigation();

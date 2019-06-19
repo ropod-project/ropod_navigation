@@ -263,7 +263,12 @@ bool ElevatorNavigation::destinationFloorReached()
             ROS_INFO("[elevator_navigation] Reached floor %d; switching map to %s", this->destination_floor, switch_map.request.new_map.c_str());
             if (this->switch_map_client.call(switch_map) && switch_map.response.success)
             {
-                ROS_INFO("[elevator_navigation] Map switched");
+                ROS_INFO("[elevator_navigation] Map switched; reinitialising localisation");
+                geometry_msgs::PoseWithCovarianceStamped current_pose;
+                current_pose.header.frame_id = this->base_position->header.frame_id;
+                current_pose.pose.pose = this->base_position->pose;
+                this->init_pose_publisher.publish(current_pose);
+                ROS_INFO("[elevator_navigation] Localisation reinitialised");
                 return true;
             }
             else
