@@ -151,11 +151,11 @@ int main(int argc, char **argv)
 
     if (route_planner_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
-      ROS_INFO("Conenction successful");
+        ROS_INFO("Connection successful");
     }
     else
     {
-      ROS_WARN("Conenction failed");
+        ROS_WARN("Connection failed");
     }
 
 
