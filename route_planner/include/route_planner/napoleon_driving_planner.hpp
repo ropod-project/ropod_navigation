@@ -3,6 +3,18 @@
 
 #include <route_planner/route_planner.hpp>
 
+struct Line
+{
+    ropod_ros_msgs::Position point1;
+    ropod_ros_msgs::Position point2;
+};
+
+enum Side
+{
+    RIGHT = 0,
+    LEFT = 1
+};
+
 class NapoleonDrivingPlanner: public RoutePlanner
 {
 public:
@@ -11,6 +23,9 @@ public:
 
 private:
     ropod_ros_msgs::Position compute_center(ropod_ros_msgs::Shape geometry);
+    Side determine_point_side(Line, ropod_ros_msgs::Position pt);
+    double get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2);
+    std::vector<ropod_ros_msgs::Position> get_two_nearest_points(ropod_ros_msgs::SubArea, ropod_ros_msgs::Position);
 };
 
 #endif /* NAPOLEON_DRIVING_PLANNER */
