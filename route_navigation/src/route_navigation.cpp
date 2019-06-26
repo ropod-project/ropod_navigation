@@ -143,6 +143,11 @@ void navigation_fbCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
     base_pos_received = true;
 }
 
+void footprintCallback(const geometry_msgs::PolygonStamped::ConstPtr& msg)
+{
+    elevator_navigation.robot_footprint = msg;
+}
+
 void actionCallback(const ropod_ros_msgs::Action::ConstPtr& action_msg_)
 {
     ROS_INFO("Action message received. Action ID %s, %d areas", action_msg_->action_id.c_str(), (int) action_msg_->areas.size());
@@ -262,6 +267,8 @@ void RopodNavigation::initialize ( ed::InitData& init )
     mn_feedback_sub_ = n.subscribe<maneuver_navigation::Feedback> ("/route_navigation/feedback", 1, (boost::bind(&RopodNavigation::maneuverNavCallback, this, _1)));
     sub_navigation_fb_ =   n.subscribe<geometry_msgs::PoseStamped> ( navigationFeedbackTopic, 10, navigation_fbCallback );
 
+    robot_footprint_sub_ = n.subscribe<geometry_msgs::PolygonStamped> ("/maneuver_navigation/local_costmap/footprint", 1, footprintCallback);
+
     movbase_cancel_pub_ = n.advertise<std_msgs::Bool>("/route_navigation/cancel", 1 );
     ropod_task_goto_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressGOTO> ( "/task_progress/goto", 1 );
     ropod_task_dock_fb_pub_ = n.advertise<ropod_ros_msgs::TaskProgressDOCK> ( "/task_progress/dock", 1 );
@@ -274,8 +281,9 @@ void RopodNavigation::initialize ( ed::InitData& init )
     docking_status_sub_ = n.subscribe<ropod_ros_msgs::DockingFeedback>("/ropod/ropod_low_level_control/dockingFeedback", 10, dockingStatusCallback );
 
     // initialising the elevator navigation
-    elevator_navigation.elevator_waypoints_client = new actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction>("/get_elevator_waypoints");
-    elevator_navigation.topology_node_client = new actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction>("/get_topology_node");
+    elevator_navigation.elevator_waypoints_client.reset(new actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction>("/get_elevator_waypoints"));
+    elevator_navigation.topology_node_client.reset(new actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction>("/get_topology_node"));
+    elevator_navigation.get_shape_client.reset(new actionlib::SimpleActionClient<ropod_ros_msgs::GetShapeAction>("/get_shape"));
     elevator_navigation.get_door_status_client = n.serviceClient<ropod_ros_msgs::GetDoorStatus>("/get_door_status");
     elevator_navigation.get_floor_client = n.serviceClient<floor_detection::DetectFloor>("/floor_detection_server");
     elevator_navigation.switch_map_client = n.serviceClient<map_switcher::SwitchMap>("/map_switcher/change_map");
@@ -604,7 +612,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         break;
     case NAVTYPE_ELEVATOR_WAITING:
     case NAVTYPE_ELEVATOR_ENTERING:
-        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_);
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, movbase_cancel_pub_);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
@@ -617,7 +625,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         }
         break;
     case NAVTYPE_ELEVATOR_RIDING:
-        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, "", floor_number);
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, movbase_cancel_pub_, "", floor_number);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;
@@ -630,7 +638,7 @@ std::cout << "action_msg.type = " << action_msg.type << std::endl;
         }
         break;
     case NAVTYPE_ELEVATOR_EXITING:
-        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, areaID);
+        nav_state = elevator_navigation.callNavigationStateMachine(mn_goal_, send_mn_goal_, movbase_cancel_pub_, areaID);
         if (nav_state.fb_nav == NAV_DONE)
         {
             ropod_progress_elevator_msg.action_id = action_msg.action_id;

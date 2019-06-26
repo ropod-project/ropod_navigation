@@ -8,6 +8,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <std_msgs/Bool.h>
 #include <actionlib/client/simple_action_client.h>
 #include <tf/transform_datatypes.h>
@@ -28,6 +29,7 @@
 #include <map_switcher/SwitchMap.h>
 #include <ropod_ros_msgs/GetElevatorWaypointsAction.h>
 #include <ropod_ros_msgs/GetTopologyNodeAction.h>
+#include <ropod_ros_msgs/GetShapeAction.h>
 #include <ropod_ros_msgs/GetDoorStatus.h>
 #include <ropod_ros_msgs/Position.h>
 
@@ -62,6 +64,7 @@ public:
     int nav_state_bpause;
     int nav_next_state_wp;
     geometry_msgs::PoseStamped::ConstPtr base_position;
+    geometry_msgs::PolygonStamped::ConstPtr robot_footprint;
     tf::Transform base_positiontf_;
     tf::Transform waypoint_tf_;
     std_msgs::Bool true_boool_msg;
@@ -69,8 +72,9 @@ public:
     ros::Time stamp_start;
     ros::Duration stamp_wait;
 
-    actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction> *elevator_waypoints_client;
-    actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction> *topology_node_client;
+    std::shared_ptr<actionlib::SimpleActionClient<ropod_ros_msgs::GetElevatorWaypointsAction>> elevator_waypoints_client;
+    std::shared_ptr<actionlib::SimpleActionClient<ropod_ros_msgs::GetTopologyNodeAction>> topology_node_client;
+    std::shared_ptr<actionlib::SimpleActionClient<ropod_ros_msgs::GetShapeAction>> get_shape_client;
     ros::ServiceClient get_door_status_client;
     ros::ServiceClient get_floor_client;
     ros::ServiceClient switch_map_client;
@@ -81,6 +85,7 @@ public:
 
     void initElevatorNavigation(int elevator_id, int elevator_door_id);
     void getElevatorWaypoints(int elevator_id, int elevator_door_id);
+    bool getElevatorShape(ropod_ros_msgs::Shape &shape);
     void setWaitingPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
     void setInsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal);
     void setOutsideElevatorPose(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id);
@@ -92,10 +97,13 @@ public:
 
     bool isPositionValid();
     bool isWaypointAchieved();
+    bool isRobotInsideElevator();
     bool isDoorOpen();
     bool destinationFloorReached();
 
-    TaskFeedbackCcu callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id="", int destination_floor=-1);
+    static bool isPointInPolygon(const geometry_msgs::Point32 &point, const std::vector<ropod_ros_msgs::Position> &polygon);
+
+    TaskFeedbackCcu callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, ros::Publisher &move_base_cancel_pub, std::string outside_area_id="", int destination_floor=-1);
 private:
     wm::Elevator elevator;
     ropod_ros_msgs::Position elevator_door_position;
