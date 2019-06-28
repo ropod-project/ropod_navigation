@@ -26,6 +26,7 @@ private:
     Side determine_point_side(Line, ropod_ros_msgs::Position pt);
     double get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2);
     std::vector<ropod_ros_msgs::Position> get_two_nearest_points(ropod_ros_msgs::SubArea, ropod_ros_msgs::Position);
+    bool get_area_sides(ropod_ros_msgs::SubArea curr_area, ropod_ros_msgs::SubArea next_area, ropod_ros_msgs::Side &right, ropod_ros_msgs::Side &left);
 };
 
 #endif /* NAPOLEON_DRIVING_PLANNER */

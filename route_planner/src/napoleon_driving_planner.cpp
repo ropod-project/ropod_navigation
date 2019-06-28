@@ -13,37 +13,55 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
             temp.name = path_areas[i].sub_areas[j].name;
             temp.floor_number = path_areas[i].floor_number;
             temp.type = path_areas[i].type;
-            temp.geometry = RoutePlanner::CallGetShapeAction(std::stoi(temp.id),"local_area");
+            temp.geometry = RoutePlanner::CallGetShapeAction(std::stoi(temp.id), "local_area");
             // std::cout << temp << std::endl;
             sub_area_level_plan.push_back(temp);
         }
     }
 
-    for (int i = 0; i < sub_area_level_plan.size(); i++)
+    // NOTE: think about strategy for computing sides for last area
+    for (int i = 0; i < sub_area_level_plan.size()-1; i++)
     {
-        if (i != sub_area_level_plan.size())
-        {
+        ropod_ros_msgs::Side right, left;
+        get_area_sides(sub_area_level_plan[i], sub_area_level_plan[i+1], right, left);
 
-        }
+        std::cout << "Left 1:" << left.point1.x << "," << left.point1.y << std::endl;
+        // std::cout << "Left 2:" << left.point2.x << "," << left.point2.y << std::endl;
+        std::cout << "Right 1:" << right.point1.x << "," << right.point1.y << std::endl;
+        // std::cout << "Right 2:" << right.point2.x << "," << right.point2.y << std::endl;
     }
 
-    // Line line;
-    // line.point1.x = 0; 
-    // line.point1.y = 0;
-
-    // line.point2.x = 4; 
-    // line.point2.y = 0;
-
-    // std::cout << "cool" << std::endl;
-
-    // ropod_ros_msgs::Position pt;
-    // pt.x = 2;
-    // pt.y = -2;
-    // std::cout << determine_point_side(line, pt) << std::endl;
-
-    // get_two_nearest_points(sub_area_level_plan[0], sub_area_level_plan[0].geometry.vertices[0]);
-
     return path_areas;
+}
+
+bool NapoleonDrivingPlanner::get_area_sides(ropod_ros_msgs::SubArea curr_area, ropod_ros_msgs::SubArea next_area, ropod_ros_msgs::Side &right, ropod_ros_msgs::Side &left)
+{
+    ropod_ros_msgs::Position curr_area_center = compute_center(curr_area.geometry);
+    ropod_ros_msgs::Position next_area_center = compute_center(next_area.geometry);
+
+    std::vector<ropod_ros_msgs::Position> front_points = get_two_nearest_points(curr_area, next_area_center);
+
+    // std::cout << front_points[0] << std::endl;
+    // std::cout << front_points[1] << std::endl;
+
+    Line center_line;
+    center_line.point1 = curr_area_center;
+    center_line.point2 = next_area_center;
+
+    // std::cout << determine_point_side(center_line, front_points[0]) << std::endl;
+    // std::cout << determine_point_side(center_line, front_points[1]) << std::endl;
+
+    if (determine_point_side(center_line, front_points[0]) == 0)
+        right.point1 = front_points[0];
+    else
+        left.point1 = front_points[0];
+
+    if (determine_point_side(center_line, front_points[1]) == 0)
+        right.point1 = front_points[1];
+    else
+        left.point1 = front_points[1];
+
+    return true;
 }
 
 std::vector<ropod_ros_msgs::Position> NapoleonDrivingPlanner::get_two_nearest_points(ropod_ros_msgs::SubArea area, ropod_ros_msgs::Position pt)
@@ -51,7 +69,9 @@ std::vector<ropod_ros_msgs::Position> NapoleonDrivingPlanner::get_two_nearest_po
     std::vector<std::pair<ropod_ros_msgs::Position, double>> distances;
 
     std::vector<ropod_ros_msgs::Position> neighbouring_points;
-    for (int i = 0; i < area.geometry.vertices.size(); i++)
+
+    // NOTE: first point is repeated in returned geometries
+    for (int i = 0; i < area.geometry.vertices.size() - 1; i++)
     {
         std::pair<ropod_ros_msgs::Position, double> temp;
         temp = std::make_pair(area.geometry.vertices[i], get_euclidean_distance(area.geometry.vertices[i], pt));
@@ -63,7 +83,10 @@ std::vector<ropod_ros_msgs::Position> NapoleonDrivingPlanner::get_two_nearest_po
         return lhs.second < rhs.second;
     });
 
-    neighbouring_points = {distances[0].first, distances[1].first};
+    // std::cout << "Distances size:" << distances.size() << std::endl;
+    // std::cout << distances[0].second << "|" << distances[1].second << "|" << distances[2].second << "|" << distances[3].second << std::endl;
+
+    neighbouring_points = {distances[1].first, distances[2].first};
     return neighbouring_points;
 }
 
@@ -92,9 +115,6 @@ ropod_ros_msgs::Position NapoleonDrivingPlanner::compute_center(ropod_ros_msgs::
     }
     center.x = center.x/no_of_points;
     center.y = center.y/no_of_points;
-
-    std::cout << center << std::endl;
-
     return center;
 }
 
