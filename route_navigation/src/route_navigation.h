@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/PolygonStamped.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/UInt16.h>
 #include <actionlib/client/simple_action_client.h>
@@ -167,6 +168,8 @@ private:
     ros::Publisher docking_command_pub_;
 
     ros::Subscriber docking_status_sub_;
+
+    ros::Subscriber robot_footprint_sub_;
 
 
     actionlib::SimpleActionClient<ropod_ros_msgs::RoutePlannerAction> * route_planner_action_client_ptr_;

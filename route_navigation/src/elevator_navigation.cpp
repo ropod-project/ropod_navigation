@@ -15,7 +15,6 @@ ElevatorNavigation::~ElevatorNavigation()
 
 void ElevatorNavigation::initElevatorNavigation(int elevator_id, int elevator_door_id)
 {
-    this->elevator_id = elevator_id;
     if (!this->inside_elevator)
     {
         this->resetNavigation();
@@ -26,6 +25,7 @@ void ElevatorNavigation::initElevatorNavigation(int elevator_id, int elevator_do
     {
         this->nav_state = RIDE_ELEVATOR;
     }
+    this->elevator_id = elevator_id;
 }
 
 void ElevatorNavigation::getElevatorWaypoints(int elevator_id, int elevator_door_id)
@@ -65,6 +65,27 @@ void ElevatorNavigation::getElevatorWaypoints(int elevator_id, int elevator_door
         ROS_ERROR("Topology information for door %d could not be retrieved", elevator_door_id);
         throw "Door topology information could not be retrieved";
     }
+}
+
+bool ElevatorNavigation::getElevatorShape(ropod_ros_msgs::Shape &shape)
+{
+    ropod_ros_msgs::GetShapeGoal elevator_shape_goal;
+    elevator_shape_goal.id = this->elevator_id;
+    elevator_shape_goal.type = "elevator";
+
+    this->get_shape_client->sendGoal(elevator_shape_goal);
+    bool received_shape = this->get_shape_client->waitForResult(ros::Duration(10.0));
+    if (received_shape)
+    {
+        shape = this->get_shape_client->getResult()->shape;
+        return  true;
+    }
+    else
+    {
+        ROS_ERROR("Shape for elevator %d could not be retrieved", this->elevator_id);
+        throw "Elevator shape could not be retrieved";
+    }
+    return false;
 }
 
 /*--------------------------------------------------------*/
@@ -224,6 +245,54 @@ bool ElevatorNavigation::isWaypointAchieved()
         return false;
 }
 
+bool ElevatorNavigation::isRobotInsideElevator()
+{
+    if (!robot_footprint)
+    {
+        ROS_WARN_STREAM("Did not get robot footprint; not checking if footprint is fully inside elevator");
+        return false;
+    }
+
+    ropod_ros_msgs::Shape elevator_shape;
+    bool success = this->getElevatorShape(elevator_shape);
+    if (!success)
+    {
+        ROS_WARN_STREAM("Could not get elevator shape; not checking if footprint is fully inside elevator");
+        return false;
+    }
+
+    std::vector<ropod_ros_msgs::Position> vertices = elevator_shape.vertices;
+    for (int i = 0; i < robot_footprint->polygon.points.size(); i++)
+    {
+        if (!ElevatorNavigation::isPointInPolygon(robot_footprint->polygon.points[i], vertices))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ElevatorNavigation::isPointInPolygon(const geometry_msgs::Point32 &point, const std::vector<ropod_ros_msgs::Position> &polygon)
+{
+    //Source: https://stackoverflow.com/questions/8721406/how-to-determine-if-a-point-is-inside-a-2d-convex-polygon
+    int i;
+    int j;
+    bool result = false;
+    // count intersections of ray (from point to infinity along positive x axis) with 
+    // each segment of the polygon
+    // If the number of intersections is odd, the point is inside the polygon
+    for (i = 0, j = i + 1; j < polygon.size(); j = i++)
+    {
+        if ((polygon[i].y > point.y) != (polygon[j].y > point.y) && // check that y coordinate is between both vertices of polygon
+            // check on which side the intersection happens
+            (point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))
+        {
+            result = !result; // count number of intersections; if odd, the point is inside the polygon
+        }
+    }
+    return result;
+}
+
 /*--------------------------------------------------------*/
 bool ElevatorNavigation::isDoorOpen()
 {
@@ -290,7 +359,7 @@ bool ElevatorNavigation::destinationFloorReached()
 }
 
 /*--------------------------------------------------------*/
-TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, std::string outside_area_id, int destination_floor)
+TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigation::Goal &mn_goal, bool& send_goal, ros::Publisher &move_base_cancel_pub, std::string outside_area_id, int destination_floor)
 {
     TaskFeedbackCcu feedback_msg;
     feedback_msg.fb_nav = NAV_BUSY;
@@ -329,8 +398,14 @@ TaskFeedbackCcu ElevatorNavigation::callNavigationStateMachine(maneuver_navigati
             this->goal_sent = true;
         }
 
-        if (this->isWaypointAchieved())
+        if (this->isWaypointAchieved() || this->isRobotInsideElevator())
         {
+            ROS_INFO_STREAM("isWayPointAchieved: " << this->isWaypointAchieved() 
+                         << ", isRobotInsideElevator: " << this->isRobotInsideElevator());
+            ROS_INFO_STREAM("Successfully entered elevator; cancelling nav goal");
+            std_msgs::Bool msg;
+            msg.data = true;
+            move_base_cancel_pub.publish(msg);
             feedback_msg.fb_nav = NAV_DONE;
             this->nav_state = RIDE_ELEVATOR;
             this->inside_elevator = true;

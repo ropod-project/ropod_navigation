@@ -3,7 +3,7 @@
     <node name="initial_pose_publisher" pkg="route_navigation" type="initial_pose_publisher" output="screen">
         <param name="source_frame" value="ropod/base_link" />
         <param name="target_frame" value="map" />
-        <rosparam param="default_initial_pose">[9.098, -15.194, 1.62]</rosparam>
+        <rosparam param="default_initial_pose">[60.786, 32.822, 3.112]</rosparam>
         <remap from="~initial_pose" to="/initialpose" />
     </node>
 </launch>
