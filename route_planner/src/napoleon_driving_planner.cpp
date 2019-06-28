@@ -26,9 +26,10 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
         get_area_sides(sub_area_level_plan[i], sub_area_level_plan[i+1], right, left);
 
         std::cout << "Left 1:" << left.point1.x << "," << left.point1.y << std::endl;
-        // std::cout << "Left 2:" << left.point2.x << "," << left.point2.y << std::endl;
+        std::cout << "Left 2:" << left.point2.x << "," << left.point2.y << std::endl;
         std::cout << "Right 1:" << right.point1.x << "," << right.point1.y << std::endl;
-        // std::cout << "Right 2:" << right.point2.x << "," << right.point2.y << std::endl;
+        std::cout << "Right 2:" << right.point2.x << "," << right.point2.y << std::endl;
+        std::cout << "-----------------------------" << std::endl;
     }
 
     return path_areas;
@@ -39,7 +40,8 @@ bool NapoleonDrivingPlanner::get_area_sides(ropod_ros_msgs::SubArea curr_area, r
     ropod_ros_msgs::Position curr_area_center = compute_center(curr_area.geometry);
     ropod_ros_msgs::Position next_area_center = compute_center(next_area.geometry);
 
-    std::vector<ropod_ros_msgs::Position> front_points = get_two_nearest_points(curr_area, next_area_center);
+    std::vector<ropod_ros_msgs::Position> front_points, rear_points;
+    get_area_points(curr_area, next_area_center, front_points, rear_points);
 
     // std::cout << front_points[0] << std::endl;
     // std::cout << front_points[1] << std::endl;
@@ -61,10 +63,20 @@ bool NapoleonDrivingPlanner::get_area_sides(ropod_ros_msgs::SubArea curr_area, r
     else
         left.point1 = front_points[1];
 
+    if (get_euclidean_distance(right.point1, rear_points[0]) > get_euclidean_distance(right.point1, rear_points[1]))
+        right.point2 = rear_points[1];
+    else
+        right.point2 = rear_points[0];
+
+    if (get_euclidean_distance(left.point1, rear_points[0]) > get_euclidean_distance(left.point1, rear_points[1]))
+        left.point2 = rear_points[1];
+    else
+        left.point2 = rear_points[0];
+
     return true;
 }
 
-std::vector<ropod_ros_msgs::Position> NapoleonDrivingPlanner::get_two_nearest_points(ropod_ros_msgs::SubArea area, ropod_ros_msgs::Position pt)
+void NapoleonDrivingPlanner::get_area_points(ropod_ros_msgs::SubArea area, ropod_ros_msgs::Position pt, std::vector<ropod_ros_msgs::Position> &front_points, std::vector<ropod_ros_msgs::Position> &rear_points)
 {
     std::vector<std::pair<ropod_ros_msgs::Position, double>> distances;
 
@@ -86,8 +98,8 @@ std::vector<ropod_ros_msgs::Position> NapoleonDrivingPlanner::get_two_nearest_po
     // std::cout << "Distances size:" << distances.size() << std::endl;
     // std::cout << distances[0].second << "|" << distances[1].second << "|" << distances[2].second << "|" << distances[3].second << std::endl;
 
-    neighbouring_points = {distances[1].first, distances[2].first};
-    return neighbouring_points;
+    front_points = {distances[0].first, distances[1].first};
+    rear_points = {distances[2].first, distances[3].first};
 }
 
 double NapoleonDrivingPlanner::get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2)

@@ -25,7 +25,7 @@ private:
     ropod_ros_msgs::Position compute_center(ropod_ros_msgs::Shape geometry);
     Side determine_point_side(Line, ropod_ros_msgs::Position pt);
     double get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2);
-    std::vector<ropod_ros_msgs::Position> get_two_nearest_points(ropod_ros_msgs::SubArea, ropod_ros_msgs::Position);
+    void get_area_points(ropod_ros_msgs::SubArea area, ropod_ros_msgs::Position pt, std::vector<ropod_ros_msgs::Position> &front_points, std::vector<ropod_ros_msgs::Position> &rear_points);
     bool get_area_sides(ropod_ros_msgs::SubArea curr_area, ropod_ros_msgs::SubArea next_area, ropod_ros_msgs::Side &right, ropod_ros_msgs::Side &left);
 };
 
