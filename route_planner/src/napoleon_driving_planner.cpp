@@ -2,36 +2,54 @@
 
 std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
 {
-    std::vector<ropod_ros_msgs::SubArea> sub_area_level_plan;
-
     for (int i = 0; i < path_areas.size(); i++)
     {
         for (int j = 0; j < path_areas[i].sub_areas.size(); j++)
         {
-            ropod_ros_msgs::SubArea temp;
-            temp.id = path_areas[i].sub_areas[j].id;
-            temp.name = path_areas[i].sub_areas[j].name;
-            temp.floor_number = path_areas[i].floor_number;
-            temp.type = path_areas[i].type;
-            temp.geometry = RoutePlanner::CallGetShapeAction(std::stoi(temp.id), "local_area");
-            // std::cout << temp << std::endl;
-            sub_area_level_plan.push_back(temp);
+            ropod_ros_msgs::Side right, left;
+            if (path_areas[i].sub_areas[j].geometry.vertices.size() == 0)
+                    path_areas[i].sub_areas[j].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j].id), "local_area");
+
+            if (j < path_areas[i].sub_areas.size()-1 && i != path_areas.size()-1)
+            {
+                path_areas[i].sub_areas[j+1].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j+1].id), "local_area");
+                get_area_sides(path_areas[i].sub_areas[j], path_areas[i].sub_areas[j+1], right, left);
+            }
+            else if (j == path_areas[i].sub_areas.size()-1 && i != path_areas.size()-1)
+            {
+                path_areas[i+1].sub_areas[0].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i+1].sub_areas[0].id), "local_area");
+                get_area_sides(path_areas[i].sub_areas[j], path_areas[i+1].sub_areas[0], right, left);
+            }
+            else if (i == path_areas.size()-1)
+            {
+                get_area_sides(path_areas[i].sub_areas[j], path_areas[i-1].sub_areas[path_areas[i-1].sub_areas.size()-1], right, left);
+                if (std::string(path_areas[i].sub_areas[j].type) == "junction")
+                {
+                    path_areas[i+1].sub_areas[j].turn_point = right.point2;
+                }
+
+                path_areas[i].sub_areas[j].right.point1 = left.point2; 
+                path_areas[i].sub_areas[j].right.point2 = left.point1; 
+                path_areas[i].sub_areas[j].left.point2 = right.point1; 
+                path_areas[i].sub_areas[j].left.point1 = right.point2; 
+                return path_areas;
+            }
+
+            // Uncomment for debugging & analysing the generated plan
+            std::cout << "Left 1," << left.point1.x << "," << left.point1.y << std::endl;
+            std::cout << "Left 2," << left.point2.x << "," << left.point2.y << std::endl;
+            std::cout << "Right 1," << right.point1.x << "," << right.point1.y << std::endl;
+            std::cout << "Right 2," << right.point2.x << "," << right.point2.y << std::endl;
+            
+            if (std::string(path_areas[i].sub_areas[j].type) == "junction")
+            {
+                path_areas[i].sub_areas[j].turn_point = left.point1;
+            }
+
+            path_areas[i].sub_areas[j].right = right; 
+            path_areas[i].sub_areas[j].left = left;
         }
     }
-
-    // NOTE: think about strategy for computing sides for last area
-    for (int i = 0; i < sub_area_level_plan.size()-1; i++)
-    {
-        ropod_ros_msgs::Side right, left;
-        get_area_sides(sub_area_level_plan[i], sub_area_level_plan[i+1], right, left);
-
-        std::cout << "Left 1:" << left.point1.x << "," << left.point1.y << std::endl;
-        std::cout << "Left 2:" << left.point2.x << "," << left.point2.y << std::endl;
-        std::cout << "Right 1:" << right.point1.x << "," << right.point1.y << std::endl;
-        std::cout << "Right 2:" << right.point2.x << "," << right.point2.y << std::endl;
-        std::cout << "-----------------------------" << std::endl;
-    }
-
     return path_areas;
 }
 
@@ -98,6 +116,7 @@ void NapoleonDrivingPlanner::get_area_points(ropod_ros_msgs::SubArea area, ropod
     // std::cout << "Distances size:" << distances.size() << std::endl;
     // std::cout << distances[0].second << "|" << distances[1].second << "|" << distances[2].second << "|" << distances[3].second << std::endl;
 
+    // NOTE: its based on assumptions that each area has only four points
     front_points = {distances[0].first, distances[1].first};
     rear_points = {distances[2].first, distances[3].first};
 }

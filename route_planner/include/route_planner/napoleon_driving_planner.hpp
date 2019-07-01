@@ -2,7 +2,6 @@
 #define NAPOLEON_DRIVING_PLANNER_HPP
 
 #include <route_planner/route_planner.hpp>
-
 struct Line
 {
     ropod_ros_msgs::Position point1;
