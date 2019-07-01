@@ -1,3 +1,21 @@
+/*
+ASSUMPTIONS
+- each top level area in plan contains atleast one sub-area
+- each sub area has four vertices
+(both the assumptions are followed while creating OSM map) 
+
+APPROACH
+- Process the area-subarea level plan sent by CCU
+- Take current and next sub area
+- Compute center of both
+- Use center of next sub-area to find 2 closest point of current sub-area to next sub-area
+- Now use line connecting 2 sub-area centers to determine left and right point
+- Among the remaining 2 points, find the point closest 2 front point. This point will be second point for left and right sides
+- Similarly compute for all sub-areas
+- For last sub areas, use reverse approach and then flip left and right sides
+*/
+
+
 #include <route_planner/napoleon_driving_planner.hpp>
 
 std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
@@ -20,9 +38,13 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
                 path_areas[i+1].sub_areas[0].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i+1].sub_areas[0].id), "local_area");
                 get_area_sides(path_areas[i].sub_areas[j], path_areas[i+1].sub_areas[0], right, left);
             }
-            else if (i == path_areas.size()-1)
+            else if (j == path_areas[i].sub_areas.size()-1 && i == path_areas.size()-1)
             {
-                get_area_sides(path_areas[i].sub_areas[j], path_areas[i-1].sub_areas[path_areas[i-1].sub_areas.size()-1], right, left);
+                if (path_areas[i].sub_areas.size() == 1)
+                    get_area_sides(path_areas[i].sub_areas[j], path_areas[i-1].sub_areas[path_areas[i-1].sub_areas.size()-1], right, left);
+                else
+                    get_area_sides(path_areas[i].sub_areas[j], path_areas[i].sub_areas[j-1], right, left);
+
                 if (std::string(path_areas[i].sub_areas[j].type) == "junction")
                 {
                     path_areas[i+1].sub_areas[j].turn_point = right.point2;
@@ -35,11 +57,13 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
                 return path_areas;
             }
 
+            /*
             // Uncomment for debugging & analysing the generated plan
             std::cout << "Left 1," << left.point1.x << "," << left.point1.y << std::endl;
             std::cout << "Left 2," << left.point2.x << "," << left.point2.y << std::endl;
             std::cout << "Right 1," << right.point1.x << "," << right.point1.y << std::endl;
             std::cout << "Right 2," << right.point2.x << "," << right.point2.y << std::endl;
+            */
             
             if (std::string(path_areas[i].sub_areas[j].type) == "junction")
             {
@@ -112,9 +136,6 @@ void NapoleonDrivingPlanner::get_area_points(ropod_ros_msgs::SubArea area, ropod
     {
         return lhs.second < rhs.second;
     });
-
-    // std::cout << "Distances size:" << distances.size() << std::endl;
-    // std::cout << distances[0].second << "|" << distances[1].second << "|" << distances[2].second << "|" << distances[3].second << std::endl;
 
     // NOTE: its based on assumptions that each area has only four points
     front_points = {distances[0].first, distances[1].first};
