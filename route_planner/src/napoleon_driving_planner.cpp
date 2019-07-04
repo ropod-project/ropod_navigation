@@ -3,6 +3,7 @@ ASSUMPTIONS
 - each top level area in plan contains atleast one sub-area
 - each sub area has four vertices
 (both the assumptions are followed while creating OSM map) 
+- start and destination cannot be a junction 
 
 APPROACH
 - Process the area-subarea level plan sent by CCU
@@ -89,17 +90,56 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
     for (int i = 0; i < path_areas.size(); i++)
     {
         std::vector<ropod_ros_msgs::SubArea> new_sub_areas;
-        // std::cout << "Initial size:" << path_areas[i].sub_areas.size() << std::endl;
+
         for (int j = 0; j < path_areas[i].sub_areas.size(); j++)
         {
             new_sub_areas.push_back(path_areas[i].sub_areas[j]);
             if (j+1 == path_areas[i].sub_areas.size() && i+1 != path_areas.size())
             {
                 ropod_ros_msgs::SubArea temp;
-                temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
-                                 path_areas[i+1].sub_areas[0].geometry.vertices[0],
-                                 path_areas[i+1].sub_areas[0].geometry.vertices[3],
-                                 path_areas[i].sub_areas[j].geometry.vertices[2]};
+
+                if (path_areas[i+1].type == "junction")
+                {
+                    std::string direction = get_turn_direction_at_junction(path_areas[i], path_areas[i+1], path_areas[i+2]);
+
+                    if (direction == "left")
+                    {
+                        temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[2],
+                                                  path_areas[i].sub_areas[j].geometry.vertices[2]};
+                    }
+                    else if (direction == "right")
+                    {
+                        temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[2],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                                  path_areas[i].sub_areas[j].geometry.vertices[2]};
+                    }
+                    else if (direction == "straight")
+                    {
+                        temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[0],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                                  path_areas[i].sub_areas[j].geometry.vertices[2]};
+                    }
+                    else
+                    {
+                        temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[2],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[1],
+                                                  path_areas[i].sub_areas[j].geometry.vertices[2]};
+                    }
+                }
+                else
+                {
+                    temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                     path_areas[i+1].sub_areas[0].geometry.vertices[0],
+                                     path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                     path_areas[i].sub_areas[j].geometry.vertices[2]};
+                }
+
+
                 new_sub_areas.push_back(temp);
             }
             else if (j+1 < path_areas[i].sub_areas.size())
@@ -122,11 +162,40 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
                       << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
                       << std::endl;
         }
-        // std::cout << "New size:" << path_areas[i].sub_areas.size() << std::endl;
-        // std::cout << "----------------------" << std::endl;
     }
 
     return path_areas;
+}
+
+double NapoleonDrivingPlanner::wrap_to_pi(double angle)
+{
+    angle = fmod(angle, 2 * M_PI);
+    if (angle >= M_PI)
+        angle -= 2 * M_PI;
+    else if (angle <= -M_PI)
+        angle += 2 * M_PI;
+    return angle;
+}
+
+std::string NapoleonDrivingPlanner::get_turn_direction_at_junction(ropod_ros_msgs::Area prev_area, ropod_ros_msgs::Area junction, ropod_ros_msgs::Area next_area)
+{
+    ropod_ros_msgs::Position prev_area_center = compute_center(prev_area.sub_areas[prev_area.sub_areas.size()-1].geometry);
+    ropod_ros_msgs::Position junction_center = compute_center(junction.sub_areas[0].geometry);
+    ropod_ros_msgs::Position next_area_center = compute_center(next_area.sub_areas[0].geometry);
+
+    double junction_prev_area_angle = atan2(junction_center.y - prev_area_center.y, junction_center.x - prev_area_center.x); 
+    double next_area_junction_angle = atan2(next_area_center.y - junction_center.y, next_area_center.x - junction_center.x);
+
+    double approx_turn_angle = wrap_to_pi(next_area_junction_angle - junction_prev_area_angle);
+
+    if (approx_turn_angle < M_PI/4 && approx_turn_angle > -M_PI/4)
+        return "straight";
+    else if (approx_turn_angle > M_PI/4 && approx_turn_angle < 3*M_PI/4)
+        return "left";
+    else if (approx_turn_angle < -M_PI/4 && approx_turn_angle > -3*M_PI/4)
+        return "right";
+    else
+        return "back";
 }
 
 
