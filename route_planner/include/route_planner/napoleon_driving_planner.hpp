@@ -26,6 +26,7 @@ private:
     double get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2);
     void get_area_points(ropod_ros_msgs::SubArea area, ropod_ros_msgs::Position pt, std::vector<ropod_ros_msgs::Position> &front_points, std::vector<ropod_ros_msgs::Position> &rear_points);
     bool get_area_sides(ropod_ros_msgs::SubArea curr_area, ropod_ros_msgs::SubArea next_area, ropod_ros_msgs::Side &right, ropod_ros_msgs::Side &left);
+    std::vector<ropod_ros_msgs::Area> add_intermediate_sub_areas(std::vector<ropod_ros_msgs::Area> path_areas);
 };
 
 #endif /* NAPOLEON_DRIVING_PLANNER */

@@ -54,7 +54,10 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
                 path_areas[i].sub_areas[j].right.point2 = left.point1; 
                 path_areas[i].sub_areas[j].left.point2 = right.point1; 
                 path_areas[i].sub_areas[j].left.point1 = right.point2; 
-                return path_areas;
+
+                path_areas[i].sub_areas[j].geometry.vertices = {path_areas[i].sub_areas[j].left.point2, path_areas[i].sub_areas[j].left.point1, 
+                                                       path_areas[i].sub_areas[j].right.point1, path_areas[i].sub_areas[j].right.point2};
+                return add_intermediate_sub_areas(path_areas);
             }
 
             /*
@@ -72,10 +75,60 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
 
             path_areas[i].sub_areas[j].right = right; 
             path_areas[i].sub_areas[j].left = left;
+
+            path_areas[i].sub_areas[j].geometry.vertices = {path_areas[i].sub_areas[j].left.point2, path_areas[i].sub_areas[j].left.point1, 
+                                                   path_areas[i].sub_areas[j].right.point1, path_areas[i].sub_areas[j].right.point2};
+
         }
     }
+    return add_intermediate_sub_areas(path_areas);
+}
+
+std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_areas(std::vector<ropod_ros_msgs::Area> path_areas)
+{
+    for (int i = 0; i < path_areas.size(); i++)
+    {
+        std::vector<ropod_ros_msgs::SubArea> new_sub_areas;
+        // std::cout << "Initial size:" << path_areas[i].sub_areas.size() << std::endl;
+        for (int j = 0; j < path_areas[i].sub_areas.size(); j++)
+        {
+            new_sub_areas.push_back(path_areas[i].sub_areas[j]);
+            if (j+1 == path_areas[i].sub_areas.size() && i+1 != path_areas.size())
+            {
+                ropod_ros_msgs::SubArea temp;
+                temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                 path_areas[i+1].sub_areas[0].geometry.vertices[0],
+                                 path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                 path_areas[i].sub_areas[j].geometry.vertices[2]};
+                new_sub_areas.push_back(temp);
+            }
+            else if (j+1 < path_areas[i].sub_areas.size())
+            {
+                ropod_ros_msgs::SubArea temp;
+                temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
+                                 path_areas[i].sub_areas[j+1].geometry.vertices[0],
+                                 path_areas[i].sub_areas[j+1].geometry.vertices[3],
+                                 path_areas[i].sub_areas[j].geometry.vertices[2]};
+                new_sub_areas.push_back(temp);
+            }
+        } 
+        path_areas[i].sub_areas = new_sub_areas;
+
+        for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
+        {
+            std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[1].x << "," << path_areas[i].sub_areas[k].geometry.vertices[1].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[2].x << "," << path_areas[i].sub_areas[k].geometry.vertices[2].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
+                      << std::endl;
+        }
+        // std::cout << "New size:" << path_areas[i].sub_areas.size() << std::endl;
+        // std::cout << "----------------------" << std::endl;
+    }
+
     return path_areas;
 }
+
 
 bool NapoleonDrivingPlanner::get_area_sides(ropod_ros_msgs::SubArea curr_area, ropod_ros_msgs::SubArea next_area, ropod_ros_msgs::Side &right, ropod_ros_msgs::Side &left)
 {
