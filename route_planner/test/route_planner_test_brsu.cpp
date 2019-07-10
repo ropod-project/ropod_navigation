@@ -149,15 +149,15 @@ int main(int argc, char **argv)
     req.areas = path_areas;
     route_planner_action_client.sendGoal(req);
 
-    if (route_planner_action_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    //wait for the action to return
+    bool finished_before_timeout = route_planner_action_client.waitForResult(ros::Duration(60.0));
+    if (finished_before_timeout)
     {
-        ROS_INFO("Connection successful");
+        actionlib::SimpleClientGoalState state = route_planner_action_client.getState();
+        ROS_INFO("Action finished: %s", state.toString().c_str());
     }
     else
-    {
-        ROS_WARN("Connection failed");
-    }
-
+        ROS_INFO("Action did not finish before the time out.");
 
     return 0;
 }
