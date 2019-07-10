@@ -26,9 +26,12 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
         for (int j = 0; j < path_areas[i].sub_areas.size(); j++)
         {
             ropod_ros_msgs::Side right, left;
-            if (path_areas[i].sub_areas[j].geometry.vertices.size() == 0)
-                    path_areas[i].sub_areas[j].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j].id), "local_area");
 
+            // get area geometries from world model mediator only if it doesn't already exist
+            if (path_areas[i].sub_areas[j].geometry.vertices.size() == 0)
+                path_areas[i].sub_areas[j].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j].id), "local_area");
+
+            // get area left and right sides and add intermediate sub-areas
             if (j < path_areas[i].sub_areas.size()-1 && i != path_areas.size()-1)
             {
                 path_areas[i].sub_areas[j+1].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j+1].id), "local_area");
@@ -100,6 +103,7 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
 
                 if (path_areas[i+1].type == "junction")
                 {
+                    // find relative turn direction at the junction
                     std::string direction = get_turn_direction_at_junction(path_areas[i], path_areas[i+1], path_areas[i+2]);
 
                     if (direction == "left")
@@ -154,14 +158,15 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
         } 
         path_areas[i].sub_areas = new_sub_areas;
 
-        for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
-        {
-            std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
-                      << path_areas[i].sub_areas[k].geometry.vertices[1].x << "," << path_areas[i].sub_areas[k].geometry.vertices[1].y << ","
-                      << path_areas[i].sub_areas[k].geometry.vertices[2].x << "," << path_areas[i].sub_areas[k].geometry.vertices[2].y << ","
-                      << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
-                      << std::endl;
-        }
+        // uncomment for debugging
+        // for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
+        // {
+        //     std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
+        //               << path_areas[i].sub_areas[k].geometry.vertices[1].x << "," << path_areas[i].sub_areas[k].geometry.vertices[1].y << ","
+        //               << path_areas[i].sub_areas[k].geometry.vertices[2].x << "," << path_areas[i].sub_areas[k].geometry.vertices[2].y << ","
+        //               << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
+        //               << std::endl;
+        // }
     }
 
     return path_areas;
