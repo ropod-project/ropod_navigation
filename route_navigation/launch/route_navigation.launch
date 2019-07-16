@@ -1,13 +1,27 @@
 <?xml version="1.0"?>
 <launch>
-    <rosparam command="load" ns="areas" file="$(find route_navigation)/config/navigation_goals.yaml"/>
-    <rosparam command="load" ns="area_types" file="$(find route_navigation)/config/navigation_goal_types.yaml"/>
-    <node name="route_navigation" pkg="route_navigation" type="demo_navigation" output="screen">
-        <param name="move_base_server" value="move_base" />
-        <param name="move_base_feedback_topic" value="/move_base/feedback" />
-        <param name="move_base_cancel_topic" value="/move_base/cancel" />
-        <remap from="~goto_action" to="/ropod_task_executor/GOTO" />
-        <remap from="~dock_action" to="/ropod_task_executor/DOCK" />
-        <remap from="~undock_action" to="/ropod_task_executor/UNDOCK" />
+    <arg name="robotName" default="ropod"/>
+    <arg name="laser1_name" value ="laser"/>
+
+    <node pkg="route_navigation" type="route_navigation" name="route_navigation" output="screen" >
+        <param name="mn_nav_topic" type="str" value="/route_navigation/goal" />
+        <param name="mn_nav_cancel_topic" type="str" value="/route_navigation/cancel" />
+        <param name="localisation_topic" type="str" value="/amcl_pose" />
+        <param name="goto_server_name" type="str" value="/ropod/goto" />
     </node>
+    <!-- Launch navigation -->
+    <!-- <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen"> -->
+    <!--     <rosparam file="$(find ropod_navigation_test)/config/parameters/footprint_ropod.yaml" command="load" ns="local_costmap" /> -->
+    <!--     <rosparam file="$(find ropod_navigation_test)/config/parameters/local_costmap_params EDhospital_osm.yaml"  command="load" ns="local_costmap" /> -->
+    <!--     <param name="default_ropod_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod.yaml"/> -->
+    <!--     <param name="default_ropod_load_navigation_param_file" value ="$(find maneuver_navigation)/config/footprint_local_planner_params_ropod_load.yaml"/> -->
+
+    <!--     <rosparam file="$(find ropod_navigation_test)/config/parameters/teb_local_planner_params_ropod.yaml" command="load" /> -->
+    <!--     <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" /> -->
+
+
+    <!--     <remap from="/maneuver_navigation/cmd_vel" to="/load/cmd_vel"/> -->
+    <!--     <remap from="odom" to="/load/odom"/> -->
+    <!-- </node> -->
+
 </launch>
