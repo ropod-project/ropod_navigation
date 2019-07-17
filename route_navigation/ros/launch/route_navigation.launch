@@ -8,6 +8,8 @@
         <param name="mn_nav_cancel_topic" type="str" value="/route_navigation/cancel" />
         <param name="localisation_topic" type="str" value="/amcl_pose" />
         <param name="goto_server_name" type="str" value="/ropod/goto" />
+
+        <param name="route_planner_timeout" type="double" value="120.0" />
     </node>
     <!-- Launch navigation -->
     <!-- <node name="maneuver_navigation" pkg="maneuver_navigation" type="maneuver_navigation" output="screen"> -->
