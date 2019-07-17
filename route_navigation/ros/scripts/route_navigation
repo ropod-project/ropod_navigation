@@ -195,10 +195,11 @@ class RouteNavigation(FTSMBase):
                             start_pose = self.base_pose.pose.pose
                             goal_pose.position = self.base_pose.pose.pose.position
                             goal_pose.orientation = quat
-                        else:
-                            start_pose = self.base_pose.pose.pose
-                            goal_pose = waypoint
-                        # mn_goal.conf.append_new_maneuver =  false; // do not append in the first two waypoints
+                            if self.__goto_waypoint(start_pose, goal_pose, feedback_msg):
+                                start_pose = self.base_pose.pose.pose
+                                goal_pose = waypoint
+                            else:
+                                return False
                     else:
                         start_pose = self.base_pose.pose.pose
                         goal_pose = waypoint
@@ -213,27 +214,33 @@ class RouteNavigation(FTSMBase):
                         goal_pose = waypoint
                 prev_waypoint = waypoint
 
-                rospy.loginfo('[route_nav] Sending new maneuver nav goal')
-                send_maneuver_nav_goal(self.mn_nav_pub,
-                                       self.base_pose.header.frame_id,
-                                       start_pose, goal_pose)
-
-                start_time = rospy.get_time()
-                while not is_waypoint_achieved(self.base_pose.pose.pose,
-                                               goal_pose,
-                                               self.pos_tolerance_m,
-                                               self.orientation_tolerance_rad) and \
-                      not has_timed_out(start_time, self.goto_timeout) and \
-                      not self.goto_server.is_preempt_requested():
-                    feedback_msg.feedback.status.status_code = Status.WAITING
-                    self.goto_server.publish_feedback(feedback_msg)
-                    rospy.sleep(0.5)
-
-                if not is_waypoint_achieved(self.base_pose.pose.pose,
-                                            goal_pose,
-                                            self.pos_tolerance_m,
-                                            self.orientation_tolerance_rad):
+                # TODO: perhaps it makes more sense to resend the goal before giving up
+                if not self.__goto_waypoint(start_pose, goal_pose, feedback_msg):
                     return False
+        return True
+
+    def __goto_waypoint(self, start_pose, goal_pose, feedback_msg):
+        rospy.loginfo('[route_nav] Sending new maneuver nav goal')
+        send_maneuver_nav_goal(self.mn_nav_pub,
+                               self.base_pose.header.frame_id,
+                               start_pose, goal_pose)
+
+        start_time = rospy.get_time()
+        while not is_waypoint_achieved(self.base_pose.pose.pose,
+                                       goal_pose,
+                                       self.pos_tolerance_m,
+                                       self.orientation_tolerance_rad) and \
+              not has_timed_out(start_time, self.goto_timeout) and \
+              not self.goto_server.is_preempt_requested():
+            feedback_msg.feedback.status.status_code = Status.WAITING
+            self.goto_server.publish_feedback(feedback_msg)
+            rospy.sleep(0.5)
+
+        if not is_waypoint_achieved(self.base_pose.pose.pose,
+                                    goal_pose,
+                                    self.pos_tolerance_m,
+                                    self.orientation_tolerance_rad):
+            return False
         return True
 
     def __set_base_pose(self, pose_msg):
