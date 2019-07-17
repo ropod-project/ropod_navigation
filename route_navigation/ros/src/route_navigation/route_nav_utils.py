@@ -96,7 +96,7 @@ def get_quaternion_msg(yaw):
 
     """
     quat = tf.quaternion_from_euler(0.0, 0.0, yaw)
-    quaternion_msg = Quaternion(w=quat[0], x=quat[1], y=quat[2], z=quat[3])
+    quaternion_msg = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
     return quaternion_msg
 
 def publish_waypoint_array(pose_array_pub, frame_id, waypoints):
