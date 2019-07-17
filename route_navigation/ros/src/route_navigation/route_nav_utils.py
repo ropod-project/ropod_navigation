@@ -1,7 +1,7 @@
 import rospy
 from tf import transformations as tf
 
-from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion
+from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped, Quaternion
 from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
 from ropod_ros_msgs.msg import GoToFeedback, Status
 
@@ -99,3 +99,11 @@ def get_quaternion_msg(yaw):
     quaternion_msg = Quaternion(w=quat[0], x=quat[1], y=quat[2], z=quat[3])
     return quaternion_msg
 
+def publish_waypoint_array(pose_array_pub, frame_id, waypoints):
+    waypoint_vis_msg = PoseArray()
+    waypoint_vis_msg.header.frame_id = frame_id
+    waypoint_vis_msg.header.stamp = rospy.Time.now()
+    waypoint_vis_msg.poses = [waypoint
+                              for area_waypoints in waypoints
+                              for waypoint in area_waypoints]
+    pose_array_pub.publish(waypoint_vis_msg)
