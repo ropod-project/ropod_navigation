@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   maneuver_navigation
 )
 
-# catkin_python_setup()
+catkin_python_setup()
 
 catkin_package(
   CATKIN_DEPENDS

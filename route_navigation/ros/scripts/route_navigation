@@ -1,0 +1,235 @@
+#! /usr/bin/env python
+
+import math
+import rospy
+import actionlib
+
+from std_msgs.msg import Bool
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
+
+from ropod_ros_msgs.msg import GoToAction, GoToFeedback, GoToResult
+from ropod_ros_msgs.msg import RoutePlannerAction, RoutePlannerGoal
+from ropod_ros_msgs.msg import Status
+from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
+
+from pyftsm.ftsm import FTSMStates, FTSMTransitions
+from ropod.ftsm.ftsm_base import FTSMBase, DependMonitorTypes
+
+from route_navigation.route_nav_utils import (has_timed_out, is_waypoint_achieved,\
+                                              send_maneuver_nav_goal, get_yaw,\
+                                              get_quaternion_msg)
+
+class RouteNavigation(FTSMBase):
+
+    """TODO"""
+
+
+    mn_nav_pub = None
+    mn_nav_cancel_pub = None
+    localisation_sub = None
+    goto_server = None
+    route_planner_client = None
+    current_action = None
+    base_pose = None
+
+    def __init__(self):
+        component_name = 'route_navigation'
+        dependencies = ['roscore', 'world_model_mediator', 'route_planner', 'maneuver_navigation']
+        dependency_monitors = {'functional': {'roscore': 'ros/ros_master_monitor',
+                                              'world_model_mediator': 'ros/ros_node_monitor',
+                                              'route_planner': 'ros/ros_node_monitor',
+                                              'maneuver_navigation': 'ros/ros_node_monitor'}}
+        super(RouteNavigation, self).__init__(component_name, dependencies, dependency_monitors)
+
+        self.mn_nav_topic = rospy.get_param('~mn_nav_topic', '/route_navigation/goal')
+        self.mn_nav_cancel_topic = rospy.get_param('~mn_nav_cancel_topic',
+                                                   '/route_navigation/cancel')
+        self.localisation_topic = rospy.get_param('~localisation_topic', '/amcl_pose')
+
+        self.goto_server_name = rospy.get_param('~goto_server_name', '/ropod/goto')
+        self.route_planner_server_name = rospy.get_param('~route_planner_server_name',
+                                                         '/route_planner')
+        self.goto_timeout = rospy.get_param('~goto_timeout', 120.0)
+        self.route_planner_timeout = rospy.get_param('~route_planner_timeout', 120.0)
+
+        self.pos_tolerance_m = float(rospy.get_param('~pos_tolerance_m', 0.3))
+        orientation_tolerance_deg = float(rospy.get_param('~orientation_tolerance_deg', 10.))
+        self.orientation_tolerance_rad = (orientation_tolerance_deg * math.pi) / 180.
+
+
+    def init(self):
+        try:
+            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_topic))
+            self.mn_nav_pub = rospy.Publisher(self.mn_nav_topic,
+                                              ManeuverNavigationGoal,
+                                              queue_size=1)
+
+            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_cancel_topic))
+            self.mn_nav_cancel_pub = rospy.Publisher(self.mn_nav_cancel_topic,
+                                                     Bool,
+                                                     queue_size=1)
+
+            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.localisation_topic))
+            self.localisation_sub = rospy.Subscriber(self.localisation_topic,
+                                                     PoseWithCovarianceStamped,
+                                                     self.__set_base_pose)
+
+            rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.route_planner_server_name))
+            self.route_planner_client = actionlib.SimpleActionClient(self.route_planner_server_name,
+                                                                          RoutePlannerAction)
+
+            rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
+            self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
+
+
+            rospy.loginfo('[route_nav] Creating a "{0}" action server'.format(self.goto_server_name))
+            self.goto_server = actionlib.SimpleActionServer(self.goto_server_name,
+                                                            GoToAction,
+                                                            self.get_action, False)
+            self.goto_server.start()
+        except Exception as exc:
+            rospy.logerr('[route_nav] Initialisation error: "{0}"'.format(str(exc)))
+            return FTSMTransitions.INIT_FAILED
+
+        return FTSMTransitions.INITIALISED
+
+    def ready(self):
+        if not self.current_action:
+            return FTSMTransitions.WAIT
+        return FTSMTransitions.RUN
+
+    def running(self):
+        if not self.current_action:
+            return FTSMTransitions.DONE
+        return FTSMTransitions.CONTINUE
+
+    def recovering(self):
+        return FTSMTransitions.DONE_RECOVERING
+
+    def get_action(self, action_request):
+        """TODO: Docstring for get_action.
+
+        :action_request: GoToGoal
+        :returns: None
+
+        """
+        rospy.loginfo(action_request)
+        self.current_action = action_request.action
+        assert self.current_action.type == 'GOTO'
+        goto_result = self.handle_goto_action()
+        if goto_result.success:
+            self.goto_server.set_succeeded(goto_result)
+        else:
+            self.goto_server.set_aborted(goto_result)
+        self.current_action = None
+
+    def handle_goto_action(self):
+        """TODO: Docstring for handle_goto_action.
+        :returns: None
+
+        """
+        route_planner_request = RoutePlannerGoal(areas=self.current_action.areas)
+        rospy.loginfo('[route_nav] Calling route planner')
+        self.route_planner_client.send_goal(route_planner_request)
+        start_time = rospy.get_time()
+        if self.route_planner_client.wait_for_result(rospy.Duration.from_sec(self.route_planner_timeout)):
+            route_planner_result = self.route_planner_client.get_result()
+            area_types = [area.type for area in route_planner_result.areas]
+            waypoints = [[sub_area.waypoint_pose for sub_area in area.sub_areas]
+                         for area in route_planner_result.areas]
+            nav_success = self.send_waypoints(area_types, waypoints)
+            return GoToResult(success=nav_success)
+        else:
+            rospy.logerr('Could not get response from route planner')
+            raise Exception('Could not get response from route planner')
+
+    def send_waypoints(self, area_types, area_waypoints):
+        """TODO: Docstring for send_waypoints.
+
+        :area_waypoints: list of list of ropod_ros_msgs.msg.Waypoint obj
+        :returns: None
+
+        """
+        start_pose = Pose()
+        goal_pose = Pose()
+        prev_waypoint = None
+        feedback_msg = get_feedback_msg_skeleton(self.current_action.action_id,
+                                                 self.current_action.action_type)
+        for i, waypoints in enumerate(area_waypoints):
+            area_changed = True
+            if area_types[i] == 'door':
+                continue
+
+            for j, waypoint in enumerate(waypoints):
+                if i == 0:
+                    if j == 0:
+                        base_yaw = get_yaw(self.base_pose.pose.pose.orientation)
+                        yaw_diff = math.atan2(waypoint.position.y - self.base_pose.pose.pose.position.y,
+                                              waypoint.position.x - self.base_pose.pose.pose.position.x)
+                        if abs(base_yaw - yaw_diff) > self.orientation_tolerance_rad:
+                            quat = get_quaternion_msg(yaw_diff)
+                            start_pose = self.base_pose.pose.pose
+                            goal_pose.position = self.base_pose.pose.pose.position
+                            goal_pose.orientation = quat
+                        else:
+                            start_pose = self.base_pose.pose.pose
+                            goal_pose = waypoint
+                        # mn_goal.conf.append_new_maneuver =  false; // do not append in the first two waypoints
+                    else:
+                        start_pose = self.base_pose.pose.pose
+                        goal_pose = waypoint
+                else:
+                    if area_changed:
+                        start_pose.position = self.base_pose.pose.pose.position
+                        start_pose.orientation = prev_waypoint.orientation
+                        goal_pose = waypoint
+                        area_changed = False
+                    else:
+                        start_pose = self.base_pose.pose.pose
+                        goal_pose = waypoint
+                prev_waypoint = waypoint
+
+                rospy.loginfo('[route_nav] Sending new maneuver nav goal')
+                send_maneuver_nav_goal(self.mn_nav_pub,
+                                       self.base_pose.header.frame_id,
+                                       start_pose, goal_pose)
+
+                start_time = rospy.get_time()
+                while not is_waypoint_achieved(self.base_pose.pose.pose,
+                                               goal_pose,
+                                               self.pos_tolerance_m,
+                                               self.orientation_tolerance_rad) and \
+                      not has_timed_out(start_time, self.goto_timeout) and \
+                      not self.goto_server.is_preempt_requested():
+                    feedback_msg.feedback.status.status_code = Status.WAITING
+                    self.goto_server.publish_feedback(feedback_msg)
+                    rospy.sleep(0.5)
+
+                if not is_waypoint_achieved(self.base_pose.pose.pose,
+                                            goal_pose,
+                                            self.pos_tolerance_m,
+                                            self.orientation_tolerance_rad):
+                    return False
+        return True
+
+    def __set_base_pose(self, pose_msg):
+        '''Sets self.elevator_nav_data.base_pose to the given argument.
+
+        Keyword arguments:
+        pose_msg: geometry_msgs.msg.PoseWithCovarianceStamped
+
+        '''
+        self.base_pose = pose_msg
+
+
+if __name__ == "__main__":
+    rospy.init_node('route_navigation')
+    ROUTE_NAVIGATION = RouteNavigation()
+    try:
+        ROUTE_NAVIGATION.run()
+        while ROUTE_NAVIGATION.is_running and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+    except (KeyboardInterrupt, SystemExit):
+        rospy.loginfo('{0} interrupted exiting...'.format(ROUTE_NAVIGATION.name))
+        ROUTE_NAVIGATION.stop()
+
