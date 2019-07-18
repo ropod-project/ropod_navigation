@@ -88,7 +88,7 @@ def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params
     nav_goal.goal.header.stamp = rospy.Time.now()
     nav_goal.goal.pose = goal_pose
 
-    nav_goal.conf.append_maneuver = nav_params.append_maneuver
+    nav_goal.conf.append_new_maneuver = nav_params.append_maneuver
     nav_goal.conf.precise_goal = nav_params.precise_goal
     nav_goal.conf.use_line_planner = nav_params.use_line_planner
 
