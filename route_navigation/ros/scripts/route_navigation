@@ -244,7 +244,8 @@ class RouteNavigation(FTSMBase):
                             start_pose = self.base_pose.pose.pose
                             goal_pose.position = self.base_pose.pose.pose.position
                             goal_pose.orientation = quat
-                            if self.__goto_waypoint(start_pose, goal_pose, feedback_msg):
+                            if self.__goto_waypoint(start_pose, goal_pose,
+                                                    feedback_msg, nav_config_params):
                                 start_pose = self.base_pose.pose.pose
                                 goal_pose = waypoint
                             else:
