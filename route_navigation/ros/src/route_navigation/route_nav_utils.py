@@ -6,6 +6,8 @@ from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
 from ropod_ros_msgs.msg import GoToFeedback, Status
 
 class ManeuverNavConfigParams(object):
+    '''Configuration parameters for the maneuver navigation component.
+    '''
     def __init__(self, append_maneuver=False, precise_goal=False, use_line_planner=False):
         self.append_maneuver = append_maneuver
         self.precise_goal = precise_goal
@@ -93,28 +95,37 @@ def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params
     goal_pub.publish(nav_goal)
 
 def get_yaw(quaternion):
-    """TODO: Docstring for get_yaw.
+    '''Returns the yaw orientation extracted from the input quaternion.
 
-    :quaternion: geometry_msgs.msg.Quaternion
-    :returns: float
+    Keyword arguments:
+    quaternion: geometry_msgs.msg.Quaternion
 
-    """
+    '''
     euler_orientation = tf.euler_from_quaternion([quaternion.w, quaternion.x,
                                                   quaternion.y, quaternion.z])
     return euler_orientation[2]
 
 def get_quaternion_msg(yaw):
-    """TODO: Docstring for get_quaternion.
+    '''Returns a geometry_msgs.msg.Quaternion message representing the quaternion
+    that represents the Euler orientation (0, 0, yaw)
 
-    :yaw: TODO
-    :returns: TODO
+    Keyword arguments:
+    yaw: float -- yaw orientation
 
-    """
+    '''
     quat = tf.quaternion_from_euler(0.0, 0.0, yaw)
     quaternion_msg = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
     return quaternion_msg
 
 def publish_waypoint_array(pose_array_pub, frame_id, waypoints):
+    '''Publishes a geometry_msgs.msg.PoseArray message created from the waypoint list.
+
+    Keyword arguments:
+    pose_array_pub: rospy.Publisher -- publisher for geometry_msgs.msg.PoseArray messages
+    frame_id: str -- frame ID of the poses
+    waypoints: Sequence[Sequence[Pose]] -- lists of sub-area waypoints for a sequence of areas
+
+    '''
     waypoint_vis_msg = PoseArray()
     waypoint_vis_msg.header.frame_id = frame_id
     waypoint_vis_msg.header.stamp = rospy.Time.now()
