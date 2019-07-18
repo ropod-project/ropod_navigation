@@ -5,6 +5,12 @@ from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped, Quaternion
 from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
 from ropod_ros_msgs.msg import GoToFeedback, Status
 
+class ManeuverNavConfigParams(object):
+    def __init__(self, append_maneuver=False, precise_goal=False, use_line_planner=False):
+        self.append_maneuver = append_maneuver
+        self.precise_goal = precise_goal
+        self.use_line_planner = use_line_planner
+
 def get_feedback_msg_skeleton(action_id, action_type):
     '''Returns a GoToFeedback message with the following fields prefilled:
     * feedback.action_id
@@ -52,7 +58,7 @@ def is_waypoint_achieved(pose1, pose2, pos_tolerance_m, orientation_tolerance_ra
     angular_distance = abs(get_yaw(pose1.orientation) - get_yaw(pose2.orientation))
     return pos_distance < pos_tolerance_m and angular_distance < orientation_tolerance_rad
 
-def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose):
+def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params):
     '''Sends a maneuver navigation goal from "start_pose" to "goal_pose"
     in the given frame using the given goal publisher.
 
@@ -61,8 +67,13 @@ def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose):
     frame_id: str -- frame ID of the start and goal poses
     start_pose: geometry_msgs.msg.Pose -- start pose for the navigation
     goal_pose: geometry_msgs.msg.Pose -- goal pose for the navigation
+    nav_params: ManeuverNavConfigParams -- configuration parameters for the
+                                           navigation component
 
     '''
+    if nav_params is None:
+        nav_params = ManeuverNavConfigParams()
+
     # we remove any leading or trailing / from the frame_id
     frame_id = frame_id.strip('/')
 
@@ -74,6 +85,10 @@ def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose):
     nav_goal.goal.header.frame_id = frame_id
     nav_goal.goal.header.stamp = rospy.Time.now()
     nav_goal.goal.pose = goal_pose
+
+    nav_goal.conf.append_maneuver = nav_params.append_maneuver
+    nav_goal.conf.precise_goal = nav_params.precise_goal
+    nav_goal.conf.use_line_planner = nav_params.use_line_planner
 
     goal_pub.publish(nav_goal)
 
