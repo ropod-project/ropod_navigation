@@ -4,15 +4,15 @@
   <version>0.0.0</version>
   <description>The route_navigation package</description>
 
+  <author email="c.a.lopez.martinez@tue.nl">Cesar Lopez Martinez</author>
   <author email="aleksandar.mitrevski@h-brs.de">Alex Mitrevski</author>
   <author email="dharmingeo@gmail.com">Dharmin Bakaraniya</author>
-  <author email="c.a.lopez.martinez@tue.nl">Cesar Lopez Martinez</author>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
+  <maintainer email="c.a.lopez.martinez@tue.nl">Cesar Lopez Martinez</maintainer>
   <maintainer email="aleksandar.mitrevski@h-brs.de">Alex Mitrevski</maintainer>
   <maintainer email="dharmingeo@gmail.com">Dharmin Bakaraniya</maintainer>
-  <maintainer email="c.a.lopez.martinez@tue.nl">Cesar Lopez Martinez</maintainer>
 
   <license>GPLv3</license>
 
