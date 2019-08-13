@@ -40,6 +40,17 @@ int main(int argc, char **argv)
     temp2.sub_areas.push_back(stemp2);
     path_areas.push_back(temp2);
 
+    // For right turn at junction
+    // ropod_ros_msgs::Area temp3;
+    // ropod_ros_msgs::SubArea stemp3;
+    // temp3.id = std::to_string(2);
+    // temp3.name = "BRSU_C_L0_C11";
+    // temp3.type = "corridor";
+    // stemp3.name = "BRSU_C_L0_C11_LA2";
+    // stemp3.id = std::to_string(57);
+    // temp3.sub_areas.push_back(stemp3);
+    // path_areas.push_back(temp3);
+
     ropod_ros_msgs::Area temp3;
     ropod_ros_msgs::SubArea stemp3;
     temp3.id = std::to_string(92);
@@ -48,7 +59,7 @@ int main(int argc, char **argv)
     stemp3.name = "BRSU_C_L0_C7_LA1";
     stemp3.id = std::to_string(66);
     temp3.sub_areas.push_back(stemp3);
-    path_areas.push_back(temp3);
+    path_areas.push_back(temp3);    
 
     ropod_ros_msgs::Area temp4;
     ropod_ros_msgs::SubArea stemp4;

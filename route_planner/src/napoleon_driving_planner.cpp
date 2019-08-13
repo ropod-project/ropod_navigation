@@ -116,8 +116,8 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
                     else if (direction == "right")
                     {
                         temp.geometry.vertices = {path_areas[i].sub_areas[j].geometry.vertices[1],
-                                                  path_areas[i+1].sub_areas[0].geometry.vertices[2],
-                                                  path_areas[i+1].sub_areas[0].geometry.vertices[3],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[1],
+                                                  path_areas[i+1].sub_areas[0].geometry.vertices[0],
                                                   path_areas[i].sub_areas[j].geometry.vertices[2]};
                     }
                     else if (direction == "straight")
