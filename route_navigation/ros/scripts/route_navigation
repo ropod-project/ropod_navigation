@@ -221,6 +221,8 @@ class RouteNavigation(FTSMBase):
         prev_waypoint = None
         feedback_msg = get_feedback_msg_skeleton(self.current_action.action_id,
                                                  self.current_action.type)
+        feedback_msg.totalNumber = sum([1 for area_type in area_types if area_type != 'door'])
+
         nav_config_params = ManeuverNavConfigParams()
         for i, waypoints in enumerate(area_waypoints):
             area_changed = True
@@ -228,6 +230,8 @@ class RouteNavigation(FTSMBase):
             # we ignore areas of type "door"
             if area_types[i] == 'door':
                 continue
+
+            feedback_msg.sequenceNumber = i
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
@@ -310,7 +314,7 @@ class RouteNavigation(FTSMBase):
                                        self.orientation_tolerance_rad) and \
               not has_timed_out(start_time, self.goto_timeout) and \
               not self.goto_server.is_preempt_requested():
-            feedback_msg.feedback.status.status_code = Status.WAITING
+            feedback_msg.feedback.status.status_code = Status.NAVIGATION_IN_PROGRESS
             self.goto_server.publish_feedback(feedback_msg)
             rospy.sleep(0.5)
 
@@ -318,7 +322,12 @@ class RouteNavigation(FTSMBase):
                                     goal_pose,
                                     self.pos_tolerance_m,
                                     self.orientation_tolerance_rad):
+            feedback_msg.feedback.status.status_code = Status.GOAL_NOT_REACHABLE
+            self.goto_server.publish_feedback(feedback_msg)
             return False
+
+        feedback_msg.feedback.status.status_code = Status.GOAL_REACHED
+        self.goto_server.publish_feedback(feedback_msg)
         return True
 
     def __set_base_pose(self, pose_msg):
