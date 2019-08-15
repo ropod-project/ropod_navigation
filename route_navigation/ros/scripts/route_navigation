@@ -211,7 +211,7 @@ class RouteNavigation(FTSMBase):
         are not performed.
 
         Keyword arguments:
-        area_types: Sequnce[str] -- list of types for all areas in the path plan
+        area_types: Sequence[str] -- list of types for all areas in the path plan
         area_waypoints: Sequence[Sequence[geometry_msgs.msg.Pose]] -- a list of
                         waypoints for each area in the path plan
 
@@ -231,7 +231,7 @@ class RouteNavigation(FTSMBase):
             if area_types[i] == 'door':
                 continue
 
-            feedback_msg.feedback.sequenceNumber = i
+            feedback_msg.feedback.sequenceNumber = i+1  # since we compare against non-zero indexed totalNumber
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
