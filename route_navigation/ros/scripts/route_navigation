@@ -221,7 +221,7 @@ class RouteNavigation(FTSMBase):
         prev_waypoint = None
         feedback_msg = get_feedback_msg_skeleton(self.current_action.action_id,
                                                  self.current_action.type)
-        feedback_msg.totalNumber = sum([1 for area_type in area_types if area_type != 'door'])
+        feedback_msg.feedback.totalNumber = sum([1 for area_type in area_types if area_type != 'door'])
 
         nav_config_params = ManeuverNavConfigParams()
         for i, waypoints in enumerate(area_waypoints):
@@ -231,7 +231,7 @@ class RouteNavigation(FTSMBase):
             if area_types[i] == 'door':
                 continue
 
-            feedback_msg.sequenceNumber = i
+            feedback_msg.feedback.sequenceNumber = i
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
