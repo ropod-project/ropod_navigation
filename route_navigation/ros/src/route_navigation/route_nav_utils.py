@@ -101,8 +101,8 @@ def get_yaw(quaternion):
     quaternion: geometry_msgs.msg.Quaternion
 
     '''
-    euler_orientation = tf.euler_from_quaternion([quaternion.x, quaternion.y,
-                                                  quaternion.z, quaternion.w])
+    euler_orientation = tf.euler_from_quaternion([quaternion.w, quaternion.x,
+                                                  quaternion.y, quaternion.z])
     return euler_orientation[2]
 
 def get_quaternion_msg(yaw):
