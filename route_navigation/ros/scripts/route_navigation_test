@@ -8,12 +8,12 @@ from ropod_ros_msgs.msg import Action, Area, SubArea
 def main():
     try:
         route_nav_client = actionlib.SimpleActionClient('/ropod/goto', GoToAction)
+        rospy.loginfo("Waiting for route navigation server")
         route_nav_client.wait_for_server()
 
         goal = GoToGoal()
         goal.action = Action()
         goal.action.action_id = '1234567890'
-        areas = []
         area1 = Area(
                     id="5",
                     name="BRSU_C_L0_C9",
@@ -24,8 +24,22 @@ def main():
                     name="BRSU_C_L0_C8",
                     type="junction",
                     sub_areas=[SubArea(id="64", name="BRSU_C_L0_C8_LA1")])
-        areas.append(area1)
-        areas.append(area2)
+        area3 = Area(
+                    id="92",
+                    name="BRSU_C_L0_C7",
+                    type="corridor",
+                    sub_areas=[SubArea(id="66", name="BRSU_C_L0_C7_LA1")])
+        area4 = Area(
+                    id="89",
+                    name="BRSU_C_L0_C6_Door1",
+                    type="door",
+                    sub_areas=[])
+        area5 = Area(
+                    id="8",
+                    name="BRSU_C_L0_C6",
+                    type="corridor",
+                    sub_areas=[SubArea(id="68", name="BRSU_C_L0_C6_LA1")])
+        areas = [area1, area2, area3, area4, area5]
         goal.action.areas = areas
         goal.action.type = 'GOTO'
         goal.action.start_floor = 0

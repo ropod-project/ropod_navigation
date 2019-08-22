@@ -169,6 +169,7 @@ class RouteNavigation(FTSMBase):
         except Exception as exc:
             rospy.logerr('[route_nav] An error occurred while executing "{0}" action; aborting request'.format(action_type))
             rospy.logerr(str(exc))
+            self.goto_server.set_aborted() # return empty result
 
         # setting self.current_action to None allows
         # to transition to the ready state
@@ -189,19 +190,22 @@ class RouteNavigation(FTSMBase):
         start_time = rospy.get_time()
         if self.route_planner_client.wait_for_result(rospy.Duration.from_sec(self.route_planner_timeout)):
             route_planner_result = self.route_planner_client.get_result()
-            area_types = [area.type for area in route_planner_result.areas]
             waypoints = [[sub_area.waypoint_pose for sub_area in area.sub_areas]
                          for area in route_planner_result.areas]
+            print(route_planner_result.areas)
+            print("here2")
+            areas = route_planner_result.areas
+            self.base_pose = PoseWithCovarianceStamped()
             publish_waypoint_array(self.nav_waypoints_pub,
                                    self.base_pose.header.frame_id,
                                    waypoints)
-            nav_success = self.send_waypoints(area_types, waypoints)
+            nav_success = self.send_waypoints(waypoints, areas)
             return GoToResult(success=nav_success)
         else:
             rospy.logerr('Could not get response from route planner')
             raise Exception('Could not get response from route planner')
 
-    def send_waypoints(self, area_types, area_waypoints):
+    def send_waypoints(self, area_waypoints, areas):
         '''Sends the waypoints in the path plan to the navigation component.
         The waypoints are sent one by one.
 
@@ -211,9 +215,9 @@ class RouteNavigation(FTSMBase):
         are not performed.
 
         Keyword arguments:
-        area_types: Sequence[str] -- list of types for all areas in the path plan
         area_waypoints: Sequence[Sequence[geometry_msgs.msg.Pose]] -- a list of
                         waypoints for each area in the path plan
+        areas: Sequence[ropod_ros_msgs.Area] -- list of area returned from route_planner
 
         '''
         start_pose = Pose()
@@ -221,21 +225,34 @@ class RouteNavigation(FTSMBase):
         prev_waypoint = None
         feedback_msg = get_feedback_msg_skeleton(self.current_action.action_id,
                                                  self.current_action.type)
-        feedback_msg.feedback.totalNumber = sum([1 for area_type in area_types if area_type != 'door'])
+        feedback_msg.feedback.totalNumber = sum([1 for area in areas if area.type != 'door'])
 
         nav_config_params = ManeuverNavConfigParams()
-        for i, waypoints in enumerate(area_waypoints):
+        # for i, waypoints in enumerate(area_waypoints):
+        for i, area in enumerate(areas):
             area_changed = True
 
             # we ignore areas of type "door"
-            if area_types[i] == 'door':
+            if area.type == 'door':
                 continue
+
+            print(area.name)
+            print(area.type)
+            # print(areas[i].name)
+            # feedback_msg.feedback.area_name = str(areas[i].name)
+            # feedback_msg.feedback.area_id = str(areas[i].id)
+            # feedback_msg.feedback.subarea_name = str(areas[i].name)
+            # feedback_msg.feedback.subarea_id = str(areas[i].id)
 
             feedback_msg.feedback.sequenceNumber = i+1  # since we compare against non-zero indexed totalNumber
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
-            for j, waypoint in enumerate(waypoints):
+            # for j, waypoint in enumerate(waypoints):
+            for j, sub_area in enumerate(area.sub_areas):
+                waypoint = sub_area.waypoint_pose
+                print(sub_area.name)
+                print(sub_area.type)
                 # if we are processing the very first point in the path plan,
                 # we align the robot towards it before starting the actual navigation
                 if i == 0:
