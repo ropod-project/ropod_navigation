@@ -2,11 +2,11 @@
 <launch>
     <arg name="robot_name" default="ropod"/>
 
-    <!-- <include file="$(find map_switcher)/launch/map_switcher.launch" /> -->
-    <!-- <include file="$(find route_navigation)/ros/launch/localisation.launch"> -->
-    <!--     <arg name="robot_name" value="$(arg robot_name)" /> -->
-    <!-- </include> -->
-    <!-- <include file="$(find route_navigation)/ros/launch/maneuver_navigation.launch" /> -->
+    <include file="$(find map_switcher)/launch/map_switcher.launch" />
+    <include file="$(find route_navigation)/ros/launch/localisation.launch">
+        <arg name="robot_name" value="$(arg robot_name)" />
+    </include>
+    <include file="$(find route_navigation)/ros/launch/maneuver_navigation.launch" />
 
     <node pkg="route_navigation" type="route_navigation" name="route_navigation" output="screen" >
         <param name="mn_nav_topic" type="str" value="/route_navigation/goal" />

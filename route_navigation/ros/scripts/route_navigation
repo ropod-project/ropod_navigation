@@ -192,10 +192,7 @@ class RouteNavigation(FTSMBase):
             route_planner_result = self.route_planner_client.get_result()
             waypoints = [[sub_area.waypoint_pose for sub_area in area.sub_areas]
                          for area in route_planner_result.areas]
-            print(route_planner_result.areas)
-            print("here2")
             areas = route_planner_result.areas
-            self.base_pose = PoseWithCovarianceStamped()
             publish_waypoint_array(self.nav_waypoints_pub,
                                    self.base_pose.header.frame_id,
                                    waypoints)
@@ -228,7 +225,6 @@ class RouteNavigation(FTSMBase):
         feedback_msg.feedback.totalNumber = sum([1 for area in areas if area.type != 'door'])
 
         nav_config_params = ManeuverNavConfigParams()
-        # for i, waypoints in enumerate(area_waypoints):
         for i, area in enumerate(areas):
             area_changed = True
 
@@ -236,23 +232,17 @@ class RouteNavigation(FTSMBase):
             if area.type == 'door':
                 continue
 
-            print(area.name)
-            print(area.type)
-            # print(areas[i].name)
-            # feedback_msg.feedback.area_name = str(areas[i].name)
-            # feedback_msg.feedback.area_id = str(areas[i].id)
-            # feedback_msg.feedback.subarea_name = str(areas[i].name)
-            # feedback_msg.feedback.subarea_id = str(areas[i].id)
+            feedback_msg.feedback.area_name = str(area.name)
+            feedback_msg.feedback.area_id = str(area.id)
 
             feedback_msg.feedback.sequenceNumber = i+1  # since we compare against non-zero indexed totalNumber
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
             # for j, waypoint in enumerate(waypoints):
-            for j, sub_area in enumerate(area.sub_areas):
                 waypoint = sub_area.waypoint_pose
-                print(sub_area.name)
-                print(sub_area.type)
+                feedback_msg.feedback.subarea_name = str(sub_area.name)
+                feedback_msg.feedback.subarea_id = str(sub_area.id)
                 # if we are processing the very first point in the path plan,
                 # we align the robot towards it before starting the actual navigation
                 if i == 0:
