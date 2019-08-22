@@ -218,7 +218,7 @@ class RouteNavigation(FTSMBase):
         prev_waypoint = None
         feedback_msg = get_feedback_msg_skeleton(self.current_action.action_id,
                                                  self.current_action.type)
-        feedback_msg.feedback.totalNumber = sum([1 for area in areas if area.type != 'door'])
+        feedback_msg.feedback.totalNumber = len([1 for area in areas if area.type != 'door'])
 
         nav_config_params = ManeuverNavConfigParams()
         for i, area in enumerate(areas):
