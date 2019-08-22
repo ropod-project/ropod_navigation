@@ -117,19 +117,19 @@ def get_quaternion_msg(yaw):
     quaternion_msg = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
     return quaternion_msg
 
-def publish_waypoint_array(pose_array_pub, frame_id, waypoints):
+def publish_waypoint_array(pose_array_pub, frame_id, areas):
     '''Publishes a geometry_msgs.msg.PoseArray message created from the waypoint list.
 
     Keyword arguments:
     pose_array_pub: rospy.Publisher -- publisher for geometry_msgs.msg.PoseArray messages
     frame_id: str -- frame ID of the poses
-    waypoints: Sequence[Sequence[Pose]] -- lists of sub-area waypoints for a sequence of areas
+    areas: Sequence[ropod_ros_msgs.Area] -- list of area returned from route_planner
 
     '''
     waypoint_vis_msg = PoseArray()
     waypoint_vis_msg.header.frame_id = frame_id
     waypoint_vis_msg.header.stamp = rospy.Time.now()
-    waypoint_vis_msg.poses = [waypoint
-                              for area_waypoints in waypoints
-                              for waypoint in area_waypoints]
+    waypoint_vis_msg.poses = [sub_area.waypoint_pose
+                              for area in areas 
+                              for sub_area in area.sub_areas]
     pose_array_pub.publish(waypoint_vis_msg)
