@@ -190,19 +190,17 @@ class RouteNavigation(FTSMBase):
         start_time = rospy.get_time()
         if self.route_planner_client.wait_for_result(rospy.Duration.from_sec(self.route_planner_timeout)):
             route_planner_result = self.route_planner_client.get_result()
-            waypoints = [[sub_area.waypoint_pose for sub_area in area.sub_areas]
-                         for area in route_planner_result.areas]
             areas = route_planner_result.areas
             publish_waypoint_array(self.nav_waypoints_pub,
                                    self.base_pose.header.frame_id,
-                                   waypoints)
-            nav_success = self.send_waypoints(waypoints, areas)
+                                   areas)
+            nav_success = self.send_waypoints(areas)
             return GoToResult(success=nav_success)
         else:
             rospy.logerr('Could not get response from route planner')
             raise Exception('Could not get response from route planner')
 
-    def send_waypoints(self, area_waypoints, areas):
+    def send_waypoints(self, areas):
         '''Sends the waypoints in the path plan to the navigation component.
         The waypoints are sent one by one.
 
@@ -212,8 +210,6 @@ class RouteNavigation(FTSMBase):
         are not performed.
 
         Keyword arguments:
-        area_waypoints: Sequence[Sequence[geometry_msgs.msg.Pose]] -- a list of
-                        waypoints for each area in the path plan
         areas: Sequence[ropod_ros_msgs.Area] -- list of area returned from route_planner
 
         '''
@@ -239,7 +235,7 @@ class RouteNavigation(FTSMBase):
 
             # we send the waypoints in the current area to the
             # navigation component (one by one)
-            # for j, waypoint in enumerate(waypoints):
+            for j, sub_area in enumerate(area.sub_areas):
                 waypoint = sub_area.waypoint_pose
                 feedback_msg.feedback.subarea_name = str(sub_area.name)
                 feedback_msg.feedback.subarea_id = str(sub_area.id)
