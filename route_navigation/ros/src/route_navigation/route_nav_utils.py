@@ -113,9 +113,7 @@ def get_quaternion_msg(yaw):
     yaw: float -- yaw orientation
 
     '''
-    quat = tf.quaternion_from_euler(0.0, 0.0, yaw)
-    quaternion_msg = Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
-    return quaternion_msg
+    return Quaternion(*tf.quaternion_from_euler(0.0, 0.0, yaw))
 
 def publish_waypoint_array(pose_array_pub, frame_id, areas):
     '''Publishes a geometry_msgs.msg.PoseArray message created from the waypoint list.
