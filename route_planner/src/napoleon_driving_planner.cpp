@@ -155,18 +155,41 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
                                  path_areas[i].sub_areas[j].geometry.vertices[2]};
                 new_sub_areas.push_back(temp);
             }
-        } 
+        }
+
         path_areas[i].sub_areas = new_sub_areas;
 
         // uncomment for debugging
-        // for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
-        // {
-        //     std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
-        //               << path_areas[i].sub_areas[k].geometry.vertices[1].x << "," << path_areas[i].sub_areas[k].geometry.vertices[1].y << ","
-        //               << path_areas[i].sub_areas[k].geometry.vertices[2].x << "," << path_areas[i].sub_areas[k].geometry.vertices[2].y << ","
-        //               << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
-        //               << std::endl;
-        // }
+        /**
+        for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
+        {
+            std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[1].x << "," << path_areas[i].sub_areas[k].geometry.vertices[1].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[2].x << "," << path_areas[i].sub_areas[k].geometry.vertices[2].y << ","
+                      << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
+                      << std::endl;
+        }
+        **/
+    }
+
+    /**
+    ensuring each junction has only 1 sub area
+    following code is based on lots of assumptions 
+    1. junction has only 1 sub-area in OSM
+    2. there are no 2 continuous junctions
+    3. there is never a junction at the end of the plan
+    **/
+
+    for (int i = 0; i < path_areas.size(); i++)
+    {
+        if(path_areas[i].type == "junction" && path_areas[i].sub_areas.size() == 2)
+        {
+            // move sub-area to next area
+            path_areas[i+1].sub_areas.insert(path_areas[i+1].sub_areas.begin(), path_areas[i].sub_areas[1]);
+
+            // delete sub-area from junction
+            path_areas[i].sub_areas.erase(path_areas[i].sub_areas.end());
+        }
     }
 
     return path_areas;
