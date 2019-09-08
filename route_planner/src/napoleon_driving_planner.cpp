@@ -21,6 +21,19 @@ APPROACH
 
 std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vector<ropod_ros_msgs::Area> path_areas)
 {
+    // we treat doors as junctions
+    for (int i = 0; i < path_areas.size(); i++)
+    {   
+        if (path_areas[i].sub_areas.empty())
+        {
+            ropod_ros_msgs::SubArea door_sub_area;
+            door_sub_area.geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].id), "door"); 
+            door_sub_area.type = "junction";
+            // door_sub_area.id = path_areas[i].id;
+            path_areas[i].sub_areas.push_back(door_sub_area);  
+        }
+    }
+
     for (int i = 0; i < path_areas.size(); i++)
     {
         for (int j = 0; j < path_areas[i].sub_areas.size(); j++)
@@ -34,12 +47,14 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
             // get area left and right sides and add intermediate sub-areas
             if (j < path_areas[i].sub_areas.size()-1 && i != path_areas.size()-1)
             {
-                path_areas[i].sub_areas[j+1].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j+1].id), "local_area");
+                if (path_areas[i].sub_areas[j+1].geometry.vertices.size() == 0)
+                    path_areas[i].sub_areas[j+1].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].sub_areas[j+1].id), "local_area");
                 get_area_sides(path_areas[i].sub_areas[j], path_areas[i].sub_areas[j+1], right, left);
             }
             else if (j == path_areas[i].sub_areas.size()-1 && i != path_areas.size()-1)
             {
-                path_areas[i+1].sub_areas[0].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i+1].sub_areas[0].id), "local_area");
+                if (path_areas[i+1].sub_areas[0].geometry.vertices.size() == 0)
+                    path_areas[i+1].sub_areas[0].geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i+1].sub_areas[0].id), "local_area");
                 get_area_sides(path_areas[i].sub_areas[j], path_areas[i+1].sub_areas[0], right, left);
             }
             else if (j == path_areas[i].sub_areas.size()-1 && i == path_areas.size()-1)
@@ -64,8 +79,8 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
                 return add_intermediate_sub_areas(path_areas);
             }
 
-            /*
             // Uncomment for debugging & analysing the generated plan
+            /*
             std::cout << "Left 1," << left.point1.x << "," << left.point1.y << std::endl;
             std::cout << "Left 2," << left.point2.x << "," << left.point2.y << std::endl;
             std::cout << "Right 1," << right.point1.x << "," << right.point1.y << std::endl;
@@ -160,7 +175,7 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
         path_areas[i].sub_areas = new_sub_areas;
 
         // uncomment for debugging
-        /**
+        /*
         for (int k = 0; k < path_areas[i].sub_areas.size(); k++)
         {
             std::cout << path_areas[i].sub_areas[k].geometry.vertices[0].x << "," << path_areas[i].sub_areas[k].geometry.vertices[0].y << ","
@@ -169,12 +184,12 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::add_intermediate_sub_a
                       << path_areas[i].sub_areas[k].geometry.vertices[3].x << "," << path_areas[i].sub_areas[k].geometry.vertices[3].y
                       << std::endl;
         }
-        **/
+        */
     }
 
     /**
     ensuring each junction has only 1 sub area
-    following code is based on lots of assumptions 
+    following code is based on following assumptions 
     1. junction has only 1 sub-area in OSM
     2. there are no 2 continuous junctions
     3. there is never a junction at the end of the plan
@@ -287,9 +302,22 @@ void NapoleonDrivingPlanner::get_area_points(ropod_ros_msgs::SubArea area, ropod
         return lhs.second < rhs.second;
     });
 
-    // NOTE: its based on assumptions that each area has only four points
-    front_points = {distances[0].first, distances[1].first};
-    rear_points = {distances[2].first, distances[3].first};
+    // NOTE: based on assumptions that each area has only four points
+    if (get_euclidean_distance(distances[0].first, distances[1].first) < 0.3)
+    {
+        /*
+        In case of door its not necessary that 2 farthest points are front points, so we check
+        if distance between farthest points is greater then 0.3 m (assumnng width of sub-area will be always
+        greater then 0.3m since ROPOD size is 0.6m)
+        */
+        front_points = {distances[0].first, distances[2].first};
+        rear_points = {distances[1].first, distances[3].first}; 
+    }
+    else
+    {
+        front_points = {distances[0].first, distances[1].first};
+        rear_points = {distances[2].first, distances[3].first};
+    }
 }
 
 double NapoleonDrivingPlanner::get_euclidean_distance(ropod_ros_msgs::Position pt1, ropod_ros_msgs::Position pt2)

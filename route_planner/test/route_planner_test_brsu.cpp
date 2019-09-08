@@ -111,6 +111,12 @@ int main(int argc, char **argv)
     temp8.sub_areas.push_back(stemp8);
     path_areas.push_back(temp8);
 
+    ropod_ros_msgs::Area temp13;  
+    temp13.id = std::to_string(91);
+    temp13.name = "BRSU_C_L0_C1_Door1";
+    temp13.type = "door";
+    path_areas.push_back(temp13);
+
     ropod_ros_msgs::Area temp9;
     ropod_ros_msgs::SubArea stemp9;
     temp9.id = std::to_string(123);
