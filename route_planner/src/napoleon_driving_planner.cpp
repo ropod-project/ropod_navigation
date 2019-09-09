@@ -30,6 +30,7 @@ std::vector<ropod_ros_msgs::Area> NapoleonDrivingPlanner::compute_route(std::vec
             door_sub_area.geometry = RoutePlanner::CallGetShapeAction(std::stoi(path_areas[i].id), "door"); 
             door_sub_area.type = "junction";
             // door_sub_area.id = path_areas[i].id;
+            path_areas[i].type = "junction";
             path_areas[i].sub_areas.push_back(door_sub_area);  
         }
     }
