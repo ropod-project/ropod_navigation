@@ -63,8 +63,8 @@ class RouteNavigation(FTSMBase):
     def __init__(self):
         component_name = 'route_navigation'
         dependencies = ['roscore', 'world_model_mediator', 'route_planner', 'maneuver_navigation']
-        dependency_monitors = {'functional': {'roscore': 'ros/ros_master_monitor',
-                                              'world_model_mediator': 'ros/ros_node_monitor',
+        dependency_monitors = {'heartbeat': {'roscore': 'ros/ros_master_monitor'},
+                               'functional': {'world_model_mediator': 'ros/ros_node_monitor',
                                               'route_planner': 'ros/ros_node_monitor',
                                               'maneuver_navigation': 'ros/ros_node_monitor'}}
         super(RouteNavigation, self).__init__(component_name, dependencies, dependency_monitors)
@@ -128,17 +128,33 @@ class RouteNavigation(FTSMBase):
         return FTSMTransitions.INITIALISED
 
     def ready(self):
+        status_transition = self.process_depend_statuses()
+        if status_transition:
+            return status_transition
         if not self.current_action:
             return FTSMTransitions.WAIT
         return FTSMTransitions.RUN
 
     def running(self):
+        status_transition = self.process_depend_statuses()
+        if status_transition:
+            return status_transition
         if not self.current_action:
             return FTSMTransitions.DONE
         return FTSMTransitions.CONTINUE
 
     def recovering(self):
+        self.recover_from_possible_dead_rosmaster()
         return FTSMTransitions.DONE_RECOVERING
+
+    def process_depend_statuses(self):
+        '''Returns FTSMTransitions.RECOVER if the rosmaster is dead; returns None otherwise.
+        '''
+        master_available = self.depend_statuses[DependMonitorTypes.HEARTBEAT]\
+                                               ['roscore']['ros/ros_master_monitor']['status']
+        if not master_available:
+            rospy.logwarn('[route_nav] roscore not available; trying to recover')
+            return FTSMTransitions.RECOVER
 
     def goto_server_cb(self, action_request):
         '''Processes request for GOTO actions; ignores all other action types.
