@@ -1,5 +1,6 @@
 import rospy
 from tf import transformations as tf
+import numpy as np
 
 from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped, Quaternion
 from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
@@ -60,7 +61,7 @@ def is_waypoint_achieved(pose1, pose2, pos_tolerance_m, orientation_tolerance_ra
     pos_distance = ((pose1.position.x - pose2.position.x)**2 \
                   + (pose1.position.y - pose2.position.y)**2)
 
-    angular_distance = abs(get_yaw(pose1.orientation) - get_yaw(pose2.orientation))
+    angular_distance = abs(get_min_angular_diff(get_yaw(pose1.orientation), get_yaw(pose2.orientation)))
     return pos_distance < pos_tolerance_m and angular_distance < orientation_tolerance_rad
 
 def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params):
@@ -97,6 +98,16 @@ def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params
 
     goal_pub.publish(nav_goal)
 
+def get_min_angular_diff(angle1, angle2):
+    '''Returns the minimum angular difference between angle1 and angle2
+
+    Keyword arguments:
+    angle1: float -- first angle in radians
+    angle2: float -- second angle in radians
+
+    '''
+    return np.arctan2(np.sin(angle1-angle2), np.cos(angle1-angle2))
+
 def get_yaw(quaternion):
     '''Returns the yaw orientation extracted from the input quaternion.
 
@@ -104,8 +115,8 @@ def get_yaw(quaternion):
     quaternion: geometry_msgs.msg.Quaternion
 
     '''
-    euler_orientation = tf.euler_from_quaternion([quaternion.w, quaternion.x,
-                                                  quaternion.y, quaternion.z])
+    euler_orientation = tf.euler_from_quaternion([quaternion.x, quaternion.y,
+                                                  quaternion.z, quaternion.w])
     return euler_orientation[2]
 
 def get_quaternion_msg(yaw):
