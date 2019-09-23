@@ -17,7 +17,8 @@ from ropod.ftsm.ftsm_base import FTSMBase, DependMonitorTypes
 
 from route_navigation.route_nav_utils import (has_timed_out, is_waypoint_achieved,\
                                               send_maneuver_nav_goal, get_yaw,\
-                                              get_quaternion_msg, get_feedback_msg_skeleton,
+                                              get_quaternion_msg, get_feedback_msg_skeleton, \
+                                              get_min_angular_diff, \
                                               publish_waypoint_array, ManeuverNavConfigParams)
 
 class RouteNavigation(FTSMBase):
@@ -271,7 +272,7 @@ class RouteNavigation(FTSMBase):
                         base_yaw = get_yaw(self.base_pose.pose.pose.orientation)
                         yaw_diff = math.atan2(waypoint.position.y - self.base_pose.pose.pose.position.y,
                                               waypoint.position.x - self.base_pose.pose.pose.position.x)
-                        if abs(base_yaw - yaw_diff) > self.orientation_tolerance_rad:
+                        if abs(get_min_angular_diff(base_yaw, yaw_diff)) > self.orientation_tolerance_rad:
                             quat = get_quaternion_msg(yaw_diff)
                             start_pose = self.base_pose.pose.pose
                             goal_pose.position = self.base_pose.pose.pose.position
@@ -282,6 +283,9 @@ class RouteNavigation(FTSMBase):
                                 goal_pose = waypoint
                             else:
                                 return False
+                        else:
+                            start_pose = self.base_pose.pose.pose
+                            goal_pose = waypoint
                     else:
                         start_pose = self.base_pose.pose.pose
                         goal_pose = waypoint
