@@ -37,10 +37,17 @@ class RouteNavigation(FTSMBase):
     route_planner_server: str -- name of an action server exposed by
                                  a route planner (default /route_planner)
 
-    goto_timeout: float -- timeout (in seconds) for the action of going from
-                           one waypoint to another (default 120)
-    route_planner_timeout: float -- timeout (in seconds) for calls to the
-                                    route planner (default 120)
+    goto_timeout_s: float -- timeout (in seconds) for the action of going from
+                             one waypoint to another (default 120)
+    route_planner_timeout_s: float -- timeout (in seconds) for calls to the
+                                      route planner (default 120)
+    recovery_timeout_s: float -- timeout (in seconds) specifying how long
+                                 to wait for the component to recover
+                                 (if recovery is necessary) before
+                                 reporting a failure (default 120)
+    recovery_waiting_sleep_s: float -- sleep duration (in seconds) while
+                                       waiting for the component to recover
+                                       itself (default 0.1)
 
     pos_tolerance_m: float -- distance tolerance (in meters) for navigation
                               waypoints (default 0.3)
@@ -79,11 +86,13 @@ class RouteNavigation(FTSMBase):
         self.goto_server_name = rospy.get_param('~goto_server_name', '/ropod/goto')
         self.route_planner_server_name = rospy.get_param('~route_planner_server_name',
                                                          '/route_planner')
-        self.goto_timeout = rospy.get_param('~goto_timeout', 120.0)
-        self.route_planner_timeout = rospy.get_param('~route_planner_timeout', 120.0)
+        self.goto_timeout_s = rospy.get_param('~goto_timeout_s', 120.0)
+        self.route_planner_timeout_s = rospy.get_param('~route_planner_timeout_s', 120.0)
+        self.recovery_timeout_s = rospy.get_param('~recovery_timeout_s', 120.0)
+        self.recovery_waiting_sleep_s = rospy.get_param('~recovery_waiting_sleep_s', 0.1)
 
-        self.pos_tolerance_m = float(rospy.get_param('~pos_tolerance_m', 0.3))
-        orientation_tolerance_deg = float(rospy.get_param('~orientation_tolerance_deg', 10.))
+        self.pos_tolerance_m = rospy.get_param('~pos_tolerance_m', 0.3)
+        orientation_tolerance_deg = rospy.get_param('~orientation_tolerance_deg', 10.)
         self.orientation_tolerance_rad = (orientation_tolerance_deg * math.pi) / 180.
 
     def init(self):
@@ -204,7 +213,7 @@ class RouteNavigation(FTSMBase):
         rospy.loginfo('[route_nav] Calling route planner')
         self.route_planner_client.send_goal(route_planner_request)
         start_time = rospy.get_time()
-        if self.route_planner_client.wait_for_result(rospy.Duration.from_sec(self.route_planner_timeout)):
+        if self.route_planner_client.wait_for_result(rospy.Duration.from_sec(self.route_planner_timeout_s)):
             route_planner_result = self.route_planner_client.get_result()
             areas = route_planner_result.areas
             publish_waypoint_array(self.nav_waypoints_pub,
@@ -295,12 +304,37 @@ class RouteNavigation(FTSMBase):
                     nav_config_params.append_maneuver = True
                 prev_waypoint = waypoint
 
-                # we send the waypoint to the navigtion component and
-                # return False if the navigation fails
-                # TODO: perhaps it makes more sense to resend the goal before giving up
-                if not self.__goto_waypoint(start_pose, goal_pose,
+                navigation_complete = False
+                while not navigation_complete:
+                    # we send the waypoint to the navigation component
+                    if self.__goto_waypoint(start_pose, goal_pose,
                                             feedback_msg, nav_config_params):
-                    return False
+                        navigation_complete = True
+                    else:
+                        # if the waypoint could not be reached, but the component
+                        # is not recovering, we stop processing the path processing
+                        # and report a navigation failure
+                        if self.current_state == FTSMStates.RUNNING:
+                            return False
+                        # if the component is recovering, we wait
+                        # for the recovery to finish before
+                        # resending the navigation goal again
+                        else:
+                            recovery_start_time = rospy.get_time()
+                            while self.current_state == FTSMStates.RECOVERING and \
+                                  not has_timed_out(recovery_start_time, self.recovery_timeout_s):
+                                rospy.sleep(self.recovery_waiting_sleep_s)
+
+                            # if the component is still in a recovery state,
+                            # we stop processing the navigation goals
+                            # and report a failure
+                            if self.current_state == FTSMStates.RECOVERING:
+                                return False
+
+                            # we otherwise update the starting pose of the robot
+                            # before resending the navigation goal
+                            start_pose = self.base_pose.pose.pose
+
         return True
 
     def __goto_waypoint(self, start_pose, goal_pose, feedback_msg, nav_config_params):
@@ -331,11 +365,16 @@ class RouteNavigation(FTSMBase):
                                        goal_pose,
                                        self.pos_tolerance_m,
                                        self.orientation_tolerance_rad) and \
-              not has_timed_out(start_time, self.goto_timeout) and \
-              not self.goto_server.is_preempt_requested():
+              not has_timed_out(start_time, self.goto_timeout_s) and \
+              not self.goto_server.is_preempt_requested() and \
+              self.current_state == FTSMStates.RUNNING:
             feedback_msg.feedback.status.status_code = Status.NAVIGATION_IN_PROGRESS
             self.goto_server.publish_feedback(feedback_msg)
             rospy.sleep(0.5)
+
+        # we simply return a failure if the component is currently trying to recover
+        if self.current_state == FTSMStates.RECOVERING:
+            return False
 
         if not is_waypoint_achieved(self.base_pose.pose.pose,
                                     goal_pose,
