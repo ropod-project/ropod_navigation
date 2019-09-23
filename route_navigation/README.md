@@ -24,8 +24,10 @@ The component expects several parameters to be made available to the ROS paramet
 * `goto_server_name: str` -- name of the action server exposed by the component (default `/ropod/goto`)
 * `route_planner_server: str` -- name of an action server exposed by a route planner (default `/route_planner`)
 
-* `goto_timeout: float` -- timeout (in seconds) for the action of going from one waypoint to another (default `120`)
-* `route_planner_timeout: float` -- timeout (in seconds) for calls to the route planner (default `120`)
+* `goto_timeout_s: float` -- timeout (in seconds) for the action of going from one waypoint to another (default `120`)
+* `route_planner_timeout_s: float` -- timeout (in seconds) for calls to the route planner (default `120`)
+* `recovery_timeout_s: float` -- timeout (in seconds) specifying how long to wait for the component to recover (if recovery is necessary) before reporting a failure (default `120`)
+* `recovery_waiting_sleep_s: float` -- sleep duration (in seconds) while waiting for the component to recover itself (default `0.1`)
 
 * `pos_tolerance_m: float` -- distance tolerance (in meters) for navigation waypoints (default `0.3`)
 * `orientation_tolerance_deg: float` -- orientation tolerance (in degrees) for navigation waypoints (default `10`)
