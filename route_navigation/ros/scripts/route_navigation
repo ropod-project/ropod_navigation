@@ -372,8 +372,10 @@ class RouteNavigation(FTSMBase):
             self.goto_server.publish_feedback(feedback_msg)
             rospy.sleep(0.5)
 
-        # we simply return a failure if the component is currently trying to recover
+        # if the component is currently trying to recover, we cancel
+        # the ongoing navigation goal and simply return a failure
         if self.current_state == FTSMStates.RECOVERING:
+            self.mn_nav_cancel_pub.publish(Bool(data=true))
             return False
 
         if not is_waypoint_achieved(self.base_pose.pose.pose,
