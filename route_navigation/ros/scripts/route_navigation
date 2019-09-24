@@ -9,6 +9,7 @@ from geometry_msgs.msg import Pose, PoseArray, PoseStamped, PoseWithCovarianceSt
 
 from ropod_ros_msgs.msg import GoToAction, GoToFeedback, GoToResult
 from ropod_ros_msgs.msg import RoutePlannerAction, RoutePlannerGoal
+from ropod_ros_msgs.msg import DockAction, DockGoal
 from ropod_ros_msgs.msg import Status
 from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
 
@@ -65,16 +66,19 @@ class RouteNavigation(FTSMBase):
     localisation_sub = None
     goto_server = None
     route_planner_client = None
+    collect_cart_client = None
     current_action = None
     base_pose = None
 
     def __init__(self):
         component_name = 'route_navigation'
-        dependencies = ['roscore', 'world_model_mediator', 'route_planner', 'maneuver_navigation']
+        dependencies = ['roscore', 'world_model_mediator', 'route_planner',
+                        'maneuver_navigation', 'cart_attachment']
         dependency_monitors = {'heartbeat': {'roscore': 'ros/ros_master_monitor'},
                                'functional': {'world_model_mediator': 'ros/ros_node_monitor',
                                               'route_planner': 'ros/ros_node_monitor',
-                                              'maneuver_navigation': 'ros/ros_node_monitor'}}
+                                              'maneuver_navigation': 'ros/ros_node_monitor',
+                                              'cart_attachment': 'cart_attachment/cart_attachment_visual_3d_monitor'}}
         super(RouteNavigation, self).__init__(component_name, dependencies, dependency_monitors)
 
         self.mn_nav_topic = rospy.get_param('~mn_nav_topic', '/route_navigation/goal')
@@ -87,6 +91,8 @@ class RouteNavigation(FTSMBase):
         self.goto_server_name = rospy.get_param('~goto_server_name', '/ropod/goto')
         self.route_planner_server_name = rospy.get_param('~route_planner_server_name',
                                                          '/route_planner')
+        self.collect_cart_server_name = rospy.get_param('~collect_cart_server_name',
+                                                        '/collect_cart')
         self.goto_timeout_s = rospy.get_param('~goto_timeout_s', 120.0)
         self.route_planner_timeout_s = rospy.get_param('~route_planner_timeout_s', 120.0)
         self.recovery_timeout_s = rospy.get_param('~recovery_timeout_s', 120.0)
@@ -122,6 +128,10 @@ class RouteNavigation(FTSMBase):
             self.route_planner_client = actionlib.SimpleActionClient(self.route_planner_server_name,
                                                                           RoutePlannerAction)
 
+            rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.collect_cart_server_name))
+            self.collect_cart_client = actionlib.SimpleActionClient(self.collect_cart_server_name,
+                                                                    DockAction)
+
             rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
             self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
 
@@ -155,6 +165,27 @@ class RouteNavigation(FTSMBase):
 
     def recovering(self):
         self.recover_from_possible_dead_rosmaster()
+
+        cart_attached = self.depend_statuses[DependMonitorTypes.FUNCTIONAL]\
+                                            ['cart_attachment']\
+                                            ['cart_attachment/cart_attachment_visual_3d_monitor']\
+                                            ['cart_attachment_status']
+        if not cart_attached:
+            redock_to_cart_request = DockGoal(type='REDOCK')
+            self.collect_cart_client.send_goal(redock_to_cart_request)
+            if self.collect_cart_client.wait_for_result(rospy.Duration.from_sec(self.recovery_timeout_s)):
+                redocking_result = self.collect_cart_client.get_result()
+                if redocking_result.success:
+                    rospy.loginfo('[route_nav] Redocking successful')
+                else:
+                    rospy.logerr('[route_nav] Redocking unsuccessful')
+            else:
+                rospy.logerr('[route_nav] Redocking could not complete within {0}s; giving up'.format(self.recovery_timeout_s))
+
+        # in case the recovery has timed out, the other threads need time
+        # to realise this, so we sleep shortly
+        rospy.sleep(0.5)
+
         return FTSMTransitions.DONE_RECOVERING
 
     def process_depend_statuses(self):
@@ -164,6 +195,14 @@ class RouteNavigation(FTSMBase):
                                                ['roscore']['ros/ros_master_monitor']['status']
         if not master_available:
             rospy.logwarn('[route_nav] roscore not available; trying to recover')
+            return FTSMTransitions.RECOVER
+
+        cart_attached = self.depend_statuses[DependMonitorTypes.FUNCTIONAL]\
+                                            ['cart_attachment']\
+                                            ['cart_attachment/cart_attachment_visual_3d_monitor']\
+                                            ['cart_attachment_status']
+        if not cart_attached:
+            rospy.logwarn('[route_nav] Cart detached; trying to recover')
             return FTSMTransitions.RECOVER
 
     def goto_server_cb(self, action_request):
