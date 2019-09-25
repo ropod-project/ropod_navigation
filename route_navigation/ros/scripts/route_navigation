@@ -171,7 +171,8 @@ class RouteNavigation(FTSMBase):
                                             ['cart_attachment/cart_attachment_visual_3d_monitor']\
                                             ['cart_attachment_status']
         if not cart_attached:
-            redock_to_cart_request = DockGoal(type='REDOCK')
+            redock_to_cart_request = DockGoal()
+            redock_to_cart_request.action.type = 'REDOCK'
             self.collect_cart_client.send_goal(redock_to_cart_request)
             if self.collect_cart_client.wait_for_result(rospy.Duration.from_sec(self.recovery_timeout_s)):
                 redocking_result = self.collect_cart_client.get_result()
@@ -418,7 +419,7 @@ class RouteNavigation(FTSMBase):
         # if the component is currently trying to recover, we cancel
         # the ongoing navigation goal and simply return a failure
         if self.current_state == FTSMStates.RECOVERING:
-            self.mn_nav_cancel_pub.publish(Bool(data=true))
+            self.mn_nav_cancel_pub.publish(Bool(data=True))
             return False
 
         if not is_waypoint_achieved(self.base_pose.pose.pose,
