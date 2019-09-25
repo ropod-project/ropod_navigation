@@ -103,48 +103,14 @@ class RouteNavigation(FTSMBase):
         self.orientation_tolerance_rad = (orientation_tolerance_deg * math.pi) / 180.
 
     def init(self):
+        rospy.loginfo('[route_nav] Initialising...')
         try:
-            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_topic))
-            self.mn_nav_pub = rospy.Publisher(self.mn_nav_topic,
-                                              ManeuverNavigationGoal,
-                                              queue_size=1)
-
-            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_cancel_topic))
-            self.mn_nav_cancel_pub = rospy.Publisher(self.mn_nav_cancel_topic,
-                                                     Bool,
-                                                     queue_size=1)
-
-            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.nav_waypoints_topic))
-            self.nav_waypoints_pub = rospy.Publisher(self.nav_waypoints_topic,
-                                                     PoseArray,
-                                                     queue_size=1)
-
-            rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.localisation_topic))
-            self.localisation_sub = rospy.Subscriber(self.localisation_topic,
-                                                     PoseWithCovarianceStamped,
-                                                     self.__set_base_pose)
-
-            rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.route_planner_server_name))
-            self.route_planner_client = actionlib.SimpleActionClient(self.route_planner_server_name,
-                                                                          RoutePlannerAction)
-
-            rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.collect_cart_server_name))
-            self.collect_cart_client = actionlib.SimpleActionClient(self.collect_cart_server_name,
-                                                                    DockAction)
-
-            rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
-            self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
-
-
-            rospy.loginfo('[route_nav] Creating a "{0}" action server'.format(self.goto_server_name))
-            self.goto_server = actionlib.SimpleActionServer(self.goto_server_name,
-                                                            GoToAction,
-                                                            self.goto_server_cb, False)
-            self.goto_server.start()
+            self.setup_ros()
         except Exception as exc:
             rospy.logerr('[route_nav] Initialisation error: "{0}"'.format(str(exc)))
             return FTSMTransitions.INIT_FAILED
 
+        rospy.loginfo('[route_nav] Initialisation complete')
         return FTSMTransitions.INITIALISED
 
     def ready(self):
@@ -380,6 +346,52 @@ class RouteNavigation(FTSMBase):
                             start_pose = self.base_pose.pose.pose
 
         return True
+
+    def setup_ros(self):
+        print('[route_nav] Initialising ROS node')
+        rospy.init_node('route_navigation')
+
+        rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_topic))
+        self.mn_nav_pub = rospy.Publisher(self.mn_nav_topic,
+                                          ManeuverNavigationGoal,
+                                          queue_size=1)
+
+        rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.mn_nav_cancel_topic))
+        self.mn_nav_cancel_pub = rospy.Publisher(self.mn_nav_cancel_topic,
+                                                 Bool,
+                                                 queue_size=1)
+
+        rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.nav_waypoints_topic))
+        self.nav_waypoints_pub = rospy.Publisher(self.nav_waypoints_topic,
+                                                 PoseArray,
+                                                 queue_size=1)
+
+        rospy.loginfo('[route_nav] Creating a "{0}" topic publisher'.format(self.localisation_topic))
+        self.localisation_sub = rospy.Subscriber(self.localisation_topic,
+                                                 PoseWithCovarianceStamped,
+                                                 self.__set_base_pose)
+
+        rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.route_planner_server_name))
+        self.route_planner_client = actionlib.SimpleActionClient(self.route_planner_server_name,
+                                                                      RoutePlannerAction)
+
+        rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.collect_cart_server_name))
+        self.collect_cart_client = actionlib.SimpleActionClient(self.collect_cart_server_name,
+                                                                DockAction)
+
+        rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
+        self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
+
+
+        rospy.loginfo('[route_nav] Creating a "{0}" action server'.format(self.goto_server_name))
+        self.goto_server = actionlib.SimpleActionServer(self.goto_server_name,
+                                                        GoToAction,
+                                                        self.goto_server_cb, False)
+        self.goto_server.start()
+
+    def tear_down_ros(self):
+        print('[route_nav] Tearing down ROS node')
+        self.goto_server.shutdown()
 
     def __goto_waypoint(self, start_pose, goal_pose, feedback_msg, nav_config_params):
         '''Sends a goal to the navigation component and then waits
