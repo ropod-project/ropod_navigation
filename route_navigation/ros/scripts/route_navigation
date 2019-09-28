@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import math
 import rospy
 import actionlib
@@ -15,6 +16,8 @@ from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
 
 from pyftsm.ftsm import FTSMStates, FTSMTransitions
 from ropod.ftsm.ftsm_base import FTSMBase, DependMonitorTypes
+
+from task_planner.knowledge_base_interface import KnowledgeBaseInterface
 
 from route_navigation.route_nav_utils import (has_timed_out, is_waypoint_achieved,\
                                               send_maneuver_nav_goal, get_yaw,\
@@ -101,6 +104,11 @@ class RouteNavigation(FTSMBase):
         self.pos_tolerance_m = rospy.get_param('~pos_tolerance_m', 0.3)
         orientation_tolerance_deg = rospy.get_param('~orientation_tolerance_deg', 10.)
         self.orientation_tolerance_rad = (orientation_tolerance_deg * math.pi) / 180.
+
+        self.kb_interface = KnowledgeBaseInterface()
+        self.robot_name = 'bot'
+        if 'ROPOD_ID' in os.environ:
+            self.robot_name = os.environ['ROPOD_ID']
 
     def init(self):
         rospy.loginfo('[route_nav] Initialising...')
@@ -320,6 +328,11 @@ class RouteNavigation(FTSMBase):
                     if self.__goto_waypoint(start_pose, goal_pose,
                                             feedback_msg, nav_config_params):
                         navigation_complete = True
+
+                        # we update the knowledge base with the new location of the robot
+                        location_predicate = ('robot_at', [('bot', self.robot_name),
+                                                           ('loc', sub_area.name)])
+                        self.kb_interface.update_predicate(location_predicate)
                     else:
                         # if the waypoint could not be reached, but the component
                         # is not recovering, we stop processing the path processing
