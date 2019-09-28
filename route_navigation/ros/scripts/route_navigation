@@ -371,16 +371,21 @@ class RouteNavigation(FTSMBase):
                                                  PoseWithCovarianceStamped,
                                                  self.__set_base_pose)
 
+
         rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.route_planner_server_name))
         self.route_planner_client = actionlib.SimpleActionClient(self.route_planner_server_name,
                                                                       RoutePlannerAction)
+
+        rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
+        self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
+
 
         rospy.loginfo('[route_nav] Creating a "{0}" action client'.format(self.collect_cart_server_name))
         self.collect_cart_client = actionlib.SimpleActionClient(self.collect_cart_server_name,
                                                                 DockAction)
 
-        rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.route_planner_server_name))
-        self.route_planner_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
+        rospy.loginfo('[route_nav] Waiting for "{0}" action server'.format(self.collect_cart_server_name))
+        self.collect_cart_client.wait_for_server(timeout=rospy.Duration.from_sec(120.))
 
 
         rospy.loginfo('[route_nav] Creating a "{0}" action server'.format(self.goto_server_name))
@@ -391,7 +396,13 @@ class RouteNavigation(FTSMBase):
 
     def tear_down_ros(self):
         print('[route_nav] Tearing down ROS node')
-        self.goto_server.shutdown()
+        self.mn_nav_pub.unregister()
+        self.mn_nav_cancel_pub.unregister()
+        self.nav_waypoints_pub.unregister()
+        self.localisation_sub.unregister()
+        self.shutdown_action_client(self.route_planner_client)
+        self.shutdown_action_client(self.collect_cart_client)
+        self.shutdown_action_server(self.goto_server)
 
     def __goto_waypoint(self, start_pose, goal_pose, feedback_msg, nav_config_params):
         '''Sends a goal to the navigation component and then waits
