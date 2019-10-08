@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="route_navigation" name="osm_pose_updater" type="osm_pose_updater" output="screen">
+        <param name="loop_rate" type="double" value="0.2" />
+        <param name="ref_latitude" type="double" value="50.7800401" />
+        <param name="ref_longitude" type="double" value="7.18226" />
+        <param name="building" value="$(optenv BUILDING BRSU)" />
+        <param name="floor" type="int" value="0" />
+        <param name="db_name" type="str" value="robot_store" />
+        <param name="collection_name" type="str" value="robot_state" />
+
+        <remap from="~localisation_topic" to="/amcl_pose" />
+    </node>
+</launch>

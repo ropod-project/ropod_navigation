@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import tf
+import sys
+import rospy
+import pymongo as pm
+from OBL.osm_bridge import OSMBridge
+
+from geometry_msgs.msg import PoseWithCovarianceStamped
+
+NODE = 'osm_pose_updater'
+
+class OSMPoseUpdater(object):
+
+    """Updates the osm local area pose based on localisation data in database"""
+
+    def __init__(self):
+        self.loop_rate = rospy.get_param('~loop_rate', 0.1)
+
+        ref_latitude = rospy.get_param('~ref_latitude', None)
+        ref_longitude = rospy.get_param('~ref_longitude', None)
+        if ref_latitude is None or ref_longitude is None:
+            rospy.logfatal('Reference global origin not provided. Exiting.')
+            sys.exit(1)
+        self.osm_bridge = OSMBridge(global_origin=[ref_latitude, ref_longitude])
+
+        building = rospy.get_param('~building', 'BRSU')
+        self.floor_prefix = building + '_L'
+
+        self.localisation_sub = rospy.Subscriber('~localisation_topic',
+                                            PoseWithCovarianceStamped,
+                                            self.localisation_cb)
+        self.current_x, self.current_y, self.current_theta = 0.0, 0.0, 0.0
+
+        db_name = rospy.get_param('~db_name', 'robot_store')
+        collection_name = rospy.get_param('~collection_name', 'robot_state')
+        client = pm.MongoClient()
+        self.state_collection = client[db_name][collection_name]
+
+    def localisation_cb(self, msg):
+        self.current_x = msg.pose.pose.position.x
+        self.current_y = msg.pose.pose.position.y
+        self.current_theta = tf.transformations.euler_from_quaternion(
+                [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y,
+                 msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])[2]
+
+    def main_loop(self):
+        rate = rospy.Rate(self.loop_rate)
+        while not rospy.is_shutdown():
+            current_floor = rospy.get_param('~floor', 0)
+            floor_name = self.floor_prefix + str(current_floor)
+            local_area = self.osm_bridge.get_local_area(
+                x=self.current_x, y=self.current_y, floor_name=floor_name, isLatlong=False)
+            if local_area is not None:
+                pose = {'x': self.current_x,
+                        'y': self.current_y,
+                        'theta': self.current_theta,
+                        'local_area': {'id': local_area.id, 'name': local_area.ref},
+                        'type': 'pose'}
+                self.state_collection.replace_one({'type':'pose'}, pose, upsert=True)
+            rate.sleep()
+
+if __name__ == '__main__':
+    rospy.init_node(NODE)
+    OPU = OSMPoseUpdater()
+    OPU.main_loop()
