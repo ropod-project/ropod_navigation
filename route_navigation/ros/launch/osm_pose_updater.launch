@@ -5,6 +5,7 @@
         <param name="ref_latitude" type="double" value="50.7800401" />
         <param name="ref_longitude" type="double" value="7.18226" />
         <param name="building" value="$(optenv BUILDING BRSU)" />
+        <param name="ropod_id" value="$(optenv ROPOD_ID ropod_003)" />
         <param name="floor" type="int" value="0" />
         <param name="db_name" type="str" value="robot_store" />
         <param name="collection_name" type="str" value="robot_state" />
