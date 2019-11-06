@@ -56,6 +56,10 @@ add_executable(route_planner_test_brsu ${PROJECT_SOURCE_DIR}/test/route_planner_
 add_dependencies(route_planner_test_brsu ropod_ros_msgs_generate_messages_cpp)
 target_link_libraries(route_planner_test_brsu ${LIBS} ${catkin_LIBRARIES})
 
+add_executable(route_planner_test_hochschulestrasse_return ${PROJECT_SOURCE_DIR}/test/route_planner_test_hochschulestrasse_return.cpp ${HEADER_FILES})
+add_dependencies(route_planner_test_hochschulestrasse_return ropod_ros_msgs_generate_messages_cpp)
+target_link_libraries(route_planner_test_hochschulestrasse_return ${LIBS} ${catkin_LIBRARIES})
+
 add_executable(route_planner_visualizer ${PROJECT_SOURCE_DIR}/test/route_planner_visualizer.cpp ${HEADER_FILES})
 add_dependencies(route_planner_visualizer ropod_ros_msgs_generate_messages_cpp)
 target_link_libraries(route_planner_visualizer ${LIBS} ${catkin_LIBRARIES})

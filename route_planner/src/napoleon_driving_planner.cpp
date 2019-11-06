@@ -254,32 +254,39 @@ bool NapoleonDrivingPlanner::get_area_sides(ropod_ros_msgs::SubArea curr_area, r
     // std::cout << front_points[0] << std::endl;
     // std::cout << front_points[1] << std::endl;
 
+    ropod_ros_msgs::Position front_mid_point;
+    front_mid_point.x = (front_points[0].x + front_points[1].x)/2.0;
+    front_mid_point.y = (front_points[0].y + front_points[1].y)/2.0;
+
+    ropod_ros_msgs::Position rear_mid_point;
+    rear_mid_point.x = (rear_points[0].x + rear_points[1].x)/2.0;
+    rear_mid_point.y = (rear_points[0].y + rear_points[1].y)/2.0;
+
     Line center_line;
-    center_line.point1 = curr_area_center;
-    center_line.point2 = next_area_center;
+    center_line.point1 = rear_mid_point;
+    center_line.point2 = front_mid_point;
 
-    // std::cout << determine_point_side(center_line, front_points[0]) << std::endl;
-    // std::cout << determine_point_side(center_line, front_points[1]) << std::endl;
-
-    if (determine_point_side(center_line, front_points[0]) == 0)
+    if (determine_point_side(center_line, front_points[0]) == RIGHT)
+    {
         right.point1 = front_points[0];
-    else
-        left.point1 = front_points[0];
-
-    if (determine_point_side(center_line, front_points[1]) == 0)
-        right.point1 = front_points[1];
-    else
         left.point1 = front_points[1];
-
-    if (get_euclidean_distance(right.point1, rear_points[0]) > get_euclidean_distance(right.point1, rear_points[1]))
-        right.point2 = rear_points[1];
+    }
     else
+    {
+        left.point1 = front_points[0];
+        right.point1 = front_points[1];
+    }
+
+    if (determine_point_side(center_line, rear_points[0]) == RIGHT)
+    {
         right.point2 = rear_points[0];
-
-    if (get_euclidean_distance(left.point1, rear_points[0]) > get_euclidean_distance(left.point1, rear_points[1]))
         left.point2 = rear_points[1];
+    }
     else
+    {
         left.point2 = rear_points[0];
+        right.point2 = rear_points[1];
+    }
 
     return true;
 }

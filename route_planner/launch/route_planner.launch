@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
     <node name="route_planner_node" pkg="route_planner" type="route_planner_node" output="screen">
-        <param name="route_plan_type" type="str" value="OSM-SUBAREA"/>  <!-- NAPOLEON | SIMPLE-OSM | OSM-SUBAREA  -->
+        <param name="route_plan_type" type="str" value="NAPOLEON"/>  <!-- NAPOLEON | SIMPLE-OSM | OSM-SUBAREA  -->
     </node>
 </launch>
