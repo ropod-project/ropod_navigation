@@ -19,6 +19,7 @@ The waypoint navigation depends on the following other components:
 
 The component expects several parameters to be made available to the ROS parameter server:
 * `mn_nav_topic: str` -- name of a topic for sending maneuver navigation goals (default `/route_navigation/goal`)
+* `mn_nav_feedback_topic: str` -- name of a topic on which maneuver navigation feedback is received (default `/route_navigation/feedback`)
 * `mn_nav_cancel_topic: str` -- name of a topic for cancelling maneuver navigation goals (default `/route_navigation/cancel`)
 * `localisation_topic: str` -- name of a topic on which localisation pose estimates are published (default `/amcl_pose`)
 * `goto_server_name: str` -- name of the action server exposed by the component (default `/ropod/goto`)
@@ -29,5 +30,4 @@ The component expects several parameters to be made available to the ROS paramet
 * `recovery_timeout_s: float` -- timeout (in seconds) specifying how long to wait for the component to recover (if recovery is necessary) before reporting a failure (default `120`)
 * `recovery_waiting_sleep_s: float` -- sleep duration (in seconds) while waiting for the component to recover itself (default `0.1`)
 
-* `pos_tolerance_m: float` -- distance tolerance (in meters) for navigation waypoints (default `0.3`)
 * `orientation_tolerance_deg: float` -- orientation tolerance (in degrees) for navigation waypoints (default `10`)

@@ -3,6 +3,7 @@ import numpy as np
 
 from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped, Quaternion
 from maneuver_navigation.msg import Goal as ManeuverNavigationGoal
+from maneuver_navigation.msg import Feedback as ManeuverNavigationFeedback
 from ropod_ros_msgs.msg import GoToFeedback, Status
 import route_navigation.transformations as tf
 
@@ -47,22 +48,20 @@ def has_timed_out(start_time, timeout):
     '''
     return (rospy.get_time() - start_time) >= timeout
 
-def is_waypoint_achieved(pose1, pose2, pos_tolerance_m, orientation_tolerance_rad):
-    '''Returns True if the position distance between the poses is less than
-    pos_tolerance_m and the orientation distance is less than orientation_tolerance_rad.
+def is_waypoint_achieved(feedback_topic, timeout_s):
+    '''Returns True if the feedback message published on the given topic (which is assumed
+    to be of type maneuver_navigation.msg.Feedback) indicates navigation success;
+    returns False otherwise.
 
     Keyword arguments:
-    pose1: geometry_msgs.msg.PoseStamped
-    pose2: geometry_msgs.msg.PoseStamped
-    pos_tolerance_m: float -- position tolerance in meters
-    orientation_tolerance_rad: float -- orientation tolerance in radians
+    feedback_topic: str -- topic on which navigation feedback is published
+    timeout_s: float -- timeout (in seconds) to wait for a feedback message
 
     '''
-    pos_distance = ((pose1.position.x - pose2.position.x)**2 \
-                  + (pose1.position.y - pose2.position.y)**2)
-
-    angular_distance = abs(get_min_angular_diff(get_yaw(pose1.orientation), get_yaw(pose2.orientation)))
-    return pos_distance < pos_tolerance_m and angular_distance < orientation_tolerance_rad
+    feedback_msg = rospy.wait_for_message(feedback_topic,
+                                          ManeuverNavigationFeedback,
+                                          timeout=timeout_s)
+    return feedback_msg and feedback_msg.status == ManeuverNavigationFeedback.SUCCESS
 
 def send_maneuver_nav_goal(goal_pub, frame_id, start_pose, goal_pose, nav_params):
     '''Sends a maneuver navigation goal from "start_pose" to "goal_pose"
@@ -142,6 +141,6 @@ def publish_waypoint_array(pose_array_pub, frame_id, areas):
     waypoint_vis_msg.header.frame_id = frame_id
     waypoint_vis_msg.header.stamp = rospy.Time.now()
     waypoint_vis_msg.poses = [sub_area.waypoint_pose
-                              for area in areas 
+                              for area in areas
                               for sub_area in area.sub_areas]
     pose_array_pub.publish(waypoint_vis_msg)

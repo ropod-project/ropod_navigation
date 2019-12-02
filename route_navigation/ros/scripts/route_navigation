@@ -33,6 +33,8 @@ class RouteNavigation(FTSMBase):
     The component expects several parameters to be made available to the ROS parameter server:
     mn_nav_topic: str -- name of a topic for sending maneuver
                          navigation goals (default /route_navigation/goal)
+    mn_nav_feedback_topic: str -- name of a topic for sending maneuver
+                                  navigation goals (default /route_navigation/feedback)
     mn_nav_cancel_topic: str -- name of a topic for cancelling maneuver
                                 navigation goals (default /route_navigation/cancel)
     localisation_topic: str -- name of a topic on which localisation
@@ -54,8 +56,6 @@ class RouteNavigation(FTSMBase):
                                        waiting for the component to recover
                                        itself (default 0.1)
 
-    pos_tolerance_m: float -- distance tolerance (in meters) for navigation
-                              waypoints (default 0.3)
     orientation_tolerance_deg: float -- orientation tolerance (in degrees) for
                                         navigation waypoints (default 10)
 
@@ -85,6 +85,7 @@ class RouteNavigation(FTSMBase):
         super(RouteNavigation, self).__init__(component_name, dependencies, dependency_monitors)
 
         self.mn_nav_topic = rospy.get_param('~mn_nav_topic', '/route_navigation/goal')
+        self.mn_nav_feedback_topic = rospy.get_param('~mn_nav_feedback_topic', '/route_navigation/feedback')
         self.mn_nav_cancel_topic = rospy.get_param('~mn_nav_cancel_topic',
                                                    '/route_navigation/cancel')
         self.localisation_topic = rospy.get_param('~localisation_topic', '/amcl_pose')
@@ -101,7 +102,6 @@ class RouteNavigation(FTSMBase):
         self.recovery_timeout_s = rospy.get_param('~recovery_timeout_s', 120.0)
         self.recovery_waiting_sleep_s = rospy.get_param('~recovery_waiting_sleep_s', 0.1)
 
-        self.pos_tolerance_m = rospy.get_param('~pos_tolerance_m', 0.3)
         orientation_tolerance_deg = rospy.get_param('~orientation_tolerance_deg', 10.)
         self.orientation_tolerance_rad = (orientation_tolerance_deg * math.pi) / 180.
 
@@ -441,16 +441,15 @@ class RouteNavigation(FTSMBase):
                                nav_config_params)
 
         start_time = rospy.get_time()
-        while not is_waypoint_achieved(self.base_pose.pose.pose,
-                                       goal_pose,
-                                       self.pos_tolerance_m,
-                                       self.orientation_tolerance_rad) and \
+        waypoint_achieved = False
+        while not waypoint_achieved and \
               not has_timed_out(start_time, self.goto_timeout_s) and \
               not self.goto_server.is_preempt_requested() and \
               self.current_state == FTSMStates.RUNNING:
             feedback_msg.feedback.status.status_code = Status.NAVIGATION_IN_PROGRESS
             self.goto_server.publish_feedback(feedback_msg)
-            rospy.sleep(0.5)
+            waypoint_achieved = is_waypoint_achieved(self.mn_nav_feedback_topic, 0.5)
+            rospy.sleep(0.1)
 
         # if the component is currently trying to recover, we cancel
         # the ongoing navigation goal and simply return a failure
@@ -458,10 +457,7 @@ class RouteNavigation(FTSMBase):
             self.mn_nav_cancel_pub.publish(Bool(data=True))
             return False
 
-        if not is_waypoint_achieved(self.base_pose.pose.pose,
-                                    goal_pose,
-                                    self.pos_tolerance_m,
-                                    self.orientation_tolerance_rad):
+        if not waypoint_achieved:
             feedback_msg.feedback.status.status_code = Status.GOAL_NOT_REACHABLE
             self.goto_server.publish_feedback(feedback_msg)
             return False
