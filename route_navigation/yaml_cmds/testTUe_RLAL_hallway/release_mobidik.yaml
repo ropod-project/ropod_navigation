@@ -1,0 +1,14 @@
+rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "
+action_id: '4a15af55-47fa-43e5-ad75-58d138242ab4'
+type: 'RELEASE_MOBIDIK'
+areas: 
+  - 
+    area_id: 'MobidikArea3'
+    name: 'WP01'
+    waypoints: []
+waypoints: []
+start_floor: 0
+goal_floor: 0
+execution_status: ''
+estimated_duration: 0.0
+"

@@ -1,0 +1,15 @@
+rostopic pub /ropod_task_executor/GOTO ropod_ros_msgs/Action "
+action_id: 'collect_mobidik'
+type: 'DOCK'
+areas: 
+  - 
+    area_id: 'MobidikArea1'
+    name: 'WP01'
+    type: 'mobidik'
+    waypoints: []
+waypoints: []
+start_floor: 0
+goal_floor: 0
+execution_status: ''
+estimated_duration: 0.0
+" -1

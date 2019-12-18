@@ -1,0 +1,63 @@
+rostopic pub /model_mediator_action ropod_ros_msgs/RobotAction "
+action_id: 'goto-charging-4a15af55-47fa-43e5-ad75-58d138242ab4'
+type: 'GOTO'
+navigation_areas: 
+  #- 
+    #area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    #name: 'Parallel_AL_RL_ALside_CCW'
+    #type: 'Corridor'
+    #waypoints:
+        #- 
+          #semantic_id: 'test-semantic_id-1'
+          #area_id: 'test-area_id-1'
+          #floor_number: 0
+          #waypoint_pose: 
+            #position:             
+                #x: 11.89
+                #y: 4.8
+                #z: 0.0
+            #orientation: 
+                #x: 0.0
+                #y: 0.0
+                #z: 0.62184842614
+                #w: 0.783137621946
+  -               
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'hallway_opposite_AL_RL_doors_CCW'
+    type: 'Corridor'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 10.5276269913
+                y: 7.17953681946
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.994400819293
+                w: 0.105674077189
+  -               
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'charging_area'
+    type: 'charging_area'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 9.51217746735
+                y: 7.31385946274
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.797493492644
+                w: 0.603327547183
+"
+                                                        

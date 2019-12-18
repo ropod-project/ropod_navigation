@@ -1,0 +1,115 @@
+rostopic pub /model_mediator_action ropod_ros_msgs/RobotAction "
+action_id: 'goto-deliver-4a15af55-47fa-43e5-ad75-58d138242ab4'
+type: 'GOTO'
+navigation_areas: 
+  - 
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Parallel_AL_RL_RLside_CCW'
+    type: 'Corridor'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 3.23738861084
+                y: 3.93877410889
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.783816123798
+                w: 0.620992982307
+  -                        
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Intersection_RL_door'
+    type: 'Intersection'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose:                 
+            position: 
+                x: 3.14523458481
+                y: 1.37765955925
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.619206891037
+                w: 0.785227881632
+  -
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Hallway_AL_RL_doors_CCW'
+    type: 'Corridor'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 4.48894071579
+                y: 0.420589506626
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.119945053773
+                w: 0.992780531676
+            
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 7.20604276657
+                y: -0.20830373466
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.12186347167
+                w: 0.992546872582
+  - 
+    area_id: '1d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Intersection_AL_door'
+    type: 'Intersection'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-2'
+          area_id: 'test-area_id-2'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 10.0414514542
+                y: -0.283344745636
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: -0.782678788289
+                w: 0.622425830411
+  - 
+    area_id: '0d19dded-806f-43f0-8777-888de32507fb'
+    name: 'Parallel_AL_RL_ALside_CCW'
+    type: 'Corridor'
+    waypoints:
+        - 
+          semantic_id: 'test-semantic_id-1'
+          area_id: 'test-area_id-1'
+          floor_number: 0
+          waypoint_pose: 
+            position: 
+                x: 10.9946060181
+                y: 0.742776989937
+                z: 0.0
+            orientation: 
+                x: 0.0
+                y: 0.0
+                z: 0.619226624927
+                w: 0.785212319683
+"

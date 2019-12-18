@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="robot_name" default="ropod"/>
+
+    <node pkg="route_navigation" type="route_navigation" name="route_navigation" output="screen" >
+        <param name="mn_nav_topic" type="str" value="/route_navigation/goal" />
+        <param name="mn_nav_feedback_topic" type="str" value="/route_navigation/feedback" />
+        <param name="mn_nav_cancel_topic" type="str" value="/route_navigation/cancel" />
+        <param name="nav_waypoints_topic" type="str" value="/route_navigation/nav_waypoints" />
+        <param name="localisation_topic" type="str" value="/amcl_pose" />
+        <param name="goto_server_name" type="str" value="/ropod/goto" />
+        <param name="route_planner_server_name" type="str" value="/route_planner" />
+        <param name="goto_timeout_s" type="double" value="120.0" />
+        <param name="route_planner_timeout_s" type="double" value="120.0" />
+        <param name="recovery_timeout_s" type="double" value="120.0" />
+        <param name="recovery_waiting_sleep_s" type="double" value="0.1" />
+        <param name="orientation_tolerance_deg" type="double" value="10.0" />
+    </node>
+</launch>
